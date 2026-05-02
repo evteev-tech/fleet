@@ -285,14 +285,17 @@ export async function getDeposits() {
  * @returns {Promise<object>}
  */
 export async function postAction(action, data) {
-  // Webhook URL: приоритет у localStorage (overridden в настройках)
-  const url = localStorage.getItem('matizi_webhook') || WEBHOOK_URL;
+  const webhookUrl = localStorage.getItem('matizi_webhook') || WEBHOOK_URL;
+  const payload    = JSON.stringify({ action, ...data });
+
+  // URLSearchParams → Content-Type: application/x-www-form-urlencoded
+  // браузер не шлёт preflight, Apps Script читает через e.parameter.data
+  const formData = new URLSearchParams();
+  formData.append('data', payload);
+
   let res;
   try {
-    res = await fetch(url, {
-      method: 'POST',
-      body:   JSON.stringify({ action, ...data }),
-    });
+    res = await fetch(webhookUrl, { method: 'POST', body: formData });
   } catch {
     throw new Error('NO_CONNECTION');
   }

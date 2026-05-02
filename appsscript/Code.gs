@@ -157,7 +157,8 @@ function doPost(e) {
   const ss = SpreadsheetApp.openById(SS_ID);
 
   try {
-    const body   = JSON.parse(e.postData.contents);
+    const raw    = (e.parameter && e.parameter.data) ? e.parameter.data : e.postData.contents;
+    const body   = JSON.parse(raw);
     const action = body.action || 'ADD_OPERATION';
 
     switch (action) {
