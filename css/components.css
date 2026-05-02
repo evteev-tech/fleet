@@ -622,3 +622,203 @@ select.field-input {
   color: var(--color-dark);
   box-shadow: 0 1px 4px rgba(0,0,0,0.08);
 }
+
+/* ═══════════════════════════════════════════════════════════
+   ДИЗАЙН-СИСТЕМА: компоненты от дизайнера
+═══════════════════════════════════════════════════════════ */
+
+/* ── Файл 1: секционный лейбл, белая карточка, ряды ── */
+
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: ***REMOVED***8A8A8E;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 0 4px;
+  margin-top: 16px;
+  margin-bottom: 6px;
+  line-height: 1.2;
+}
+
+.white-card {
+  background-color: ***REMOVED***FFFFFF;
+  border-radius: 16px;
+  padding: 0;
+  border: none;
+  overflow: hidden;
+}
+
+.card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 56px;
+  padding: 14px 16px;
+  box-sizing: border-box;
+}
+
+.card-row:not(:last-child) {
+  border-bottom: 0.5px solid var(--color-bg);
+}
+
+/* ── Файл 3: хедер экрана и переключатель месяца ── */
+
+.header {
+  background-color: var(--color-dark);
+  padding: 24px 16px 16px 16px;
+  margin: -12px -16px 6px -16px;
+}
+
+.header-greeting {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-muted-white);
+  margin-bottom: 2px;
+  line-height: 1.2;
+}
+
+.header-name {
+  font-size: 18px;
+  font-weight: 900;
+  color: ***REMOVED***FFFFFF;
+  line-height: 1.2;
+}
+
+.month-switcher {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--color-dark);
+  margin-top: 12px;
+  height: 32px;
+}
+
+.month-switcher-chevron {
+  color: var(--color-text-muted-white);
+  font-size: 16px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 4px;
+}
+
+.month-switcher-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: ***REMOVED***FFFFFF;
+  text-align: center;
+}
+
+/* ── Файл 2: hero-карточка ── */
+
+.hero-card {
+  background-color: var(--color-yellow);
+  border-radius: 20px;
+  padding: 18px;
+  border: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.hero-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+  line-height: 1.2;
+}
+
+.hero-amount {
+  font-size: 36px;
+  font-weight: 900;
+  letter-spacing: -1.5px;
+  color: var(--color-dark);
+  line-height: 1.1;
+  margin-bottom: 16px;
+}
+
+.hero-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.hero-stat-tile {
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.stat-value {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--color-dark);
+  margin-bottom: 2px;
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+/* ── Файл 5: строки с аватарами, кассы, статусы парка ── */
+
+.row-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cash-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-dark);
+}
+
+.cash-amount {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.cash-amount.positive { color: var(--color-green); }
+.cash-amount.negative { color: var(--color-red);   }
+
+.fleet-letter {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.status-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-dark);
+}
+
+.status-count {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--color-dark);
+}
+
+.fleet-rented { background-color: ***REMOVED***E3F9F0; color: var(--color-green); }
+.fleet-idle   { background-color: var(--color-bg); color: ***REMOVED***6C757D;    }
+.fleet-repair { background-color: ***REMOVED***FFF3E0; color: ***REMOVED***F97316;            }
