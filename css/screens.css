@@ -2446,3 +2446,386 @@
   color: var(--color-muted);
   padding: 8px 0;
 }
+
+/* ═══════════════════════════════════════════════
+   ЭКРАН: ПРИНЯТЬ ПЛАТЁЖ (income.js)
+════════════════════════════════════════════════ */
+
+.dash-income-cta {
+  padding: 0 4px 14px;
+}
+
+.dash-income-cta__btn {
+  width: 100%;
+  padding: 14px 16px;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-family);
+  font-size: 15px;
+  font-weight: 700;
+  background: var(--color-accent);
+  color: var(--color-dark);
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(26, 26, 26, 0.08);
+}
+
+.income-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--bg-page);
+  padding-bottom: calc(var(--navbar-height) + var(--safe-bottom));
+}
+
+.income-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--header-height);
+  padding: 0 8px;
+  padding-top: max(8px, env(safe-area-inset-top));
+  background: var(--bg-header);
+  color: ***REMOVED***fff;
+}
+
+.income-header__back {
+  color: ***REMOVED***fff;
+  width: 44px;
+  height: 44px;
+}
+
+.income-header__title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.income-header__spacer {
+  width: 44px;
+}
+
+.income-cards-wrap--scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 12px 16px;
+  padding-bottom: calc(280px + env(safe-area-inset-bottom));
+}
+
+.income-cards-wrap.income-cards--warn {
+  outline: 2px solid var(--color-red);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.income-loading,
+.income-error {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--color-muted);
+}
+
+.income-empty {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--color-muted);
+  font-size: 15px;
+}
+
+.income-card {
+  background: ***REMOVED***fff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  border: 1px solid ***REMOVED***e0e0e0;
+  box-shadow: 0 2px 12px rgba(26, 26, 26, 0.06);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.income-card--selected {
+  border: 2px solid var(--color-accent);
+  background: ***REMOVED***fafce8;
+}
+
+.income-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.income-card__car-id {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--color-dark);
+}
+
+.income-card__meta {
+  font-size: 13px;
+  color: var(--color-muted);
+  margin-top: 2px;
+}
+
+.income-badge {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--color-green-bg);
+  color: var(--color-green);
+}
+
+.income-card__rule {
+  height: 1px;
+  background: ***REMOVED***e8e8e8;
+  margin: 12px 0;
+}
+
+.income-card__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+}
+
+.income-cell__label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+
+.income-cell__val {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-dark);
+}
+
+.income-km--bad {
+  color: var(--color-red);
+}
+
+.income-km--mid {
+  color: ***REMOVED***e6b800;
+}
+
+.income-card__driver {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid ***REMOVED***f0f0f0;
+}
+
+.income-avatar {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: var(--color-dark);
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.income-driver-text {
+  font-size: 13px;
+  color: var(--color-dark);
+  line-height: 1.35;
+}
+
+.income-bottom {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--navbar-height) + var(--safe-bottom));
+  z-index: 30;
+  background: ***REMOVED***fff;
+  padding: 14px 16px calc(12px + env(safe-area-inset-bottom));
+  box-shadow: 0 -4px 20px rgba(26, 26, 26, 0.08);
+  border-radius: 16px 16px 0 0;
+}
+
+.income-bottom--disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.income-bottom__hint {
+  text-align: center;
+  font-size: 14px;
+  color: var(--color-muted);
+  padding: 10px 0;
+}
+
+.income-periods {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.income-period {
+  border: 1px solid ***REMOVED***e5e5ea;
+  border-radius: 10px;
+  padding: 8px 6px;
+  background: ***REMOVED***fafafa;
+  cursor: pointer;
+  font-family: var(--font-family);
+}
+
+.income-period--on {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-dark);
+}
+
+.income-period__label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  opacity: 0.85;
+}
+
+.income-period__sum {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.income-sum-wrap {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 8px 0 12px;
+  cursor: pointer;
+}
+
+.income-sum {
+  display: block;
+  text-align: center;
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  color: var(--color-dark);
+}
+
+.income-sum--warn {
+  color: var(--color-red);
+}
+
+@keyframes income-sum-flash {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); color: var(--color-red); }
+}
+
+.income-sum--flash {
+  animation: income-sum-flash 0.35s ease;
+}
+
+.income-dates {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  font-size: 13px;
+  color: var(--color-muted);
+  margin-bottom: 8px;
+}
+
+.income-dates strong {
+  color: var(--color-dark);
+  font-weight: 700;
+}
+
+.income-dates__arrow {
+  color: ***REMOVED***c4c4c4;
+}
+
+.income-dates__days {
+  font-weight: 700;
+  color: var(--color-dark);
+}
+
+.income-warn {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-dark);
+  background: ***REMOVED***fff9e6;
+  border: 1px solid var(--color-accent);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+
+.btn-income-submit {
+  width: 100%;
+  padding: 14px 16px;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-family);
+  font-size: 16px;
+  font-weight: 800;
+  background: var(--color-accent);
+  color: var(--color-dark);
+  cursor: pointer;
+}
+
+.btn-income-submit:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.income-numpad-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 26, 26, 0.45);
+  z-index: 200;
+}
+
+.income-numpad {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 210;
+  background: ***REMOVED***fff;
+  border-radius: 16px 16px 0 0;
+  padding: 12px 16px calc(20px + env(safe-area-inset-bottom));
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.18);
+  transform: translateY(100%);
+  transition: transform 0.28s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.income-numpad--visible {
+  transform: translateY(0);
+}
+
+.income-numpad__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.income-numpad__key {
+  padding: 16px;
+  font-size: 22px;
+  font-weight: 700;
+  border: 1px solid ***REMOVED***e8e8e8;
+  border-radius: 12px;
+  background: ***REMOVED***fafafa;
+  cursor: pointer;
+  font-family: var(--font-family);
+}

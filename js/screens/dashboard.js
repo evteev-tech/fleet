@@ -9,7 +9,7 @@ import { getOperations, getFleet } from '../api.js';
 import { getCurrentUser }          from '../auth.js';
 import { parseRuDate }             from './history.js';
 import { showScreen }              from '../router.js?v=6';
-import { KASSA_ID, KASSA_NAMES, CAR_STATUSES } from '../config.js';
+import { KASSA_ID, KASSA_NAMES, CAR_STATUSES, ROLES } from '../config.js';
 
 const _now = new Date();
 let _month = _now.getMonth() + 1;
@@ -145,11 +145,30 @@ export async function renderDashboard() {
     document.getElementById('dashFleetLabel').textContent = `Парк · ${_fleet.length} авто`;
 
     _refreshMonthUI();
+    _injectIncomeCta();
   } catch (err) {
     console.error('Dashboard parse/render error:', err);
     console.error('Raw data:', { ...data, fleetSample: _fleet?.slice?.(0, 2) });
     _showDashboardError(false);
   }
+}
+
+/** Кнопка «Принять платёж» для роли operations (Владимир). */
+function _injectIncomeCta() {
+  const user = getCurrentUser();
+  if (user?.role !== ROLES.OPERATIONS) return;
+  const body = _dashboardBodyEl();
+  if (!body || document.getElementById('dash-btn-income')) return;
+  const first = body.firstElementChild;
+  first?.insertAdjacentHTML(
+    'beforebegin',
+    `<div class="dash-income-cta">
+      <button type="button" class="dash-income-cta__btn" id="dash-btn-income">Принять платёж</button>
+    </div>`,
+  );
+  document.getElementById('dash-btn-income')?.addEventListener('click', () => {
+    showScreen('screen-income');
+  });
 }
 
 function _showDashboardError(isNoConn) {

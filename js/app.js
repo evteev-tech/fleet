@@ -18,6 +18,7 @@ import { initDrivers }   from './screens/drivers.js';
 import { initDriver }    from './screens/driver.js';
 import { initSettings }  from './screens/settings.js';
 import { initAnalytics } from './screens/analytics.js';
+import { initIncome } from './screens/income.js';
 
 // ─── Старт ────────────────────────────────────────────────────────────────────
 
@@ -25,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Инициализируем все экраны (подписывают свои слушатели событий)
   initHome();
   initDashboard();
+  initIncome();
   initAdd();
   initHistory();
   initAnalytics();

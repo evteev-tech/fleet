@@ -155,8 +155,7 @@ export async function renderHome() {
   document.getElementById('home-refresh')?.addEventListener('click', renderHome);
 
   document.getElementById('home-btn-income')?.addEventListener('click', () => {
-    document.dispatchEvent(new CustomEvent('add:prefill', { detail: { type: 'ДОХОД' } }));
-    showScreen('screen-add');
+    showScreen('screen-income');
   });
 
   document.getElementById('home-btn-expense')?.addEventListener('click', () => {

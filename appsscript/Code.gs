@@ -21,14 +21,14 @@ const SS_ID = '1z4raGK4oamjZNznow-OesTljRz649_wCFYIFOh3mufg';
 
 // Имена листов — как в js/config.js + служебные
 const SHEET = {
-  OPERATIONS: 'Касса_операции',
-  CARS:       'Машины',
-  DRIVERS:    'Водители',
-  RENTALS:    'Аренда',
-  DEPOSITS:   'Депозиты_операции',
-  USERS:      'Пользователи',
-  FAIL_LOG:   'Лог_ошибок',
-  DASHBOARD:  'Дашборд',
+  OPERATIONS: '\u041a\u0430\u0441\u0441\u0430_\u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438',
+  CARS:       '\u041c\u0430\u0448\u0438\u043d\u044b',
+  DRIVERS:    '\u0412\u043e\u0434\u0438\u0442\u0435\u043b\u0438',
+  RENTALS:    '\u0410\u0440\u0435\u043d\u0434\u0430',
+  DEPOSITS:   '\u0414\u0435\u043f\u043e\u0437\u0438\u0442\u044b_\u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438',
+  USERS:      '\u041f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u0438',
+  FAIL_LOG:   '\u041b\u043e\u0433_\u043e\u0448\u0438\u0431\u043e\u043a',
+  DASHBOARD:  '\u0414\u0430\u0448\u0431\u043e\u0440\u0434',
 };
 
 // -----------------------------------------------------------------------------
@@ -173,6 +173,8 @@ function doPost(e) {
       case 'UPDATE_PERIOD':     return handleUpdatePeriod(SS, body);
       case 'GET_FLEET':         return handleGetFleet(SS);
       case 'GET_DRIVERS':       return handleGetDrivers(SS);
+      case 'GET_INCOME_FORM':   return handleGetIncomeForm(SS);
+      case 'ADD_INCOME':        return handleAddIncome(SS, body);
       default:
         logFailure(SS, action, 'UNKNOWN_ACTION', 'Action not implemented');
         return err('UNKNOWN_ACTION');
@@ -218,13 +220,13 @@ function handleAddOperation(ss, body) {
   let klass_itog;
   const typeLower = String(type).toLowerCase();
   const dirStr = String(direction || '');
-  if (typeLower.startsWith('аренда') || typeLower === 'аренда') {
+  if (typeLower.startsWith('\u0430\u0440\u0435\u043d\u0434\u0430') || typeLower === '\u0430\u0440\u0435\u043d\u0434\u0430') {
     klass_itog = 'revenue';
-  } else if (dirStr === 'перевод') {
+  } else if (dirStr === '\u043f\u0435\u0440\u0435\u0432\u043e\u0434') {
     klass_itog = 'transfer';
-  } else if (typeLower.startsWith('депозит')) {
+  } else if (typeLower.startsWith('\u0434\u0435\u043f\u043e\u0437\u0438\u0442')) {
     klass_itog = 'deposit';
-  } else if (dirStr === 'расход') {
+  } else if (dirStr === '\u0440\u0430\u0441\u0445\u043e\u0434') {
     klass_itog = 'opex';
   } else {
     klass_itog = 'revenue';
@@ -288,7 +290,7 @@ function handleUpdateCarStatus(ss, body) {
 function handleSaveDriver(ss, body) {
   const {
     driver_id = '', fio = '', phone = '',
-    vu = '', car_id = '', status = 'активен', comment = '',
+    vu = '', car_id = '', status = '\u0430\u043a\u0442\u0438\u0432\u0435\u043d', comment = '',
   } = body;
 
   const sheet = ss.getSheetByName(SHEET.DRIVERS);
@@ -350,7 +352,7 @@ function handleAddDeposit(ss, body) {
   if (!driverSheet) return err('SHEET_NOT_FOUND: ' + SHEET.DRIVERS);
 
   const dep_op_id     = getNextId(depSheet, 'DP');
-  const status_src    = Number(amount) > 0 ? 'приход' : 'расход';
+  const status_src    = Number(amount) > 0 ? '\u043f\u0440\u0438\u0445\u043e\u0434' : '\u0440\u0430\u0441\u0445\u043e\u0434';
   const today         = formatDate(new Date());
 
   // A          B      C          D       E       F                 G
@@ -432,7 +434,7 @@ function handleGetDashboard(ss) {
   const year = Number(sheet.getRange('B2').getValue()) || new Date().getFullYear();
   const month = Number(sheet.getRange('B3').getValue()) || (new Date().getMonth() + 1);
 
-  const summaryLabels = ['Выручка', 'OPEX', 'CAPEX', 'Прибыль'];
+  const summaryLabels = ['\u0412\u044b\u0440\u0443\u0447\u043a\u0430', 'OPEX', 'CAPEX', '\u041f\u0440\u0438\u0431\u044b\u043b\u044c'];
   const summaryKeys = ['revenue', 'opex', 'capex', 'profit'];
   const sumVals = sheet.getRange(10, 2, 13, 3).getValues();
   var summary = [];
@@ -653,6 +655,148 @@ function handleGetDrivers(ss) {
 }
 
 // -----------------------------------------------------------------------------
+// GET_INCOME_FORM — MAX(дата_окончания) по «Аренда» для машин «в аренде»
+// -----------------------------------------------------------------------------
+
+/**
+ * Для каждой машины со статусом «в аренде» — максимальная дата_окончания из листа «Аренда».
+ */
+function handleGetIncomeForm(ss) {
+  var carsSheet = ss.getSheetByName(SHEET.CARS);
+  var rentSheet = ss.getSheetByName(SHEET.RENTALS);
+  if (!carsSheet || !rentSheet) {
+    logFailure(ss, 'GET_INCOME_FORM', 'SHEET_NOT_FOUND', 'CARS/RENTALS');
+    return err('SHEET_NOT_FOUND');
+  }
+  var statusRent = '\u0432 \u0430\u0440\u0435\u043d\u0434\u0435';
+  var cVals = carsSheet.getDataRange().getValues();
+  var rentedIds = {};
+  var ci;
+  for (ci = 1; ci < cVals.length; ci++) {
+    var st = String(cVals[ci][3] != null ? cVals[ci][3] : '').trim();
+    if (st === statusRent) {
+      var id = String(cVals[ci][0] != null ? cVals[ci][0] : '').trim();
+      if (id) rentedIds[id] = true;
+    }
+  }
+  var rVals = rentSheet.getDataRange().getValues();
+  var maxEnd = {};
+  var rj;
+  for (rj = 1; rj < rVals.length; rj++) {
+    var carId = String(rVals[rj][1] != null ? rVals[rj][1] : '').trim();
+    if (!carId || !rentedIds[carId]) continue;
+    var endRaw = rVals[rj][4];
+    var endDt = parseDate(endRaw);
+    if (!endDt) continue;
+    var ts = endDt.getTime();
+    if (!maxEnd[carId] || ts > maxEnd[carId]) maxEnd[carId] = ts;
+  }
+  var out = [];
+  for (var cid in rentedIds) {
+    if (!rentedIds.hasOwnProperty(cid)) continue;
+    var ms = maxEnd[cid];
+    var lastStr = '';
+    if (ms) {
+      lastStr = Utilities.formatDate(new Date(ms), Session.getScriptTimeZone(), 'dd.MM.yyyy');
+    }
+    out.push({ carId: cid, lastPaidDate: lastStr });
+  }
+  return ok({ incomeForm: out });
+}
+
+function deleteOperationRowByOpId_(ss, opId) {
+  var sheet = ss.getSheetByName(SHEET.OPERATIONS);
+  if (!sheet) return false;
+  var data = sheet.getDataRange().getValues();
+  var ri;
+  for (ri = 1; ri < data.length; ri++) {
+    if (String(data[ri][0]) === String(opId)) {
+      sheet.deleteRow(ri + 1);
+      return true;
+    }
+  }
+  return false;
+}
+
+function parseContentJson_(textOutput) {
+  return JSON.parse(textOutput.getContent());
+}
+
+/**
+ * Приход аренды: касса + строка аренды; при ошибке аренды — откат операции.
+ */
+function handleAddIncome(ss, body) {
+  var lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(30000);
+  } catch (eLock) {
+    return err('LOCK_TIMEOUT');
+  }
+
+  try {
+    var car_id = body.car_id;
+    var driver_id = body.driver_id;
+    var amount = body.amount;
+    var date_from = body.date_from;
+    var date_to = body.date_to;
+    var rate = body.rate;
+    var comment = body.comment || '';
+    var kassa_id = body.kassa_id || 'K_AZAMAT';
+    var provel = body.provel || '\u0410\u0437\u0430\u043c\u0430\u0442';
+
+    if (!car_id) return err('MISSING: car_id');
+    if (!driver_id) return err('MISSING: driver_id');
+    if (amount === undefined || amount === null || amount === '') return err('MISSING: amount');
+    if (!date_from) return err('MISSING: date_from');
+    if (!date_to) return err('MISSING: date_to');
+
+    var dirPrihod = '\u043f\u0440\u0438\u0445\u043e\u0434';
+    var typeArenda = '\u0430\u0440\u0435\u043d\u0434\u0430';
+
+    var opOut = handleAddOperation(ss, {
+      date: formatDate(new Date()),
+      kassa_id: String(kassa_id),
+      direction: dirPrihod,
+      amount: Number(amount),
+      type: typeArenda,
+      category: typeArenda,
+      car_id: car_id,
+      driver_id: driver_id,
+      comment: comment,
+      provel: String(provel),
+    });
+
+    var opData = parseContentJson_(opOut);
+    if (opData.error === true || opData.status === 'error') {
+      return err('OP_FAILED: ' + (opData.message || ''));
+    }
+    var op_id = opData.op_id;
+
+    var rentalOut = handleAddRental(ss, {
+      car_id: car_id,
+      driver_id: driver_id,
+      date_start: date_from,
+      date_end: date_to,
+      rate_day: rate,
+      comment: comment,
+    });
+
+    var rentalData = parseContentJson_(rentalOut);
+    if (rentalData.error === true || rentalData.status === 'error') {
+      deleteOperationRowByOpId_(ss, op_id);
+      return err('RENTAL_FAILED: ' + (rentalData.message || ''));
+    }
+
+    return ok({
+      op_id: op_id,
+      rental_id: rentalData.rental_id,
+    });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+// -----------------------------------------------------------------------------
 // Локальные тесты (запуск из редактора Apps Script)
 // -----------------------------------------------------------------------------
 
@@ -668,13 +812,13 @@ function testAll() {
         action:     'ADD_OPERATION',
         date:       formatDate(new Date()),
         kassa_id:   'K_AZAMAT',
-        direction:  'приход',
+        direction:  '\u043f\u0440\u0438\u0445\u043e\u0434',
         amount:     5000,
-        type:       'аренда',
-        category:   'аренда',
+        type:       '\u0430\u0440\u0435\u043d\u0434\u0430',
+        category:   '\u0430\u0440\u0435\u043d\u0434\u0430',
         car_id:     'TEST_CAR',
         driver_id:  'TEST_DRIVER',
-        comment:    'смок testAll()',
+        comment:    '\u0441\u043c\u043e\u043a testAll()',
         provel:     'system',
       })
     }

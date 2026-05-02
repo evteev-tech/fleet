@@ -392,6 +392,24 @@ export async function updateAnalyticsPeriod(year, month) {
   await postAction('UPDATE_PERIOD', { year, month });
 }
 
+/**
+ * MAX(дата_окончания) по листу «Аренда» для машин «в аренде» (Apps Script GET_INCOME_FORM).
+ * @returns {Promise<Array<{ carId: string, lastPaidDate: string }>>}
+ */
+export async function fetchIncomeForm() {
+  const body = await postAction('GET_INCOME_FORM', {});
+  const rows = body.incomeForm;
+  return Array.isArray(rows) ? rows : [];
+}
+
+/**
+ * Приход аренды: касса + строка аренды (ADD_INCOME).
+ * @param {object} payload
+ */
+export async function postAddIncome(payload) {
+  return postAction('ADD_INCOME', payload);
+}
+
 // ─── Какие листы сбрасываем после каждого action ─────────────────────────────
 const ACTION_INVALIDATES = {
   ADD_OPERATION:    [SHEETS.OPERATIONS],
@@ -399,6 +417,7 @@ const ACTION_INVALIDATES = {
   SAVE_DRIVER:      [SHEETS.DRIVERS, SHEETS.CARS],
   ADD_DEPOSIT:      [SHEETS.DEPOSITS, SHEETS.DRIVERS],
   ADD_RENTAL:       [SHEETS.RENTALS, SHEETS.CARS],
+  ADD_INCOME:       [SHEETS.OPERATIONS, SHEETS.RENTALS, SHEETS.CARS],
 };
 
 function _invalidateByAction(action) {
