@@ -69,17 +69,39 @@ function fmtBuyDate(d) {
   return d.toLocaleDateString('ru-RU');
 }
 
-/** Остаток км до ТО: ТО на пробег − текущий */
-function kmToService(car) {
-  const a = Number(car.toMileage) || 0;
-  const b = Number(car.mileage) || 0;
-  return Math.max(0, a - b);
-}
+const TO_MILEAGE_COLOR_HEX = {
+  red: '***REMOVED***C62828',
+  yellow: '***REMOVED***F57F17',
+  green: '***REMOVED***2E7D32',
+  gray: '***REMOVED***9E9E9E',
+};
 
-function kmRemainClass(km) {
-  if (km < 1000) return 'fleet-car__km--bad';
-  if (km < 3000) return 'fleet-car__km--warn';
-  return 'fleet-car__km--ok';
+/**
+ * До ТО: остаток km до следующего ТО; при t===0 или t===m — «—» (ТО не запланировано).
+ */
+function formatToMileage(mileage, toMileage) {
+  const m = Number(mileage) || 0;
+  const t = Number(toMileage) || 0;
+
+  if (t === 0 || t === m) {
+    return { text: '—', color: 'gray' };
+  }
+
+  const diff = t - m;
+
+  if (diff <= 0) {
+    return { text: 'Просрочено', color: 'red' };
+  }
+
+  if (diff < 1000) {
+    return { text: new Intl.NumberFormat('ru-RU').format(diff) + ' км', color: 'red' };
+  }
+
+  if (diff < 3000) {
+    return { text: new Intl.NumberFormat('ru-RU').format(diff) + ' км', color: 'yellow' };
+  }
+
+  return { text: new Intl.NumberFormat('ru-RU').format(diff) + ' км', color: 'green' };
 }
 
 export function initFleet() {
@@ -182,7 +204,8 @@ function _cardHTML(car) {
   const sk = statusKey(car.status);
   const badge = BADGE[sk] ?? BADGE.idle;
   const title = [car.name, car.color].filter(Boolean).join(' · ');
-  const remain = kmToService(car);
+  const toInfo = formatToMileage(car.mileage, car.toMileage);
+  const toHex = TO_MILEAGE_COLOR_HEX[toInfo.color] ?? '***REMOVED***9E9E9E';
   const note = String(car.note || '').trim();
 
   return `
@@ -210,7 +233,7 @@ function _cardHTML(car) {
         </div>
         <div class="fleet-car__cell">
           <div class="fleet-car__lbl">До ТО</div>
-          <div class="fleet-car__val ${kmRemainClass(remain)}">${fmtKm(remain)}</div>
+          <div class="fleet-car__val" style="color:${toHex}">${escapeHtml(toInfo.text)}</div>
         </div>
       </div>
       ${note ? `

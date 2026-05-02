@@ -123,6 +123,14 @@ function doPost(e) {
     const body = parseRequestBody_(e);
     const action = body.action || 'ADD_OPERATION';
 
+    // ????????: ?????? ???? ?????? ??????? (???????)
+    if (action === 'DEBUG_SHEETS') {
+      const names = ss.getSheets().map(function (s) { return s.getName(); });
+      return ContentService
+        .createTextOutput(JSON.stringify({ sheets: names }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
     switch (action) {
       case 'ADD_OPERATION':     return handleAddOperation(ss, body);
       case 'UPDATE_CAR_STATUS': return handleUpdateCarStatus(ss, body);
@@ -131,7 +139,7 @@ function doPost(e) {
       case 'ADD_RENTAL':        return handleAddRental(ss, body);
       case 'GET_DASHBOARD':     return handleGetDashboard();
       case 'UPDATE_PERIOD':     return handleUpdatePeriod(ss, body);
-      case 'GET_FLEET':         return handleGetFleet(ss);
+      case 'GET_FLEET':         return handleGetFleet();
       default:
         logFailure(ss, action, 'UNKNOWN_ACTION', 'Action not implemented');
         return err('UNKNOWN_ACTION');
@@ -486,7 +494,8 @@ function handleUpdatePeriod(ss, body) {
  * ??????? A?J: car_id, ????????, ????, ??????, ????_???????, ????_???????,
  * ??????_????, ??????????, ??????? ??????, ?? ?? ???????.
  */
-function handleGetFleet(ss) {
+function handleGetFleet() {
+  const ss = SpreadsheetApp.openById('1z4raGK4oamjZNznow-OesTljRz649_wCFYIFOh3mufg');
   const sheet = ss.getSheetByName('\u041c\u0430\u0448\u0438\u043d\u044b');
   if (!sheet) {
     logFailure(ss, 'GET_FLEET', 'SHEET_NOT_FOUND', '\u041c\u0430\u0448\u0438\u043d\u044b');
