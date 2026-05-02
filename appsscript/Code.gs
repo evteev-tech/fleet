@@ -556,27 +556,30 @@ function handleGetFleet(ss) {
 }
 
 /**
- * GET_DRIVERS ? ????? ?????????? + ????????, ???????? ?????? ? currentCar (car_id).
+ * ??????????????? ?????? ???? ?? ?????? (Date / ????? Excel / DD.MM.YYYY / ISO-??????).
  */
-function parseCellDateForDrivers_(v) {
-  if (v === '' || v === null || v === undefined) return null;
-  if (Object.prototype.toString.call(v) === '[object Date]' && !isNaN(v.getTime())) return v;
-  if (typeof v === 'number') {
-    var epoch = new Date(1899, 11, 30);
-    return new Date(epoch.getTime() + v * 86400000);
+function parseDate(val) {
+  if (!val && val !== 0) return null;
+  if (val instanceof Date) return val;
+  if (typeof val === 'number') {
+    return new Date((val - 25569) * 86400 * 1000);
   }
-  var s = String(v).trim();
-  var p = s.split('.');
-  if (p.length === 3) {
-    return new Date(Number(p[2]), Number(p[1]) - 1, Number(p[0]));
+  var str = String(val).trim();
+  if (!str) return null;
+  if (/^\d{2}\.\d{2}\.\d{4}$/.test(str)) {
+    var parts = str.split('.');
+    var d = parts[0];
+    var m = parts[1];
+    var y = parts[2];
+    return new Date(Number(y), Number(m) - 1, Number(d));
   }
-  return null;
+  var f = new Date(str);
+  return isNaN(f.getTime()) ? null : f;
 }
 
-function dayStartDrivers_(d) {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-}
-
+/**
+ * GET_DRIVERS ? ????? «????????» + «??????», ???????? ?????? ? currentCar (car_id).
+ */
 function handleGetDrivers(ss) {
   var dSheet = ss.getSheetByName('\u0412\u043e\u0434\u0438\u0442\u0435\u043b\u0438');
   var rSheet = ss.getSheetByName('\u0410\u0440\u0435\u043d\u0434\u0430');
@@ -586,7 +589,8 @@ function handleGetDrivers(ss) {
   }
   var dVals = dSheet.getDataRange().getValues();
   var rVals = rSheet.getDataRange().getValues();
-  var today = dayStartDrivers_(new Date());
+  var today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   var rentalsByDriver = {};
   var ri;
@@ -597,9 +601,9 @@ function handleGetDrivers(ss) {
     if (!rentalsByDriver[did]) rentalsByDriver[did] = [];
     rentalsByDriver[did].push({
       carId: String(rw[1] || '').trim(),
-      dateStart: parseCellDateForDrivers_(rw[3]),
+      dateStart: parseDate(rw[3]),
       dateEndRaw: rw[4],
-      dateEnd: parseCellDateForDrivers_(rw[4]),
+      dateEndParsed: parseDate(rw[4]),
     });
   }
 
@@ -609,12 +613,14 @@ function handleGetDrivers(ss) {
     var bestStartTs = -1;
     for (var j = 0; j < list.length; j++) {
       var r = list[j];
-      var endEmpty = r.dateEndRaw === '' || r.dateEndRaw === null || r.dateEndRaw === undefined;
+      var rawEnd = r.dateEndRaw;
+      var dateEndEmpty = rawEnd === '' || rawEnd === null || rawEnd === undefined;
       var active = false;
-      if (endEmpty) {
+      if (dateEndEmpty) {
         active = true;
-      } else if (r.dateEnd) {
-        active = dayStartDrivers_(r.dateEnd).getTime() >= today.getTime();
+      } else {
+        var pe = r.dateEndParsed;
+        if (pe && pe.getTime() >= today.getTime()) active = true;
       }
       if (!active) continue;
       var st = r.dateStart ? r.dateStart.getTime() : 0;
