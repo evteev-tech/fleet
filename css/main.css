@@ -51,6 +51,16 @@
 
   /* Safe area */
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* ── Семантические алиасы ── */
+  --bg-page:          ***REMOVED***F0F1F3;
+  --bg-card:          ***REMOVED***FFFFFF;
+  --bg-header:        ***REMOVED***1A1A1A;
+  --color-text-main:  ***REMOVED***1A1A1A;
+  --color-text-muted: ***REMOVED***9299A2;
+  --color-positive:   ***REMOVED***00A86B;
+  --color-negative:   ***REMOVED***E34234;
+  --color-accent:     ***REMOVED***FFDD2D;
 }
 
 /* ─── Сброс ─── */
@@ -241,4 +251,27 @@ ul, ol {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* ─── Утилиты ─── */
+
+.dashboard-card {
+  background-color: var(--bg-card);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 12px;
+  border: none;
+  box-shadow: none;
+}
+
+.avatar-36 {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 15px;
 }
