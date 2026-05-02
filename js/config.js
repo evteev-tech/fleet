@@ -1,5 +1,5 @@
 // ─── Идентификаторы Google Таблицы ──────────────────────────────────────────
-export const SHEET_ID    = '1z4raGK4oamjZNznow-OesTljRz649_wCFYIFOh3mufg';
+export const SHEET_ID = '1z4raGK4oamjZNznow-OesTljRz649_wCFYIFOh3mufg';
 export const API_KEY     = 'REDACTED_OLD_APIKEY';
 export const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbyPKuvlWRG_mk_vfP-l0rENt1NdqQPP2Ayf8u0SigbGuinyLtBEZkoGETmw0891lZ9n/exec';
 

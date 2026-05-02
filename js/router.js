@@ -6,8 +6,8 @@
  * Navbar рендерится один раз при входе; активный пункт обновляется при смене экрана.
  */
 
-import { ROLES } from './config.js';
-import { getSession, isMechanic } from './auth.js';
+import { getCurrentUser } from './auth.js';
+import { ROLES }         from './config.js';
 
 // ─── Конфиг navbar по ролям ──────────────────────────────────────────────────
 
@@ -199,7 +199,7 @@ function _updateNavbar(screenId) {
  * @param {{ onNeedLogin: Function, onLoggedIn: Function }} callbacks
  */
 export function initRouter({ onNeedLogin, onLoggedIn }) {
-  const session = getSession();
+  const session = getCurrentUser();
 
   if (!session) {
     showScreen('screen-login');
@@ -210,7 +210,7 @@ export function initRouter({ onNeedLogin, onLoggedIn }) {
 
   renderNavbar(session.role);
 
-  const startScreen = isMechanic(session.role) ? 'screen-home' : 'screen-dashboard';
+  const startScreen = session.role === ROLES.MECHANIC ? 'screen-home' : 'screen-dashboard';
   showScreen(startScreen);
 
   onLoggedIn?.(session);
