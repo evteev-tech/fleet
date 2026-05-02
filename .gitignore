@@ -1,0 +1,13 @@
+***REMOVED*** Dependencies
+node_modules/
+
+***REMOVED*** OS
+.DS_Store
+Thumbs.db
+
+***REMOVED*** Editor
+.vscode/
+.idea/
+
+***REMOVED*** Logs
+*.log
