@@ -4,7 +4,7 @@
  */
 
 import { initRouter, showScreen, renderNavbar }
-  from './router.js?v=3';
+  from './router.js?v=4';
 
 import { initAuth, getCurrentUser, clearCurrentUser } from './auth.js';
 

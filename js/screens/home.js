@@ -8,7 +8,7 @@
 
 import { getOperations, getFleet } from '../api.js';
 import { getCurrentUser }          from '../auth.js';
-import { showScreen }              from '../router.js?v=3';
+import { showScreen }              from '../router.js?v=4';
 import { showToast }               from '../ui.js';
 import { KASSA_ID, CAR_STATUSES }  from '../config.js';
 

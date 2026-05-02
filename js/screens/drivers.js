@@ -8,7 +8,7 @@
  */
 
 import { getDrivers, getFleet, postAction, invalidateCache } from '../api.js';
-import { showScreen }                                         from '../router.js?v=3';
+import { showScreen }                                         from '../router.js?v=4';
 import { showBottomSheet, hideBottomSheet, showToast }        from '../ui.js';
 import { CAR_STATUSES }                                       from '../config.js';
 
