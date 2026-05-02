@@ -353,7 +353,11 @@ export async function getDeposits() {
  */
 export async function postAction(action, data) {
   const webhookUrl = localStorage.getItem('matizi_webhook') || WEBHOOK_URL;
-  const payload    = JSON.stringify({ action, ...data });
+  const payloadData =
+    action === 'ADD_INCOME'
+      ? { ...data, client_op_date: formatDate(new Date()) }
+      : data;
+  const payload = JSON.stringify({ action, ...payloadData });
 
   // URLSearchParams → Content-Type: application/x-www-form-urlencoded
   // браузер не шлёт preflight, Apps Script читает через e.parameter.data
@@ -415,10 +419,7 @@ export async function fetchIncomeForm() {
  * @param {object} payload
  */
 export async function postAddIncome(payload) {
-  return postAction('ADD_INCOME', {
-    ...payload,
-    client_op_date: formatDate(new Date()),
-  });
+  return postAction('ADD_INCOME', payload);
 }
 
 // ─── Какие листы сбрасываем после каждого action ─────────────────────────────
