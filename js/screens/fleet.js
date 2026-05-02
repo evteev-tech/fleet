@@ -179,7 +179,7 @@ function _showCarSheet(car, enriched) {
       ${car.rateDay ? `
         <div class="bs-op-field">
           <span class="bs-op-field__lbl">Ставка/день</span>
-          <span class="bs-op-field__val">${car.rateDay.toLocaleString('ru-RU')} ₸</span>
+          <span class="bs-op-field__val">${car.rateDay.toLocaleString('ru-RU')} ₽</span>
         </div>
       ` : ''}
     </div>

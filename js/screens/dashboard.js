@@ -10,7 +10,7 @@ import { getOperations, getFleet } from '../api.js';
 import { getCurrentUser }          from '../auth.js';
 import { showScreen }              from '../router.js';
 import { showToast }               from '../ui.js';
-import { KASSA_ID, CAR_STATUSES }  from '../config.js';
+import { KASSA_ID, KASSA_NAMES, CAR_STATUSES } from '../config.js';
 
 // ─── Состояние переключателя месяца ──────────────────────────────────────────
 const _now = new Date();
@@ -23,16 +23,16 @@ let _fleet  = [];
 
 // ─── Конфиг касс ─────────────────────────────────────────────────────────────
 const KASSA_META = {
-  [KASSA_ID.AZAMAT]:   { label: 'K_AZAMAT',   color: 'var(--color-yellow)', textDark: true  },
-  [KASSA_ID.VLADIMIR]: { label: 'K_VLADIMIR',  color: 'var(--color-blue)',   textDark: false },
-  [KASSA_ID.YULIA]:    { label: 'K_YULIA',     color: 'var(--color-orange)', textDark: false },
+  [KASSA_ID.AZAMAT]:   { color: 'var(--color-yellow)' },
+  [KASSA_ID.VLADIMIR]: { color: 'var(--color-blue)'   },
+  [KASSA_ID.YULIA]:    { color: 'var(--color-orange)' },
 };
 
 // ─── Конфиг статусов парка ────────────────────────────────────────────────────
 const FLEET_META = [
-  { status: CAR_STATUSES.RENT,   label: 'В аренде',   icon: '🚗', pill: 'pill--green'  },
-  { status: CAR_STATUSES.IDLE,   label: 'Простой',    icon: '🅿️', pill: 'pill--orange' },
-  { status: CAR_STATUSES.REPAIR, label: 'На ремонте', icon: '🔧', pill: 'pill--red'    },
+  { status: CAR_STATUSES.RENT,   label: 'В аренде',   letter: 'А', bg: '***REMOVED***E3F9F0', color: '***REMOVED***00A86B' },
+  { status: CAR_STATUSES.IDLE,   label: 'Простой',    letter: 'П', bg: '***REMOVED***F0F1F3', color: '***REMOVED***8A8A8E' },
+  { status: CAR_STATUSES.REPAIR, label: 'На ремонте', letter: 'Р', bg: '***REMOVED***FFF3E0', color: '***REMOVED***E08000' },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -79,7 +79,10 @@ function _renderFull(body) {
         <span class="app-logo">Матизы</span>
         <div class="dash-hdr__avatar">${initial}</div>
       </div>
-      <div class="dash-hdr__greeting">Привет, ${first}</div>
+      <div class="dash-hdr__greeting">
+        <span class="dash-hdr__greeting-sub">Добрый день,</span>
+        <span class="dash-hdr__greeting-name">${first}</span>
+      </div>
 
       <!-- Переключатель месяца -->
       <div class="dash-month-sw">
@@ -168,12 +171,13 @@ function _heroHTML() {
 function _kassasHTML() {
   const balances = _calcKassaBalances(_allOps);
   return Object.entries(KASSA_META).map(([kassaId, meta]) => {
-    const bal = balances[kassaId] ?? 0;
+    const bal      = balances[kassaId] ?? 0;
     const balClass = bal >= 0 ? 'dash-kassa__bal--pos' : 'dash-kassa__bal--neg';
+    const name     = KASSA_NAMES[kassaId] ?? kassaId;
     return `
       <div class="dash-kassa" data-kassa="${kassaId}">
         <span class="dash-kassa__dot" style="background:${meta.color}"></span>
-        <span class="dash-kassa__name">${meta.label}</span>
+        <span class="dash-kassa__name">${name}</span>
         <span class="dash-kassa__bal ${balClass}">${bal >= 0 ? '' : '−'}${_fmt(Math.abs(bal))}</span>
       </div>
     `;
@@ -187,11 +191,10 @@ function _fleetHTML() {
 
   return FLEET_META.map(m => `
     <div class="dash-fleet-row" data-status="${m.status}">
-      <span class="dash-fleet-row__icon">${m.icon}</span>
+      <span class="dash-fleet-row__circle" style="background:${m.bg};color:${m.color}">${m.letter}</span>
       <span class="dash-fleet-row__label">${m.label}</span>
       <span class="dash-fleet-row__spacer"></span>
       <span class="dash-fleet-row__count">${counts[m.status] ?? 0}</span>
-      <span class="pill ${m.pill}">${counts[m.status] ?? 0}</span>
     </div>
   `).join('');
 }
@@ -250,18 +253,15 @@ function _bindEvents() {
         detail: { kassaId: row.dataset.kassa },
       }));
       showScreen('screen-history');
-      document.dispatchEvent(new CustomEvent('screen:activated', { detail: { screenId: 'screen-history' } }));
     });
   });
 
-  // ── Парк → fleet с фильтром ───────────────────────────────────────────────
   document.querySelectorAll('.dash-fleet-row').forEach(row => {
     row.addEventListener('click', () => {
       document.dispatchEvent(new CustomEvent('fleet:filter', {
         detail: { status: row.dataset.status },
       }));
       showScreen('screen-fleet');
-      document.dispatchEvent(new CustomEvent('screen:activated', { detail: { screenId: 'screen-fleet' } }));
     });
   });
 
@@ -305,7 +305,7 @@ function _calcKassaBalances(ops) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 function _fmt(n) {
-  return `${Math.round(n).toLocaleString('ru-RU')} ₸`;
+  return `${Math.round(n).toLocaleString('ru-RU')} ₽`;
 }
 
 function _monthLabel() {

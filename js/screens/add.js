@@ -121,7 +121,7 @@ function _renderForm(body) {
 
       <!-- Сумма -->
       <div class="add-field" id="wrap-amount">
-        <label class="add-label">Сумма, ₸</label>
+        <label class="add-label">Сумма, ₽</label>
         <input id="add-amount" class="field-input add-amount-input"
           type="number" inputmode="decimal" placeholder="0" min="0" />
         <div class="add-field-err hidden" id="err-amount"></div>

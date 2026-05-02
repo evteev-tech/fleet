@@ -212,12 +212,12 @@ export function showConfirm({ title, message, confirmLabel = 'Подтверди
 // ─── ФОРМАТИРОВАНИЕ ───────────────────────────────────────────────────────────
 
 /**
- * Форматирует число как денежную сумму: «12 500 ₸»
+ * Форматирует число как денежную сумму: «12 500 ₽»
  * @param {number} amount
  * @param {string} currency
  * @returns {string}
  */
-export function formatMoney(amount, currency = '₸') {
+export function formatMoney(amount, currency = '₽') {
   return `${Math.abs(amount).toLocaleString('ru-RU')} ${currency}`;
 }
 

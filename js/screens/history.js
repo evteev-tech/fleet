@@ -503,7 +503,7 @@ function _destroyObserver() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 function _fmt(n) {
-  return `${Math.round(n).toLocaleString('ru-RU')} ₸`;
+  return `${Math.round(n).toLocaleString('ru-RU')} ₽`;
 }
 
 function _monthLabel() {

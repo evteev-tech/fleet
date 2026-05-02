@@ -336,9 +336,9 @@ function _calcFleet(fleet) {
 // УТИЛИТЫ
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** Форматирует число: «12 500 ₸» */
+/** Форматирует число: «12 500 ₽» */
 function _fmt(n) {
-  return `${Math.round(n).toLocaleString('ru-RU')} ₸`;
+  return `${Math.round(n).toLocaleString('ru-RU')} ₽`;
 }
 
 /** Группирует ops (уже отсортированных desc) по дням, возвращает массив { label, ops } */

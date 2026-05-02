@@ -149,7 +149,7 @@ export function openDriverForm(driver, fleet, drivers) {
     </div>
 
     <div class="add-field">
-      <label class="add-label">Депозит, ₸</label>
+      <label class="add-label">Депозит, ₽</label>
       <input id="drv-deposit" class="field-input" type="number"
         inputmode="decimal" placeholder="0" value="${driver?.deposit ?? ''}" />
     </div>
@@ -285,7 +285,7 @@ function _offlineHTML(isNoConn) {
   `;
 }
 
-function _fmt(n)       { return `${Math.round(n).toLocaleString('ru-RU')} ₸`; }
+function _fmt(n)       { return `${Math.round(n).toLocaleString('ru-RU')} ₽`; }
 function _esc(s)       { return String(s).replace(/"/g, '&quot;'); }
 function _initials(fio){ return (fio ?? '?').trim().split(/\s+/).slice(0,2).map(w => w[0]?.toUpperCase() ?? '').join(''); }
 function _ddmmyyyyToISO(s) {

@@ -1,13 +1,19 @@
 // ─── Идентификаторы Google Таблицы ──────────────────────────────────────────
 export const SHEET_ID = '1z4raGK4oamjZNznow-OesTljRz649_wCFYIFOh3mufg';
 export const API_KEY     = 'REDACTED_OLD_APIKEY';
-export const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbyPKuvlWRG_mk_vfP-l0rENt1NdqQPP2Ayf8u0SigbGuinyLtBEZkoGETmw0891lZ9n/exec';
+export const WEBHOOK_URL = 'https://script.google.com/macros/s/REDACTED_OLD_WEBHOOK_ID/exec';
 
 // ─── Кассы ───────────────────────────────────────────────────────────────────
 export const KASSA_ID = {
   AZAMAT:   'K_AZAMAT',
   VLADIMIR: 'K_VLADIMIR',
   YULIA:    'K_YULIA',
+};
+
+export const KASSA_NAMES = {
+  K_AZAMAT:   'Касса Азамата',
+  K_VLADIMIR: 'Касса Владимира',
+  K_YULIA:    'Касса Юлии',
 };
 
 // ─── Роли ────────────────────────────────────────────────────────────────────
