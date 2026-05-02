@@ -53,15 +53,14 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 
   /* ── Семантические алиасы ── */
-  --bg-page:               ***REMOVED***F0F1F3;
-  --bg-card:               ***REMOVED***FFFFFF;
-  --bg-header:             ***REMOVED***1A1A1A;
-  --color-text-main:       ***REMOVED***1A1A1A;
-  --color-text-muted:      rgba(0, 0, 0, 0.45);
-  --color-text-muted-white: rgba(255, 255, 255, 0.45);
-  --color-positive:        ***REMOVED***00A86B;
-  --color-negative:        ***REMOVED***E34234;
-  --color-accent:          ***REMOVED***FFDD2D;
+  --bg-page:          ***REMOVED***F0F1F3;
+  --bg-card:          ***REMOVED***FFFFFF;
+  --bg-header:        ***REMOVED***1A1A1A;
+  --color-text-main:  ***REMOVED***1A1A1A;
+  --color-text-muted: ***REMOVED***9299A2;
+  --color-positive:   ***REMOVED***00A86B;
+  --color-negative:   ***REMOVED***E34234;
+  --color-accent:     ***REMOVED***FFDD2D;
 }
 
 /* ─── Сброс ─── */
@@ -275,11 +274,4 @@ ul, ol {
   font-family: 'Inter', sans-serif;
   font-weight: 600;
   font-size: 15px;
-}
-
-.dashboard-container {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 0 16px;
 }
