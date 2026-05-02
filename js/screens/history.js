@@ -12,6 +12,55 @@ import { getCurrentUser }          from '../auth.js';
 import { showBottomSheet }         from '../ui.js';
 import { KASSA_ID, ROLES }         from '../config.js';
 
+/** DD.MM.YYYY или число Excel serial из таблицы → локальный календарный Date */
+export function parseRuDate(str) {
+  if (str === undefined || str === null || str === '') return null;
+  // Если пришло число (Excel serial) — конвертируем
+  if (!isNaN(str)) {
+    const excelEpoch = new Date(1899, 11, 30);
+    return new Date(excelEpoch.getTime() + Number(str) * 86400000);
+  }
+  // Формат DD.MM.YYYY
+  const parts = String(str).split('.');
+  if (parts.length === 3) {
+    return new Date(
+      Number(parts[2]),
+      Number(parts[1]) - 1,
+      Number(parts[0]),
+    );
+  }
+  return null;
+}
+
+export function formatGroupLabel(date) {
+  if (!date) return '';
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+
+  const isToday = date.toDateString() === today.toDateString();
+  const isYesterday = date.toDateString() === yesterday.toDateString();
+
+  if (isToday) return 'Сегодня';
+  if (isYesterday) return 'Вчера';
+
+  return date.toLocaleDateString('ru-RU', {
+    day: 'numeric',
+    month: 'long',
+  });
+}
+
+/** Ключ группировки по локальному календарному дню */
+function _dayKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** Единый разбор даты операции из API или из dateRaw */
+function _opDate(op) {
+  if (op.date instanceof Date && !isNaN(op.date.getTime())) return op.date;
+  return parseRuDate(op.dateRaw);
+}
+
 // ─── Состояние фильтров ───────────────────────────────────────────────────────
 const _now = new Date();
 let _selMonth = _now.getMonth() + 1;
@@ -376,10 +425,10 @@ function _showOpDetail(op, fleet) {
 function _applyFilters(ops, isMech) {
   return ops.filter(op => {
     // Месяц/год
-    if (op.date instanceof Date) {
-      if (op.date.getMonth() + 1 !== _selMonth) return false;
-      if (op.date.getFullYear()   !== _selYear)  return false;
-    }
+    const d = _opDate(op);
+    if (!d || isNaN(d.getTime())) return false;
+    if (d.getMonth() + 1 !== _selMonth) return false;
+    if (d.getFullYear() !== _selYear) return false;
     // Тип
     if (_selType !== 'все') {
       if (_selType === 'аренда'  && op.direction !== 'приход')  return false;
@@ -391,7 +440,7 @@ function _applyFilters(ops, isMech) {
     // Касса (игнорируем для mechanic)
     if (!isMech && _selKassa && op.kassaId !== _selKassa) return false;
     return true;
-  }).sort((a, b) => _ts(b) - _ts(a));
+  }).sort((a, b) => _tsOp(b) - _tsOp(a));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -521,29 +570,19 @@ function _groupByDay(ops) {
   const map = new Map();
   const order = [];
   ops.forEach(op => {
-    const lbl = _dayLabel(op.dateRaw);
-    if (!map.has(lbl)) { map.set(lbl, []); order.push(lbl); }
-    map.get(lbl).push(op);
+    const d = _opDate(op);
+    const key = d && !isNaN(d.getTime()) ? _dayKey(d) : '__nodate';
+    const lbl = key === '__nodate' ? 'Без даты' : formatGroupLabel(d);
+    if (!map.has(key)) {
+      map.set(key, { label: lbl, ops: [] });
+      order.push(key);
+    }
+    map.get(key).ops.push(op);
   });
-  return order.map(lbl => ({ label: lbl, ops: map.get(lbl) }));
+  return order.map(key => map.get(key));
 }
 
-function _dayLabel(ddmmyyyy) {
-  if (!ddmmyyyy) return 'Без даты';
-  const [d, m, y] = ddmmyyyy.split('.').map(Number);
-  const date = new Date(y, m - 1, d);
-  const today = new Date();
-  if (d === today.getDate() && m === today.getMonth() + 1 && y === today.getFullYear())
-    return 'Сегодня';
-  const yest = new Date(); yest.setDate(yest.getDate() - 1);
-  if (d === yest.getDate() && m === yest.getMonth() + 1 && y === yest.getFullYear())
-    return 'Вчера';
-  return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
-}
-
-function _ts(op) {
-  if (op.date instanceof Date && !isNaN(op.date)) return op.date.getTime();
-  if (!op.dateRaw) return 0;
-  const [d, m, y] = op.dateRaw.split('.').map(Number);
-  return new Date(y, m - 1, d).getTime();
+function _tsOp(op) {
+  const d = _opDate(op);
+  return d && !isNaN(d.getTime()) ? d.getTime() : 0;
 }

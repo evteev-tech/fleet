@@ -7,6 +7,7 @@
 
 import { getOperations, getFleet } from '../api.js';
 import { getCurrentUser }          from '../auth.js';
+import { parseRuDate }             from './history.js';
 import { showScreen }              from '../router.js?v=4';
 import { KASSA_ID, KASSA_NAMES, CAR_STATUSES } from '../config.js';
 
@@ -157,11 +158,18 @@ function _refreshMonthUI() {
 function _updateHeaderStats() {
   _setAmountSkeleton(false);
 
-  const monthOps = _allOps.filter(op =>
-    op.date instanceof Date &&
-    op.date.getMonth() + 1 === _month &&
-    op.date.getFullYear() === _year,
-  );
+  const monthOps = _allOps.filter(op => {
+    const d =
+      op.date instanceof Date && !isNaN(op.date.getTime())
+        ? op.date
+        : parseRuDate(op.dateRaw);
+    return (
+      d instanceof Date &&
+      !isNaN(d.getTime()) &&
+      d.getMonth() + 1 === _month &&
+      d.getFullYear() === _year
+    );
+  });
 
   const kassaBalances = _calcKassaBalances(_allOps);
   const total = Object.values(kassaBalances).reduce((s, v) => s + v, 0);

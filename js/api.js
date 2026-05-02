@@ -91,13 +91,24 @@ const cell = (row, idx, fallback = '') =>
     ? String(row[idx]).trim()
     : fallback;
 
-// ─── Парсинг даты DD.MM.YYYY → Date ──────────────────────────────────────────
+// ─── Парсинг даты: DD.MM.YYYY или Excel serial (UNFORMATTED_VALUE из Sheets) ─
 function parseDate(raw) {
-  if (!raw) return null;
-  const str = String(raw).trim();
-  const m = str.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
-  if (!m) return null;
-  return new Date(+m[3], +m[2] - 1, +m[1]);
+  if (raw === undefined || raw === null || raw === '') return null;
+  const str = typeof raw === 'number' ? raw : String(raw).trim();
+  if (str === '') return null;
+  if (!isNaN(str)) {
+    const excelEpoch = new Date(1899, 11, 30);
+    return new Date(excelEpoch.getTime() + Number(str) * 86400000);
+  }
+  const parts = String(str).split('.');
+  if (parts.length === 3) {
+    return new Date(
+      Number(parts[2]),
+      Number(parts[1]) - 1,
+      Number(parts[0]),
+    );
+  }
+  return null;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

@@ -8,6 +8,7 @@
 
 import { getOperations, getFleet } from '../api.js';
 import { getCurrentUser }          from '../auth.js';
+import { parseRuDate, formatGroupLabel } from './history.js';
 import { showScreen }              from '../router.js?v=4';
 import { showToast }               from '../ui.js';
 import { KASSA_ID, CAR_STATUSES }  from '../config.js';
@@ -58,7 +59,7 @@ export async function renderHome() {
   }
 
   // ── Вычисления ────────────────────────────────────────────────────────────
-  _allOps = [...ops].sort((a, b) => _ts(b.date) - _ts(a.date));
+  _allOps = [...ops].sort((a, b) => _tsOp(b) - _tsOp(a));
 
   const balance = _calcBalance(ops);
   const delta   = _calcDelta(ops);
@@ -312,9 +313,19 @@ function _calcBalance(ops) {
 }
 
 function _calcDelta(ops) {
-  const todayStr = _todayStr();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
   return ops
-    .filter(op => op.dateRaw === todayStr)
+    .filter(op => {
+      const d =
+        op.date instanceof Date && !isNaN(op.date.getTime())
+          ? op.date
+          : parseRuDate(op.dateRaw);
+      if (!d || isNaN(d.getTime())) return false;
+      const dd = new Date(d);
+      dd.setHours(0, 0, 0, 0);
+      return dd.getTime() === today.getTime();
+    })
     .reduce((acc, op) => {
       if (op.direction === 'приход')  return acc + op.amount;
       if (op.direction === 'расход') return acc - op.amount;
@@ -341,33 +352,37 @@ function _fmt(n) {
   return `${Math.round(n).toLocaleString('ru-RU')} ₽`;
 }
 
-/** Группирует ops (уже отсортированных desc) по дням, возвращает массив { label, ops } */
-function _groupByDay(ops) {
-  const map  = new Map();
-  const order = [];
-  ops.forEach(op => {
-    const key = op.dateRaw || '';
-    const lbl = _dayLabel(key);
-    if (!map.has(lbl)) { map.set(lbl, []); order.push(lbl); }
-    map.get(lbl).push(op);
-  });
-  return order.map(lbl => ({ label: lbl, ops: map.get(lbl) }));
+/** Ключ календарного дня для группировки */
+function _dayKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-/** «Сегодня» / «Вчера» / «1 мая» */
-function _dayLabel(ddmmyyyy) {
-  if (!ddmmyyyy) return 'Без даты';
-  const today = _todayStr();
-  if (ddmmyyyy === today) return 'Сегодня';
-  const [d, m, y] = ddmmyyyy.split('.').map(Number);
-  const date = new Date(y, m - 1, d);
-  const yest = new Date(); yest.setDate(yest.getDate() - 1);
-  if (
-    date.getDate()  === yest.getDate() &&
-    date.getMonth() === yest.getMonth() &&
-    date.getFullYear() === yest.getFullYear()
-  ) return 'Вчера';
-  return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+/** Единый разбор даты операции */
+function _opDate(op) {
+  if (op.date instanceof Date && !isNaN(op.date.getTime())) return op.date;
+  return parseRuDate(op.dateRaw);
+}
+
+/** Группирует ops (уже отсортированных desc) по дням, возвращает массив { label, ops } */
+function _groupByDay(ops) {
+  const map = new Map();
+  const order = [];
+  ops.forEach(op => {
+    const d = _opDate(op);
+    const key = d && !isNaN(d.getTime()) ? _dayKey(d) : '__nodate';
+    const lbl = key === '__nodate' ? 'Без даты' : formatGroupLabel(d);
+    if (!map.has(key)) {
+      map.set(key, { label: lbl, ops: [] });
+      order.push(key);
+    }
+    map.get(key).ops.push(op);
+  });
+  return order.map(key => map.get(key));
+}
+
+function _tsOp(op) {
+  const d = _opDate(op);
+  return d && !isNaN(d.getTime()) ? d.getTime() : 0;
 }
 
 /** «14:32» из объекта Date (если есть время) */
@@ -376,19 +391,6 @@ function _timeFromDate(date) {
   const h = date.getHours(), m = date.getMinutes();
   if (h === 0 && m === 0) return '';
   return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
-}
-
-/** Сегодняшняя дата в формате DD.MM.YYYY */
-function _todayStr() {
-  const d = new Date();
-  return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
-}
-
-/** timestamp из DD.MM.YYYY для сортировки */
-function _ts(dateRaw) {
-  if (!dateRaw) return 0;
-  const [d, m, y] = String(dateRaw).split('.').map(Number);
-  return new Date(y, m - 1, d).getTime();
 }
 
 /** «Доброе утро» / «Добрый день» / «Добрый вечер» */
