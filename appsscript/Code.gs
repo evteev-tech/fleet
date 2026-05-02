@@ -113,12 +113,12 @@ function cellNum_(v) {
 }
 
 /**
- * ??????? ????? «??????»: ????????? 10 ????? (????? ???? ? ????).
+ * ??????? ????? ????????: ????????? 10 ????? (????? ???? ? ????).
  */
 function handleDebugRental(ss) {
-  const sheet = ss.getSheetByName(SHEET.RENTALS);
+  const sheet = ss.getSheetByName('\u0410\u0440\u0435\u043d\u0434\u0430');
   if (!sheet) {
-    logFailure(ss, 'DEBUG_RENTAL', 'SHEET_NOT_FOUND', SHEET.RENTALS);
+    logFailure(ss, 'DEBUG_RENTAL', 'SHEET_NOT_FOUND', '\u0410\u0440\u0435\u043d\u0434\u0430');
     return err('SHEET_NOT_FOUND');
   }
   const rows = sheet.getDataRange().getValues();
@@ -144,41 +144,43 @@ function handleDebugRental(ss) {
 // -----------------------------------------------------------------------------
 
 function doPost(e) {
+  /** ???? ????? ?? ??????: ?????? SpreadsheetApp.openById(SS_ID), ?? getActiveSpreadsheet(). */
+  let SS = null;
   try {
-    const ss = SpreadsheetApp.openById(SS_ID);
+    SS = SpreadsheetApp.openById(SS_ID);
     const body = parseRequestBody_(e);
     const action = body.action || 'ADD_OPERATION';
 
-    // ???????: ?????? ???? ?????? (????????)
+    // ???????: ?????? ???? ??????
     if (action === 'DEBUG_SHEETS') {
-      const names = ss.getSheets().map(function (s) { return s.getName(); });
+      const names = SS.getSheets().map(function (s) { return s.getName(); });
       return ContentService
         .createTextOutput(JSON.stringify({ sheets: names }))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
     if (action === 'DEBUG_RENTAL') {
-      return handleDebugRental(ss);
+      return handleDebugRental(SS);
     }
 
     switch (action) {
-      case 'ADD_OPERATION':     return handleAddOperation(ss, body);
-      case 'UPDATE_CAR_STATUS': return handleUpdateCarStatus(ss, body);
-      case 'SAVE_DRIVER':       return handleSaveDriver(ss, body);
-      case 'ADD_DEPOSIT':       return handleAddDeposit(ss, body);
-      case 'ADD_RENTAL':        return handleAddRental(ss, body);
-      case 'GET_DASHBOARD':     return handleGetDashboard();
-      case 'UPDATE_PERIOD':     return handleUpdatePeriod(ss, body);
-      case 'GET_FLEET':         return handleGetFleet();
-      case 'GET_DRIVERS':       return handleGetDrivers();
+      case 'ADD_OPERATION':     return handleAddOperation(SS, body);
+      case 'UPDATE_CAR_STATUS': return handleUpdateCarStatus(SS, body);
+      case 'SAVE_DRIVER':       return handleSaveDriver(SS, body);
+      case 'ADD_DEPOSIT':       return handleAddDeposit(SS, body);
+      case 'ADD_RENTAL':        return handleAddRental(SS, body);
+      case 'GET_DASHBOARD':     return handleGetDashboard(SS);
+      case 'UPDATE_PERIOD':     return handleUpdatePeriod(SS, body);
+      case 'GET_FLEET':         return handleGetFleet(SS);
+      case 'GET_DRIVERS':       return handleGetDrivers(SS);
       default:
-        logFailure(ss, action, 'UNKNOWN_ACTION', 'Action not implemented');
+        logFailure(SS, action, 'UNKNOWN_ACTION', 'Action not implemented');
         return err('UNKNOWN_ACTION');
     }
   } catch (ex) {
     try {
-      const ss = SpreadsheetApp.openById(SS_ID);
-      logFailure(ss, 'doPost', 'EXCEPTION', String(ex && ex.message ? ex.message : ex));
+      var ssLog = SS || SpreadsheetApp.openById(SS_ID);
+      logFailure(ssLog, 'doPost', 'EXCEPTION', String(ex && ex.message ? ex.message : ex));
     } catch (_) {}
     return err(ex && ex.message ? ex.message : ex);
   }
@@ -305,7 +307,7 @@ function handleSaveDriver(ss, body) {
 
     // ???????? ?????? ? ?????? ????
     if (car_id) {
-      handleUpdateCarStatus(ss, { car_id, new_status: '? ??????' });
+      handleUpdateCarStatus(ss, { car_id, new_status: '\u0432 \u0430\u0440\u0435\u043d\u0434\u0435' });
     }
 
     return ok({ driver_id: newId });
@@ -407,21 +409,20 @@ function handleAddRental(ss, body) {
   sheet.getRange(newRow, 5).setNumberFormat('DD.MM.YYYY');
 
   // ?????? ? ??????
-  handleUpdateCarStatus(ss, { car_id, new_status: '? ??????' });
+  handleUpdateCarStatus(ss, { car_id, new_status: '\u0432 \u0430\u0440\u0435\u043d\u0434\u0435' });
 
   return ok({ rental_id });
 }
 
 // -----------------------------------------------------------------------------
-// ??????? (???? «???????») ? GET_DASHBOARD, UPDATE_PERIOD
+// ??????? (???? ?????????) ? GET_DASHBOARD, UPDATE_PERIOD
 // -----------------------------------------------------------------------------
 
 /**
  * ?????? ?????? ?? ????? B2:B3 ? ????? ?????? ??? ?????? ?????????.
  * Opens SS_ID and sheet by name locally (no global SHEET.* for this path).
  */
-function handleGetDashboard() {
-  const ss = SpreadsheetApp.openById(SS_ID);
+function handleGetDashboard(ss) {
   const sheet = ss.getSheetByName('\u0414\u0430\u0448\u0431\u043e\u0440\u0434');
   if (!sheet) {
     logFailure(ss, 'GET_DASHBOARD', 'SHEET_NOT_FOUND', '\u0414\u0430\u0448\u0431\u043e\u0440\u0434');
@@ -498,21 +499,20 @@ function handleGetDashboard() {
 
 /** Same payload as GET_DASHBOARD; use from Apps Script editor for smoke tests. */
 function getDashboardData() {
-  return handleGetDashboard();
+  return handleGetDashboard(SpreadsheetApp.openById(SS_ID));
 }
 
 /**
- * ???????? ??? ? ????? ? B2:B3 ?? ????? «???????» (?????? ??? ??????).
+ * ???????? ??? ? ????? ? B2:B3 ?? ????? ????????? (?????? ??? ??????).
  */
 function handleUpdatePeriod(ss, body) {
   var year = Number(body.year);
   var month = Number(body.month);
   if (!year || month < 1 || month > 12) return err('INVALID_PERIOD');
 
-  const dashSs = SpreadsheetApp.openById(SS_ID);
-  var sheet = dashSs.getSheetByName('\u0414\u0430\u0448\u0431\u043e\u0440\u0434');
+  var sheet = ss.getSheetByName('\u0414\u0430\u0448\u0431\u043e\u0440\u0434');
   if (!sheet) {
-    logFailure(dashSs, 'UPDATE_PERIOD', 'SHEET_NOT_FOUND', '\u0414\u0430\u0448\u0431\u043e\u0440\u0434');
+    logFailure(ss, 'UPDATE_PERIOD', 'SHEET_NOT_FOUND', '\u0414\u0430\u0448\u0431\u043e\u0440\u0434');
     return err('SHEET_NOT_FOUND');
   }
 
@@ -523,12 +523,11 @@ function handleUpdatePeriod(ss, body) {
 }
 
 /**
- * ??? ?????? ? ????? «??????» (?????? 1 ? ?????????).
+ * ??? ?????? ? ????? ???????? (?????? 1 ? ?????????).
  * ??????? A?J: car_id, ????????, ????, ??????, ????_???????, ????_???????,
  * ??????_????, ??????????, ?????? ??, ?? ?? ???????.
  */
-function handleGetFleet() {
-  const ss = SpreadsheetApp.openById('1z4raGK4oamjZNznow-OesTljRz649_wCFYIFOh3mufg');
+function handleGetFleet(ss) {
   const sheet = ss.getSheetByName('\u041c\u0430\u0448\u0438\u043d\u044b');
   if (!sheet) {
     logFailure(ss, 'GET_FLEET', 'SHEET_NOT_FOUND', '\u041c\u0430\u0448\u0438\u043d\u044b');
@@ -557,7 +556,7 @@ function handleGetFleet() {
 }
 
 /**
- * GET_DRIVERS ? ????? «????????» + «??????», ???????? ?????? ? currentCar (car_id).
+ * GET_DRIVERS ? ????? ?????????? + ????????, ???????? ?????? ? currentCar (car_id).
  */
 function parseCellDateForDrivers_(v) {
   if (v === '' || v === null || v === undefined) return null;
@@ -578,9 +577,7 @@ function dayStartDrivers_(d) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
-function handleGetDrivers() {
-  var SS = '1z4raGK4oamjZNznow-OesTljRz649_wCFYIFOh3mufg';
-  var ss = SpreadsheetApp.openById(SS);
+function handleGetDrivers(ss) {
   var dSheet = ss.getSheetByName('\u0412\u043e\u0434\u0438\u0442\u0435\u043b\u0438');
   var rSheet = ss.getSheetByName('\u0410\u0440\u0435\u043d\u0434\u0430');
   if (!dSheet || !rSheet) {
