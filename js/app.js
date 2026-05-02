@@ -3,6 +3,9 @@
  * Инициализирует авторизацию и все экраны приложения.
  */
 
+import { initRouter, showScreen, renderNavbar }
+  from './router.js?v=3';
+
 import { initAuth, getCurrentUser, clearCurrentUser } from './auth.js';
 
 // Экраны
