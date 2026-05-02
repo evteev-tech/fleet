@@ -1,4 +1,17 @@
 /**
+ * Date → строка DD.MM.YYYY (отправка в webhook / согласование с Apps Script).
+ * @param {Date} date
+ * @returns {string}
+ */
+export function formatDate(date) {
+  if (!date || !(date instanceof Date) || isNaN(date.getTime())) return '';
+  const d = date.getDate().toString().padStart(2, '0');
+  const m = (date.getMonth() + 1).toString().padStart(2, '0');
+  const y = date.getFullYear();
+  return d + '.' + m + '.' + y;
+}
+
+/**
  * Даты из Google Sheets: DD.MM.YYYY, Excel-serial, ISO-строка после JSON.
  * @param {*} raw
  * @returns {Date|null}

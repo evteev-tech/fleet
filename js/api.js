@@ -6,7 +6,7 @@
  */
 
 import { SHEET_ID, API_KEY, WEBHOOK_URL, CACHE_TTL_MS, SHEETS } from './config.js';
-import { parseSheetDate } from './utils/date.js';
+import { parseSheetDate, formatDate } from './utils/date.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // КЭШ
@@ -407,7 +407,10 @@ export async function fetchIncomeForm() {
  * @param {object} payload
  */
 export async function postAddIncome(payload) {
-  return postAction('ADD_INCOME', payload);
+  return postAction('ADD_INCOME', {
+    ...payload,
+    client_op_date: formatDate(new Date()),
+  });
 }
 
 // ─── Какие листы сбрасываем после каждого action ─────────────────────────────

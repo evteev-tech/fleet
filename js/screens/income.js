@@ -374,6 +374,8 @@ function _openNumpad(root) {
   const overlay = root.querySelector('***REMOVED***income-numpad-overlay');
   const pad = root.querySelector('***REMOVED***income-numpad');
   const keys = root.querySelector('***REMOVED***income-numpad-keys');
+  if (!overlay || !pad || !keys) return;
+
   overlay?.classList.remove('hidden');
   pad?.classList.remove('hidden');
 
@@ -421,8 +423,11 @@ function _numpadKey(root, k) {
 
 function _closeNumpad(root) {
   _state.numpadOpen = false;
-  const overlay = root.querySelector('***REMOVED***income-numpad-overlay');
-  const pad = root.querySelector('***REMOVED***income-numpad');
+  const scope = root ?? document.getElementById('income-root');
+  if (!scope) return;
+  const overlay = scope.querySelector('***REMOVED***income-numpad-overlay');
+  const pad = scope.querySelector('***REMOVED***income-numpad');
+  if (!overlay && !pad) return;
   pad?.classList.remove('income-numpad--visible');
   overlay?.classList.add('hidden');
   setTimeout(() => pad?.classList.add('hidden'), 280);
