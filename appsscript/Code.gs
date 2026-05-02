@@ -18,7 +18,36 @@
   Редактирование существующего не обновляет рабочий URL.
 */
 
-const ALLOWED_ORIGIN = 'https://github.com/evteev-tech/fleet.git'; // заменить на реальный URL после деплоя фронтенда
+const ALLOWED_ORIGIN = '*';
+
+/** Одинаковые CORS-заголовки для POST / OPTIONS и любого JSON-ответа. */
+function corsHeaders_() {
+  return {
+    'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Max-Age': '3600',
+  };
+}
+
+/** Всегда ContentService + JSON + CORS (иначе браузер режет ответ). */
+function jsonResponse_(payload) {
+  return ContentService
+    .createTextOutput(JSON.stringify(payload))
+    .setMimeType(ContentService.MimeType.JSON)
+    .setHeaders(corsHeaders_());
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// CORS — preflight
+// ═════════════════════════════════════════════════════════════════════════════
+
+function doOptions(e) {
+  return ContentService
+    .createTextOutput('')
+    .setMimeType(ContentService.MimeType.TEXT)
+    .setHeaders(corsHeaders_());
+}
 
 const SS_ID = '1z4raGK4oamjZNznow-OesTljRz649_wCFYIFOh3mufg';
 
@@ -33,21 +62,6 @@ const SHEET = {
   FAIL_LOG:   'Логи_отказов',
   DASHBOARD:  'Дашборд',
 };
-
-// ═════════════════════════════════════════════════════════════════════════════
-// CORS
-// ═════════════════════════════════════════════════════════════════════════════
-
-function doOptions(e) {
-  return ContentService
-    .createTextOutput('')
-    .setMimeType(ContentService.MimeType.TEXT)
-    .setHeaders({
-      'Access-Control-Allow-Origin':  ALLOWED_ORIGIN,
-      'Access-Control-Allow-Methods': 'POST',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    });
-}
 
 // ═════════════════════════════════════════════════════════════════════════════
 // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
@@ -115,23 +129,14 @@ function parseDate(ddmmyyyy) {
  * @param {object} data
  */
 function ok(data) {
-  const payload = JSON.stringify({ status: 'ok', ...data });
-  return ContentService
-    .createTextOutput(payload)
-    .setMimeType(ContentService.MimeType.JSON)
-    .setHeaders({ 'Access-Control-Allow-Origin': ALLOWED_ORIGIN });
+  return jsonResponse_(Object.assign({ status: 'ok' }, data));
 }
 
 /**
- * Ответ «ошибка» с CORS-заголовком.
- * @param {string} message
+ * Ответ «ошибка» с тем же CORS, что и успех (контракт фронта: status/error).
  */
 function err(message) {
-  const payload = JSON.stringify({ status: 'error', message });
-  return ContentService
-    .createTextOutput(payload)
-    .setMimeType(ContentService.MimeType.JSON)
-    .setHeaders({ 'Access-Control-Allow-Origin': ALLOWED_ORIGIN });
+  return jsonResponse_({ status: 'error', message: message });
 }
 
 /**
@@ -190,9 +195,8 @@ function cellNum_(v) {
 // ═════════════════════════════════════════════════════════════════════════════
 
 function doPost(e) {
-  const ss = SpreadsheetApp.openById(SS_ID);
-
   try {
+    const ss = SpreadsheetApp.openById(SS_ID);
     const body = parseRequestBody_(e);
     const action = body.action || 'ADD_OPERATION';
 
@@ -209,8 +213,11 @@ function doPost(e) {
         return err('UNKNOWN_ACTION');
     }
   } catch (ex) {
-    logFailure(ss, 'doPost', 'EXCEPTION', ex.message);
-    return err(ex.message);
+    try {
+      const ssLog = SpreadsheetApp.openById(SS_ID);
+      logFailure(ssLog, 'doPost', 'EXCEPTION', String(ex.message || ex));
+    } catch (ignore) {}
+    return err(String(ex.message || ex));
   }
 }
 
