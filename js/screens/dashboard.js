@@ -135,10 +135,8 @@ export async function renderDashboard() {
 
 function _fillUserHeader() {
   const user = getCurrentUser();
-  const av   = document.getElementById('dashAvatar');
-  const nm   = document.getElementById('dashName');
+  const av = document.getElementById('dashAvatar');
   if (av) av.textContent = (user?.name ?? '?')[0].toUpperCase();
-  if (nm) nm.textContent = user?.name ?? '';
 }
 
 function _setAmountSkeleton(on) {
