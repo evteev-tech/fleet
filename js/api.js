@@ -318,7 +318,7 @@ export async function postAction(action, data) {
     throw new Error(`HTTP ${res.status}: ответ не является JSON`);
   }
 
-  if (body?.status === 'error') {
+  if (body?.status === 'error' || body?.error === true) {
     throw new Error(body.message ?? 'UNKNOWN_ERROR');
   }
 
@@ -376,3 +376,5 @@ function _parseFlexDate(raw) {
   }
   return null;
 }
+
+
