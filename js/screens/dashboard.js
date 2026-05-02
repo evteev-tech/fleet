@@ -7,7 +7,7 @@
 
 import { getOperations, getFleet } from '../api.js';
 import { getCurrentUser }          from '../auth.js';
-import { showScreen }              from '../router.js?v=navbar-icons-2';
+import { showScreen }              from '../router.js';
 import { KASSA_ID, KASSA_NAMES, CAR_STATUSES } from '../config.js';
 
 const _now = new Date();

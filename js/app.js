@@ -3,17 +3,17 @@
  * Инициализирует авторизацию и все экраны приложения.
  */
 
-import { initAuth, getCurrentUser, clearCurrentUser } from './auth.js?v=navbar-icons-2';
+import { initAuth, getCurrentUser, clearCurrentUser } from './auth.js';
 
 // Экраны
-import { initHome }      from './screens/home.js?v=navbar-icons-2';
-import { initDashboard } from './screens/dashboard.js?v=navbar-icons-2';
-import { initAdd }       from './screens/add.js?v=navbar-icons-2';
-import { initHistory }   from './screens/history.js?v=navbar-icons-2';
-import { initFleet }     from './screens/fleet.js?v=navbar-icons-2';
-import { initDrivers }   from './screens/drivers.js?v=navbar-icons-2';
-import { initDriver }    from './screens/driver.js?v=navbar-icons-2';
-import { initSettings }  from './screens/settings.js?v=navbar-icons-2';
+import { initHome }      from './screens/home.js';
+import { initDashboard } from './screens/dashboard.js';
+import { initAdd }       from './screens/add.js';
+import { initHistory }   from './screens/history.js';
+import { initFleet }     from './screens/fleet.js';
+import { initDrivers }   from './screens/drivers.js';
+import { initDriver }    from './screens/driver.js';
+import { initSettings }  from './screens/settings.js';
 
 // ─── Старт ────────────────────────────────────────────────────────────────────
 

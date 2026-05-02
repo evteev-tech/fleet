@@ -7,7 +7,7 @@
  */
 
 import { getDrivers, getFleet, getDeposits, postAction, invalidateCache } from '../api.js';
-import { showScreen }                                                       from '../router.js?v=navbar-icons-2';
+import { showScreen }                                                       from '../router.js';
 import { showToast }                                                        from '../ui.js';
 import { openDriverForm }                                                   from './drivers.js';
 
