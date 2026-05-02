@@ -964,16 +964,16 @@
 }
 
 .dash-hdr__greeting-sub {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 400;
   color: rgba(255, 255, 255, 0.45);
   line-height: 1.3;
 }
 
 .dash-hdr__greeting-name {
-  font-size: 17px;
+  font-size: 20px;
   font-weight: 900;
-  color: ***REMOVED***fff;
+  color: ***REMOVED***FFFFFF;
   line-height: 1.2;
 }
 
@@ -981,7 +981,9 @@
 .dash-month-sw {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-sm);
+  background: transparent;
 }
 
 .dash-month-sw__btn {
@@ -990,21 +992,24 @@
   justify-content: center;
   width: 32px;
   height: 32px;
+  padding: 4px;
+  border: none;
   border-radius: 50%;
-  color: rgba(255, 255, 255, 0.7);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.45);
   cursor: pointer;
-  transition: background var(--transition-fast);
+  transition: opacity var(--transition-fast);
 }
 
 .dash-month-sw__btn:active {
-  background: rgba(255, 255, 255, 0.1);
+  opacity: 0.75;
 }
 
 .dash-month-sw__label {
+  flex: 1;
   font-size: 14px;
   font-weight: 600;
-  color: var(--color-white);
-  min-width: 110px;
+  color: ***REMOVED***FFFFFF;
   text-align: center;
 }
 
@@ -1016,9 +1021,9 @@
 /* ── Hero-карточка ── */
 .dash-hero {
   background: var(--color-yellow);
-  border-radius: var(--radius-lg);
-  padding: var(--space-lg) var(--space-lg) var(--space-md);
-  margin-bottom: var(--space-md);
+  border-radius: 20px;
+  padding: 18px;
+  margin: 0 0 10px;
 }
 
 .dash-hero__label {
@@ -1031,23 +1036,23 @@
 }
 
 .dash-hero__total {
-  font-size: 28px;
+  font-size: 36px;
   font-weight: 900;
-  color: var(--color-dark);
-  letter-spacing: -0.03em;
+  letter-spacing: -1.5px;
+  color: ***REMOVED***1A1A1A;
   margin-bottom: var(--space-md);
 }
 
 .dash-hero__tiles {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-sm);
+  gap: 6px;
 }
 
 .dash-hero__tile {
-  background: rgba(0, 0, 0, 0.08);
-  border-radius: var(--radius-sm);
-  padding: var(--space-sm) var(--space-xs);
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 10px;
+  padding: 10px 8px;
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -1096,7 +1101,9 @@
   display: flex;
   align-items: center;
   gap: var(--space-md);
-  padding: 14px var(--space-lg);
+  min-height: 56px;
+  padding: 14px 16px;
+  box-sizing: border-box;
   cursor: pointer;
   transition: background var(--transition-fast);
 }
@@ -1119,7 +1126,7 @@
 .dash-kassa__name {
   flex: 1;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--color-dark);
   font-variant-numeric: tabular-nums;
 }
