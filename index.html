@@ -47,8 +47,47 @@
        ЭКРАН: ДАШБОРД (Владимир, Юлия)
   ════════════════════════════════════════════════ -->
   <section id="screen-dashboard" class="screen">
-    <div class="home-scroll pb-navbar" id="dashboard-body">
-      <!-- Полностью рендерится в dashboard.js (хедер + hero + кассы + парк) -->
+    <div class="dashboard-header">
+
+      <div class="header-top-row">
+        <span class="header-logo">Матизы</span>
+        <div class="header-avatar" id="dashAvatar"></div>
+      </div>
+
+      <div class="header-greeting">Добрый день,</div>
+      <div class="header-name" id="dashName"></div>
+
+      <div class="header-total-label">ИТОГО В КАССАХ</div>
+      <div class="header-total-amount" id="dashTotalAmount">—</div>
+
+      <div class="header-stats-row">
+        <div class="header-stat-tile">
+          <div class="header-stat-value green" id="dashIncome">—</div>
+          <div class="header-stat-label">Доходы</div>
+        </div>
+        <div class="header-stat-tile">
+          <div class="header-stat-value red" id="dashExpense">—</div>
+          <div class="header-stat-label">Расходы</div>
+        </div>
+        <div class="header-stat-tile">
+          <div class="header-stat-value white" id="dashProfit">—</div>
+          <div class="header-stat-label">Чистыми</div>
+        </div>
+      </div>
+
+      <div class="month-switcher">
+        <button type="button" class="month-chevron" id="dashMonthPrev" aria-label="Предыдущий месяц">‹</button>
+        <span class="month-text" id="dashMonthLabel"></span>
+        <button type="button" class="month-chevron" id="dashMonthNext" aria-label="Следующий месяц">›</button>
+      </div>
+    </div>
+
+    <div class="dashboard-body">
+      <div class="section-label">Кассы</div>
+      <div class="white-card" id="dashKassaList"></div>
+
+      <div class="section-label" id="dashFleetLabel">Парк</div>
+      <div class="white-card" id="dashFleetList"></div>
     </div>
   </section>
 

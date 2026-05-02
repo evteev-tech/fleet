@@ -710,52 +710,6 @@ select.field-input {
   text-align: center;
 }
 
-/* ── Файл 2: hero-карточка ── */
-
-.hero-card {
-  background-color: var(--color-yellow);
-  border-radius: 20px;
-  padding: 18px;
-  margin: 0 0 10px;
-  border: none;
-  display: flex;
-  flex-direction: column;
-}
-
-.hero-label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-  margin-bottom: 6px;
-  line-height: 1.2;
-}
-
-.hero-amount {
-  font-size: 36px;
-  font-weight: 900;
-  letter-spacing: -1.5px;
-  color: ***REMOVED***1A1A1A;
-  line-height: 1.1;
-  margin-bottom: 16px;
-}
-
-.hero-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-}
-
-.hero-stat-tile {
-  background-color: rgba(0, 0, 0, 0.12);
-  border-radius: 10px;
-  padding: 10px 8px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
 .stat-value {
   font-size: 15px;
   font-weight: 800;
