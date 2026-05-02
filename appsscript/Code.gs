@@ -28,10 +28,10 @@ const SHEET = {
   CARS:       'Машины',
   DRIVERS:    'Водители',
   RENTALS:    'Аренда',
-  RENTALS:    'Аренда',
   DEPOSITS:   'Депозиты_операции',
   USERS:      'Пользователи',
   FAIL_LOG:   'Логи_отказов',
+  DASHBOARD:  'Дашборд',
 };
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -149,6 +149,42 @@ function logFailure(ss, action, code, reason) {
   } catch (_) {}
 }
 
+/**
+ * Тело POST: JSON в сыром теле или в form поле data (URLSearchParams с полем data).
+ */
+function parseRequestBody_(e) {
+  if (!e) return {};
+  if (e.parameter && e.parameter.data) {
+    try {
+      return JSON.parse(e.parameter.data);
+    } catch (_) {}
+  }
+  if (!e.postData || !e.postData.contents) return {};
+  var c = String(e.postData.contents).trim();
+  if (c.charAt(0) === '{') {
+    try {
+      return JSON.parse(c);
+    } catch (_) {}
+  }
+  var pairs = c.split('&');
+  for (var i = 0; i < pairs.length; i++) {
+    var kv = pairs[i].split('=');
+    if (kv.length < 2) continue;
+    if (decodeURIComponent(kv[0]) === 'data') {
+      try {
+        return JSON.parse(decodeURIComponent(kv[1].replace(/\+/g, ' ')));
+      } catch (_) {}
+    }
+  }
+  return {};
+}
+
+function cellNum_(v) {
+  if (v === '' || v === null || v === undefined) return null;
+  var n = Number(v);
+  return isNaN(n) ? null : n;
+}
+
 // ═════════════════════════════════════════════════════════════════════════════
 // ОСНОВНОЙ ОБРАБОТЧИК
 // ═════════════════════════════════════════════════════════════════════════════
@@ -157,15 +193,17 @@ function doPost(e) {
   const ss = SpreadsheetApp.openById(SS_ID);
 
   try {
-    const body   = JSON.parse(e.postData.contents);
+    const body = parseRequestBody_(e);
     const action = body.action || 'ADD_OPERATION';
 
     switch (action) {
-      case 'ADD_OPERATION':    return handleAddOperation(ss, body);
+      case 'ADD_OPERATION':     return handleAddOperation(ss, body);
       case 'UPDATE_CAR_STATUS': return handleUpdateCarStatus(ss, body);
-      case 'SAVE_DRIVER':      return handleSaveDriver(ss, body);
-      case 'ADD_DEPOSIT':      return handleAddDeposit(ss, body);
-      case 'ADD_RENTAL':       return handleAddRental(ss, body);
+      case 'SAVE_DRIVER':       return handleSaveDriver(ss, body);
+      case 'ADD_DEPOSIT':       return handleAddDeposit(ss, body);
+      case 'ADD_RENTAL':        return handleAddRental(ss, body);
+      case 'GET_DASHBOARD':     return handleGetDashboard(ss);
+      case 'UPDATE_PERIOD':     return handleUpdatePeriod(ss, body);
       default:
         logFailure(ss, action, 'UNKNOWN_ACTION', 'Action not implemented');
         return err('UNKNOWN_ACTION');
@@ -400,6 +438,108 @@ function handleAddRental(ss, body) {
   handleUpdateCarStatus(ss, { car_id, new_status: 'в аренде' });
 
   return ok({ rental_id });
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// ДАШБОРД (лист «Дашборд») — GET_DASHBOARD, UPDATE_PERIOD
+// ═════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Читает управляющие ячейки B2:B3 и блоки данных для экрана «Аналитика».
+ */
+function handleGetDashboard(ss) {
+  const sheet = ss.getSheetByName(SHEET.DASHBOARD);
+  if (!sheet) {
+    logFailure(ss, 'GET_DASHBOARD', 'SHEET_NOT_FOUND', SHEET.DASHBOARD);
+    return err('SHEET_NOT_FOUND');
+  }
+
+  const year = Number(sheet.getRange('B2').getValue()) || new Date().getFullYear();
+  const month = Number(sheet.getRange('B3').getValue()) || (new Date().getMonth() + 1);
+
+  const summaryLabels = ['Выручка', 'OPEX', 'CAPEX', 'Прибыль'];
+  const summaryKeys = ['revenue', 'opex', 'capex', 'profit'];
+  const sumVals = sheet.getRange(10, 2, 13, 3).getValues();
+  var summary = [];
+  for (var si = 0; si < 4; si++) {
+    summary.push({
+      key: summaryKeys[si],
+      label: summaryLabels[si],
+      current: cellNum_(sumVals[si][0]),
+      previous: cellNum_(sumVals[si][1]),
+    });
+  }
+
+  var opexRaw = sheet.getRange(17, 1, 26, 3).getValues();
+  var opex = [];
+  for (var oi = 0; oi < opexRaw.length; oi++) {
+    var name = String(opexRaw[oi][0] || '').trim();
+    if (!name) continue;
+    var amt = cellNum_(opexRaw[oi][1]);
+    var shareRaw = opexRaw[oi][2];
+    var share = cellNum_(shareRaw);
+    if (share !== null && share > 1) share = share / 100;
+    opex.push({
+      name: name,
+      amount: amt !== null ? amt : 0,
+      share: share !== null ? share : null,
+    });
+  }
+
+  var pnlRaw = sheet.getRange(30, 1, 44, 4).getValues();
+  var pnl = [];
+  for (var pi = 0; pi < pnlRaw.length; pi++) {
+    var carName = String(pnlRaw[pi][0] || '').trim();
+    if (!carName) continue;
+    pnl.push({
+      car: carName,
+      revenue: cellNum_(pnlRaw[pi][1]) !== null ? cellNum_(pnlRaw[pi][1]) : 0,
+      expense: cellNum_(pnlRaw[pi][2]) !== null ? cellNum_(pnlRaw[pi][2]) : 0,
+      profit: cellNum_(pnlRaw[pi][3]) !== null ? cellNum_(pnlRaw[pi][3]) : 0,
+    });
+  }
+
+  var utilRaw = sheet.getRange(47, 1, 70, 2).getValues();
+  var utilization = [];
+  for (var ui = 0; ui < utilRaw.length; ui++) {
+    var carU = String(utilRaw[ui][0] || '').trim();
+    if (!carU) continue;
+    var pctRaw = cellNum_(utilRaw[ui][1]);
+    var pct = pctRaw;
+    if (pct !== null && pct >= 0 && pct <= 1) pct = pct * 100;
+    utilization.push({ car: carU, pct: pct });
+  }
+
+  return ok({
+    dashboard: {
+      year: year,
+      month: month,
+      summary: summary,
+      opex: opex,
+      pnl: pnl,
+      utilization: utilization,
+    },
+  });
+}
+
+/**
+ * Записывает год и месяц в B2:B3 листа «Дашборд» (пересчёт формул в таблице).
+ */
+function handleUpdatePeriod(ss, body) {
+  var year = Number(body.year);
+  var month = Number(body.month);
+  if (!year || month < 1 || month > 12) return err('INVALID_PERIOD');
+
+  var sheet = ss.getSheetByName(SHEET.DASHBOARD);
+  if (!sheet) {
+    logFailure(ss, 'UPDATE_PERIOD', 'SHEET_NOT_FOUND', SHEET.DASHBOARD);
+    return err('SHEET_NOT_FOUND');
+  }
+
+  sheet.getRange('B2').setValue(year);
+  sheet.getRange('B3').setValue(month);
+
+  return ok({});
 }
 
 // ═════════════════════════════════════════════════════════════════════════════

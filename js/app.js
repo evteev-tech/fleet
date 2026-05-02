@@ -17,6 +17,7 @@ import { initFleet }     from './screens/fleet.js';
 import { initDrivers }   from './screens/drivers.js';
 import { initDriver }    from './screens/driver.js';
 import { initSettings }  from './screens/settings.js';
+import { initAnalytics } from './screens/analytics.js';
 
 // ─── Старт ────────────────────────────────────────────────────────────────────
 
@@ -26,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initDashboard();
   initAdd();
   initHistory();
+  initAnalytics();
   initFleet();
   initDrivers();
   initDriver();

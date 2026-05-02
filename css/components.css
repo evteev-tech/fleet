@@ -381,6 +381,12 @@ select.field-input {
   color: currentColor;
 }
 
+.nav-item__emoji {
+  font-size: 18px;
+  line-height: 1;
+  display: block;
+}
+
 .nav-item__label {
   font-size: 10px;
   font-weight: 500;

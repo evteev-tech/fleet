@@ -291,7 +291,7 @@ export async function getDeposits() {
  * Отправляет action в Apps Script webhook и возвращает тело ответа.
  * После успешного ответа инвалидирует кэш затронутых листов.
  *
- * @param {string} action  — 'ADD_OPERATION' | 'UPDATE_CAR_STATUS' | 'SAVE_DRIVER' | 'ADD_DEPOSIT' | 'ADD_RENTAL'
+ * @param {string} action  — например ADD_OPERATION, GET_DASHBOARD, UPDATE_PERIOD
  * @param {object} data    — поля для action
  * @returns {Promise<object>}
  */
@@ -326,6 +326,17 @@ export async function postAction(action, data) {
   _invalidateByAction(action);
 
   return body;
+}
+
+/** Данные листа «Дашборд» для экрана «Аналитика» (Apps Script GET_DASHBOARD). */
+export async function fetchDashboardAnalytics() {
+  const body = await postAction('GET_DASHBOARD', {});
+  return body.dashboard ?? null;
+}
+
+/** Записывает год и месяц в B2:B3 листа «Дашборд». */
+export async function updateAnalyticsPeriod(year, month) {
+  await postAction('UPDATE_PERIOD', { year, month });
 }
 
 // ─── Какие листы сбрасываем после каждого action ─────────────────────────────

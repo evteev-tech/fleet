@@ -57,6 +57,8 @@ const ICON_SETTINGS = `<svg viewBox="0 0 24 24" width="24" height="24" fill="non
   <circle cx="10" cy="18" r="2" fill="white"/>
 </svg>`;
 
+const ICON_ANALYTICS = `<span class="nav-item__emoji" aria-hidden="true">📊</span>`;
+
 // ─── Конфиг navbar по ролям ──────────────────────────────────────────────────
 
 const NAVBAR_CONFIG = {
@@ -68,15 +70,17 @@ const NAVBAR_CONFIG = {
   ],
 
   [ROLES.OPERATIONS]: [
-    { id: 'screen-dashboard', label: 'Главная',  icon: ICON_HOME },
-    { id: 'screen-add',       label: 'Операция', icon: ICON_ADD },
-    { id: 'screen-fleet',     label: 'Парк',     icon: ICON_FLEET },
-    { id: 'screen-drivers',   label: 'Водители', icon: ICON_DRIVERS },
+    { id: 'screen-dashboard', label: 'Главная',   icon: ICON_HOME },
+    { id: 'screen-add',       label: 'Операция',  icon: ICON_ADD },
+    { id: 'screen-analytics', label: 'Аналитика', icon: ICON_ANALYTICS },
+    { id: 'screen-fleet',     label: 'Парк',      icon: ICON_FLEET },
+    { id: 'screen-drivers',   label: 'Водители',  icon: ICON_DRIVERS },
   ],
 
   [ROLES.INVESTOR]: [
     { id: 'screen-dashboard', label: 'Главная',   icon: ICON_HOME },
     { id: 'screen-history',   label: 'История',   icon: ICON_HISTORY },
+    { id: 'screen-analytics', label: 'Аналитика', icon: ICON_ANALYTICS },
     { id: 'screen-settings',  label: 'Настройки', icon: ICON_SETTINGS },
   ],
 };
