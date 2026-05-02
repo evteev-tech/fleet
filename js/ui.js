@@ -223,10 +223,11 @@ export function formatMoney(amount, currency = '₽') {
 
 /**
  * Форматирует дату из строки «DD.MM.YYYY» или timestamp в «15 марта».
+ * (Не путать с formatDate в utils/date.js — там DD.MM.yyyy для API.)
  * @param {string|number} raw
  * @returns {string}
  */
-export function formatDate(raw) {
+export function _formatDateUi(raw) {
   if (!raw) return '';
   let date;
   if (typeof raw === 'string' && raw.includes('.')) {
