@@ -1,4 +1,4 @@
-// v=4
+// v=5
 /**
  * router.js — управление экранами и navbar.
  *
@@ -10,83 +10,88 @@
 import { getCurrentUser } from './auth.js';
 import { ROLES }         from './config.js';
 
-// ─── Иконки navbar (пути и атрибуты — строго по макету) ─────────────────────
+// ─── SVG navbar (локальные файлы, GitHub Pages — относительные пути) ─────────
 
-const ICON_HOME = `<svg viewBox="0 0 24 24" width="24" height="24" fill="none"
+const ICON_ASSETS = {
+  home:      'assets/icons/home.svg',
+  history:   'assets/icons/history.svg',
+  analytics: 'assets/icons/analytics.svg',
+  settings:  'assets/icons/settings.svg',
+};
+
+// ─── Inline-иконки для экранов без отдельного asset ──────────────────────────
+
+const ICON_ADD = `<svg viewBox="0 0 24 24" fill="none"
   stroke="currentColor" stroke-width="1.5"
   stroke-linecap="round" stroke-linejoin="round">
-  <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H15v-5h-6v5H4a1 1 0 0 1-1-1V9.5z"/>
+  <circle cx="12" cy="12" r="9" fill="none"/>
+  <path d="M12 8v8M8 12h8" fill="none"/>
 </svg>`;
 
-const ICON_HISTORY = `<svg viewBox="0 0 24 24" width="24" height="24" fill="none"
+const ICON_FLEET = `<svg viewBox="0 0 24 24" fill="none"
   stroke="currentColor" stroke-width="1.5"
   stroke-linecap="round" stroke-linejoin="round">
-  <rect x="4" y="3" width="16" height="18" rx="2"/>
-  <path d="M8 8h8M8 12h8M8 16h5"/>
+  <path d="M5 17H3v-5l2-5h14l2 5v5h-2" fill="none"/>
+  <path d="M5 17h14" fill="none"/>
+  <circle cx="7.5" cy="17" r="1.5" fill="none"/>
+  <circle cx="16.5" cy="17" r="1.5" fill="none"/>
 </svg>`;
 
-const ICON_ADD = `<svg viewBox="0 0 24 24" width="24" height="24" fill="none"
+const ICON_DRIVERS = `<svg viewBox="0 0 24 24" fill="none"
   stroke="currentColor" stroke-width="1.5"
   stroke-linecap="round" stroke-linejoin="round">
-  <circle cx="12" cy="12" r="9"/>
-  <path d="M12 8v8M8 12h8"/>
+  <circle cx="12" cy="7" r="4" fill="none"/>
+  <path d="M4 21v-1a8 8 0 0 1 16 0v1" fill="none"/>
 </svg>`;
 
-const ICON_FLEET = `<svg viewBox="0 0 24 24" width="24" height="24" fill="none"
-  stroke="currentColor" stroke-width="1.5"
-  stroke-linecap="round" stroke-linejoin="round">
-  <path d="M5 17H3v-5l2-5h14l2 5v5h-2"/>
-  <path d="M5 17h14"/>
-  <circle cx="7.5" cy="17" r="1.5"/>
-  <circle cx="16.5" cy="17" r="1.5"/>
-</svg>`;
-
-const ICON_DRIVERS = `<svg viewBox="0 0 24 24" width="24" height="24" fill="none"
-  stroke="currentColor" stroke-width="1.5"
-  stroke-linecap="round" stroke-linejoin="round">
-  <circle cx="12" cy="7" r="4"/>
-  <path d="M4 21v-1a8 8 0 0 1 16 0v1"/>
-</svg>`;
-
-const ICON_SETTINGS = `<svg viewBox="0 0 24 24" width="24" height="24" fill="none"
-  stroke="currentColor" stroke-width="1.5"
-  stroke-linecap="round" stroke-linejoin="round">
-  <path d="M4 6h16M4 12h16M4 18h16"/>
-  <circle cx="8" cy="6" r="2" fill="white"/>
-  <circle cx="16" cy="12" r="2" fill="white"/>
-  <circle cx="10" cy="18" r="2" fill="white"/>
-</svg>`;
-
-const ICON_ANALYTICS = `<span class="nav-item__emoji" aria-hidden="true">📊</span>`;
-
-// ─── Конфиг navbar по ролям ──────────────────────────────────────────────────
+// ─── Конфиг navbar по ролям (iconPath | iconHtml) ───────────────────────────
 
 const NAVBAR_CONFIG = {
   [ROLES.MECHANIC]: [
-    { id: 'screen-home',    label: 'Главная',  icon: ICON_HOME },
-    { id: 'screen-history', label: 'Касса',    icon: ICON_HISTORY },
-    { id: 'screen-fleet',   label: 'Гараж',    icon: ICON_FLEET },
-    { id: 'screen-drivers', label: 'Водители', icon: ICON_DRIVERS },
+    { id: 'screen-home',    label: 'Главная',  iconPath: ICON_ASSETS.home },
+    { id: 'screen-history', label: 'Касса',    iconPath: ICON_ASSETS.history },
+    { id: 'screen-fleet',   label: 'Гараж',    iconHtml: ICON_FLEET },
+    { id: 'screen-drivers', label: 'Водители', iconHtml: ICON_DRIVERS },
   ],
 
   [ROLES.OPERATIONS]: [
-    { id: 'screen-dashboard', label: 'Главная',   icon: ICON_HOME },
-    { id: 'screen-add',       label: 'Операция',  icon: ICON_ADD },
-    { id: 'screen-analytics', label: 'Аналитика', icon: ICON_ANALYTICS },
-    { id: 'screen-fleet',     label: 'Парк',      icon: ICON_FLEET },
-    { id: 'screen-drivers',   label: 'Водители',  icon: ICON_DRIVERS },
+    { id: 'screen-dashboard', label: 'Главная',   iconPath: ICON_ASSETS.home },
+    { id: 'screen-add',       label: 'Операция',  iconHtml: ICON_ADD },
+    { id: 'screen-analytics', label: 'Аналитика', iconPath: ICON_ASSETS.analytics },
+    { id: 'screen-fleet',     label: 'Парк',      iconHtml: ICON_FLEET },
+    { id: 'screen-drivers',   label: 'Водители',  iconHtml: ICON_DRIVERS },
   ],
 
   [ROLES.INVESTOR]: [
-    { id: 'screen-dashboard', label: 'Главная',   icon: ICON_HOME },
-    { id: 'screen-history',   label: 'История',   icon: ICON_HISTORY },
-    { id: 'screen-analytics', label: 'Аналитика', icon: ICON_ANALYTICS },
-    { id: 'screen-settings',  label: 'Настройки', icon: ICON_SETTINGS },
+    { id: 'screen-dashboard', label: 'Главная',   iconPath: ICON_ASSETS.home },
+    { id: 'screen-history',   label: 'История',   iconPath: ICON_ASSETS.history },
+    { id: 'screen-analytics', label: 'Аналитика', iconPath: ICON_ASSETS.analytics },
+    { id: 'screen-settings',  label: 'Настройки', iconPath: ICON_ASSETS.settings },
   ],
 };
 
 // ─── Текущий активный экран ───────────────────────────────────────────────────
 let _currentScreen = null;
+
+/**
+ * Вставляет SVG из файла и нормализует корневой svg.
+ * @param {string} path
+ * @param {HTMLElement} container
+ */
+async function loadIcon(path, container) {
+  const res = await fetch(path);
+  if (!res.ok) throw new Error('ICON_FETCH_' + res.status);
+  const svg = await res.text();
+  container.innerHTML = svg;
+  _stripSvgDimensions(container);
+}
+
+function _stripSvgDimensions(container) {
+  const svgEl = container.querySelector('svg');
+  if (!svgEl) return;
+  svgEl.removeAttribute('width');
+  svgEl.removeAttribute('height');
+}
 
 /**
  * Показывает экран с указанным id, скрывает остальные.
@@ -123,21 +128,41 @@ export function currentScreen() {
  * Вызывается один раз сразу после успешного входа.
  * @param {string} role
  */
-export function renderNavbar(role) {
+export async function renderNavbar(role) {
   const navbar = document.getElementById('navbar');
   if (!navbar) return;
 
   const items = NAVBAR_CONFIG[role] ?? [];
 
-  navbar.innerHTML = items.map(item => `
-    <button class="nav-item" data-screen="${item.id}" aria-label="${item.label}">
-      <span class="nav-item__icon">${item.icon}</span>
-      <span class="nav-item__label">${item.label}</span>
+  navbar.innerHTML = items.map(item => {
+    const iconClass = item.iconPath ? 'nav-icon nav-icon--asset' : 'nav-icon nav-icon--inline';
+    return `
+    <button type="button" class="nav-item" data-screen="${item.id}" aria-label="${item.label}">
+      <div class="${iconClass}" aria-hidden="true"></div>
+      <span class="nav-label">${item.label}</span>
       <span class="nav-item__dot"></span>
-    </button>
-  `).join('');
+    </button>`;
+  }).join('');
 
-  navbar.querySelectorAll('.nav-item').forEach(btn => {
+  const buttons = [...navbar.querySelectorAll('.nav-item')];
+
+  await Promise.all(items.map(async (item, i) => {
+    const iconEl = buttons[i].querySelector('.nav-icon');
+    if (!iconEl) return;
+    if (item.iconPath) {
+      try {
+        await loadIcon(item.iconPath, iconEl);
+      } catch (e) {
+        console.error('Navbar icon:', item.iconPath, e);
+        iconEl.innerHTML = '';
+      }
+    } else if (item.iconHtml) {
+      iconEl.innerHTML = item.iconHtml;
+      _stripSvgDimensions(iconEl);
+    }
+  }));
+
+  buttons.forEach(btn => {
     btn.addEventListener('click', () => {
       showScreen(btn.dataset.screen);
     });
@@ -154,7 +179,7 @@ function _updateNavbar(screenId) {
   const navbar = document.getElementById('navbar');
   if (!navbar) return;
   navbar.querySelectorAll('.nav-item').forEach(btn => {
-    btn.classList.toggle('nav-item--active', btn.dataset.screen === screenId);
+    btn.classList.toggle('active', btn.dataset.screen === screenId);
   });
 }
 
@@ -175,10 +200,9 @@ export function initRouter({ onNeedLogin, onLoggedIn }) {
     return;
   }
 
-  renderNavbar(session.role);
-
-  const startScreen = session.role === ROLES.MECHANIC ? 'screen-home' : 'screen-dashboard';
-  showScreen(startScreen);
-
-  onLoggedIn?.(session);
+  void renderNavbar(session.role).then(() => {
+    const startScreen = session.role === ROLES.MECHANIC ? 'screen-home' : 'screen-dashboard';
+    showScreen(startScreen);
+    onLoggedIn?.(session);
+  });
 }

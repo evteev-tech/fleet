@@ -358,11 +358,10 @@ select.field-input {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 0;
   cursor: pointer;
   padding: 6px 4px;
-  color: ***REMOVED***8A8A8E;
-  transition: opacity var(--transition-fast), color var(--transition-fast);
+  transition: opacity var(--transition-fast);
   -webkit-user-select: none;
   user-select: none;
   position: relative;
@@ -372,25 +371,39 @@ select.field-input {
   opacity: 0.6;
 }
 
-.nav-item__icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.nav-icon {
   width: 24px;
   height: 24px;
-  color: currentColor;
+  display: block;
+  margin: 0 auto 3px;
+  color: ***REMOVED***9e9e9e;
 }
 
-.nav-item__emoji {
-  font-size: 18px;
-  line-height: 1;
+.nav-icon svg {
+  width: 24px;
+  height: 24px;
   display: block;
 }
 
-.nav-item__label {
+.nav-icon svg path,
+.nav-icon svg rect,
+.nav-icon svg circle {
+  fill: ***REMOVED***9e9e9e;
+  transition: fill 0.2s ease, stroke 0.2s ease;
+}
+
+.nav-icon--inline svg {
+  stroke: currentColor;
+}
+
+.nav-icon svg path[fill='none'] {
+  fill: none !important;
+}
+
+.nav-label {
   font-size: 10px;
   font-weight: 500;
-  color: currentColor;
+  color: ***REMOVED***8a8a8e;
 }
 
 .nav-item__dot {
@@ -403,11 +416,28 @@ select.field-input {
   bottom: 6px;
 }
 
-.nav-item--active {
-  color: ***REMOVED***1A1A1A;
+.nav-item.active .nav-label {
+  font-weight: 700;
+  color: ***REMOVED***1a1a1a;
 }
-.nav-item--active .nav-item__label { font-weight: 700; }
-.nav-item--active .nav-item__dot   { display: block; }
+
+.nav-item.active .nav-item__dot {
+  display: block;
+}
+
+.nav-item.active .nav-icon svg path,
+.nav-item.active .nav-icon svg rect,
+.nav-item.active .nav-icon svg circle {
+  fill: ***REMOVED***ffdd2d;
+}
+
+.nav-item.active .nav-icon svg path[fill='none'] {
+  fill: none !important;
+}
+
+.nav-item.active .nav-icon {
+  color: ***REMOVED***ffdd2d;
+}
 
 /* ─────────────────────────────────────────────
    BOTTOMSHEET

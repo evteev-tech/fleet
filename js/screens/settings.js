@@ -7,7 +7,7 @@
 
 import { getCurrentUser, clearCurrentUser } from '../auth.js';
 import { getApiStatus }                      from '../api.js';
-import { showScreen }                        from '../router.js?v=4';
+import { showScreen }                        from '../router.js?v=5';
 import { showToast, showBottomSheet, hideBottomSheet } from '../ui.js';
 import { WEBHOOK_URL, ROLES }                from '../config.js';
 

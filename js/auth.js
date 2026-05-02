@@ -6,7 +6,7 @@
  */
 
 import { getUsers } from './api.js';
-import { showScreen, renderNavbar } from './router.js?v=4';
+import { showScreen, renderNavbar } from './router.js?v=5';
 import { showToast } from './ui.js';
 import { ROLES } from './config.js';
 
@@ -66,8 +66,7 @@ export function initAuth() {
   const user = getCurrentUser();
 
   if (user) {
-    renderNavbar(user.role);
-    _goHome(user.role);
+    void renderNavbar(user.role).then(() => _goHome(user.role));
   } else {
     showScreen('screen-login');
     handlePinInput();
@@ -165,7 +164,7 @@ async function tryLogin(pin, dotsEl, keyboard) {
 
     if (user) {
       setCurrentUser({ name: user.name, role: user.role, email: user.email });
-      renderNavbar(user.role);
+      await renderNavbar(user.role);
       _goHome(user.role);
     } else {
       _showError(dotsEl, keyboard);
