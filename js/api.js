@@ -6,7 +6,15 @@
  */
 
 import { SHEET_ID, API_KEY, WEBHOOK_URL, CACHE_TTL_MS, SHEETS } from './config.js';
-import { parseSheetDate, formatDate } from './utils/date.js';
+import { parseSheetDate } from './utils/date.js';
+
+function formatDate(date) {
+  if (!date || !(date instanceof Date) || isNaN(date.getTime())) return '';
+  const d = String(date.getDate()).padStart(2, '0');
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const y = date.getFullYear();
+  return `${d}.${m}.${y}`;
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // КЭШ
