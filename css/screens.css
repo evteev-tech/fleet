@@ -1624,6 +1624,206 @@
   margin-bottom: var(--space-lg);
 }
 
+/* ─────────────────────────────────────────────
+   ЭКРАН: ВОДИТЕЛИ
+───────────────────────────────────────────── */
+
+.drivers-page {
+  min-height: 100%;
+  background: ***REMOVED***f0f1f3;
+  padding-bottom: var(--space-lg);
+}
+
+.drivers-page--center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+.drivers-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: max(44px, calc(env(safe-area-inset-top) + 28px)) var(--space-lg) var(--space-md);
+  background: ***REMOVED***1a1a1a;
+}
+
+.drivers-page__header--skel {
+  align-items: flex-start;
+}
+
+.drivers-page__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: ***REMOVED***fff;
+  letter-spacing: -0.02em;
+}
+
+.drivers-page__count {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.drivers-page__tabs {
+  display: flex;
+  gap: 8px;
+  padding: var(--space-md) var(--space-lg);
+  background: ***REMOVED***f0f1f3;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.drivers-page__tabs--skel {
+  padding-top: var(--space-md);
+}
+
+.drivers-tab {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  background: rgba(0, 0, 0, 0.06);
+  color: ***REMOVED***8a8a8e;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.drivers-tab--active {
+  background: ***REMOVED***ffdd2d;
+  color: ***REMOVED***1a1a1a;
+}
+
+.drivers-tab:active {
+  opacity: 0.85;
+}
+
+.drivers-page__body {
+  padding: 0 var(--space-lg) var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.drivers-card {
+  background: ***REMOVED***fff;
+  border-radius: 12px;
+  padding: var(--space-md) var(--space-lg);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+
+.drivers-card:active {
+  transform: scale(0.992);
+}
+
+.drivers-card--skeleton {
+  cursor: default;
+  pointer-events: none;
+}
+
+.drivers-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.drivers-card__name {
+  font-size: 17px;
+  font-weight: 700;
+  color: ***REMOVED***1a1a1a;
+  line-height: 1.2;
+}
+
+.drivers-card__did {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: ***REMOVED***8a8a8e;
+}
+
+.drivers-card__badge {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 8px;
+}
+
+.drivers-card__badge--active {
+  background: ***REMOVED***e8f5e9;
+  color: ***REMOVED***2e7d32;
+}
+
+.drivers-card__badge--archive {
+  background: ***REMOVED***f5f5f5;
+  color: ***REMOVED***757575;
+}
+
+.drivers-card__rule {
+  height: 0.5px;
+  background: ***REMOVED***e8e8ed;
+  margin: var(--space-md) 0;
+}
+
+.drivers-card__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md) var(--space-lg);
+}
+
+.drivers-card__lbl {
+  font-size: 11px;
+  font-weight: 600;
+  color: ***REMOVED***8a8a8e;
+  margin-bottom: 4px;
+}
+
+.drivers-card__val {
+  font-size: 14px;
+  font-weight: 600;
+  color: ***REMOVED***1a1a1a;
+}
+
+.drivers-card__note {
+  margin-top: var(--space-md);
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: ***REMOVED***f0f1f3;
+  font-size: 13px;
+  color: ***REMOVED***5c5c61;
+  line-height: 1.35;
+}
+
+.drivers-empty {
+  text-align: center;
+  padding: var(--space-xl) var(--space-lg);
+  font-size: 14px;
+  font-weight: 500;
+  color: ***REMOVED***8a8a8e;
+}
+
+.drivers-error {
+  text-align: center;
+  padding: var(--space-xl);
+}
+
+.drivers-error__text {
+  font-size: 15px;
+  font-weight: 600;
+  color: ***REMOVED***1a1a1a;
+  margin-bottom: var(--space-lg);
+}
+
 /* ── Bottomsheet: детали машины ── */
 .fleet-bs-hero {
   margin-bottom: var(--space-lg);

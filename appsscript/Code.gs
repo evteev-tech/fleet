@@ -140,6 +140,7 @@ function doPost(e) {
       case 'GET_DASHBOARD':     return handleGetDashboard();
       case 'UPDATE_PERIOD':     return handleUpdatePeriod(ss, body);
       case 'GET_FLEET':         return handleGetFleet();
+      case 'GET_DRIVERS':       return handleGetDrivers();
       default:
         logFailure(ss, action, 'UNKNOWN_ACTION', 'Action not implemented');
         return err('UNKNOWN_ACTION');
@@ -521,6 +522,99 @@ function handleGetFleet() {
     });
   }
   return ok({ fleet: fleet });
+}
+
+/**
+ * GET_DRIVERS ? ????? «????????» + «??????», ???????? ?????? ? currentCar (car_id).
+ */
+function parseCellDateForDrivers_(v) {
+  if (v === '' || v === null || v === undefined) return null;
+  if (Object.prototype.toString.call(v) === '[object Date]' && !isNaN(v.getTime())) return v;
+  if (typeof v === 'number') {
+    var epoch = new Date(1899, 11, 30);
+    return new Date(epoch.getTime() + v * 86400000);
+  }
+  var s = String(v).trim();
+  var p = s.split('.');
+  if (p.length === 3) {
+    return new Date(Number(p[2]), Number(p[1]) - 1, Number(p[0]));
+  }
+  return null;
+}
+
+function dayStartDrivers_(d) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+function handleGetDrivers() {
+  var SS = '1z4raGK4oamjZNznow-OesTljRz649_wCFYIFOh3mufg';
+  var ss = SpreadsheetApp.openById(SS);
+  var dSheet = ss.getSheetByName('\u0412\u043e\u0434\u0438\u0442\u0435\u043b\u0438');
+  var rSheet = ss.getSheetByName('\u0410\u0440\u0435\u043d\u0434\u0430');
+  if (!dSheet || !rSheet) {
+    logFailure(ss, 'GET_DRIVERS', 'SHEET_NOT_FOUND', !dSheet ? '\u0412\u043e\u0434\u0438\u0442\u0435\u043b\u0438' : '\u0410\u0440\u0435\u043d\u0434\u0430');
+    return err('SHEET_NOT_FOUND');
+  }
+  var dVals = dSheet.getDataRange().getValues();
+  var rVals = rSheet.getDataRange().getValues();
+  var today = dayStartDrivers_(new Date());
+
+  var rentalsByDriver = {};
+  var ri;
+  for (ri = 1; ri < rVals.length; ri++) {
+    var rw = rVals[ri];
+    var did = String(rw[2] || '').trim();
+    if (!did) continue;
+    if (!rentalsByDriver[did]) rentalsByDriver[did] = [];
+    rentalsByDriver[did].push({
+      carId: String(rw[1] || '').trim(),
+      dateStart: parseCellDateForDrivers_(rw[3]),
+      dateEndRaw: rw[4],
+      dateEnd: parseCellDateForDrivers_(rw[4]),
+    });
+  }
+
+  function currentCarForDriver_(driverId) {
+    var list = rentalsByDriver[driverId] || [];
+    var bestCar = null;
+    var bestStartTs = -1;
+    for (var j = 0; j < list.length; j++) {
+      var r = list[j];
+      var endEmpty = r.dateEndRaw === '' || r.dateEndRaw === null || r.dateEndRaw === undefined;
+      var active = false;
+      if (endEmpty) {
+        active = true;
+      } else if (r.dateEnd) {
+        active = dayStartDrivers_(r.dateEnd).getTime() >= today.getTime();
+      }
+      if (!active) continue;
+      var st = r.dateStart ? r.dateStart.getTime() : 0;
+      if (st > bestStartTs) {
+        bestStartTs = st;
+        bestCar = r.carId ? String(r.carId) : null;
+      }
+    }
+    return bestCar;
+  }
+
+  var out = [];
+  for (var di = 1; di < dVals.length; di++) {
+    var row = dVals[di];
+    var driverId = String(row[0] || '').trim();
+    if (!driverId) continue;
+    var depNum = cellNum_(row[5]);
+    out.push({
+      driverId: driverId,
+      name: row[1] != null ? String(row[1]) : '',
+      phone: row[2] != null ? String(row[2]) : '',
+      license: row[3] != null ? String(row[3]) : '',
+      status: row[4] != null ? String(row[4]).trim() : '',
+      deposit: depNum !== null && depNum !== undefined ? depNum : 0,
+      note: row[6] != null ? String(row[6]) : '',
+      currentCar: currentCarForDriver_(driverId),
+    });
+  }
+  return ok({ drivers: out });
 }
 
 // ?????????????????????????????????????????????????????????????????????????????

@@ -232,24 +232,50 @@ function _normalizeFleetRow(r) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Колонки: A=driver_id, B=ФИО, C=телефон, D=ВУ,
- *          E=статус, F=депозит_текущий, G=примечание
+ * Водители + активная аренда (currentCar) через GET_DRIVERS; fallback — лист «Водители».
  *
- * @returns {Promise<Array<{driverId,fio,phone,vu,status,deposit,note}>>}
+ * @returns {Promise<Array<{driverId,fio,phone,vu,status,deposit,note,carId,currentCar}>>}
  */
 export async function getDrivers() {
-  const rows = await readSheet(SHEETS.DRIVERS);
-  return rows
-    .map(row => ({
-      driverId: cell(row, 0),
-      fio:      cell(row, 1),
-      phone:    cell(row, 2),
-      vu:       cell(row, 3),
-      status:   cell(row, 4),
-      deposit:  parseFloat(cell(row, 5)) || 0,
-      note:     cell(row, 6),
-    }))
-    .filter(d => d.driverId);
+  try {
+    const body = await postAction('GET_DRIVERS', {});
+    const rows = body.drivers ?? [];
+    return rows.map(_normalizeDriverRow).filter(d => d.driverId);
+  } catch (err) {
+    console.warn('[api] GET_DRIVERS failed, Sheets fallback:', err?.message ?? err);
+    const rows = await readSheet(SHEETS.DRIVERS);
+    return rows
+      .map(row => _normalizeDriverRow({
+        driverId: cell(row, 0),
+        name: cell(row, 1),
+        phone: cell(row, 2),
+        license: cell(row, 3),
+        status: cell(row, 4),
+        deposit: parseFloat(cell(row, 5)) || 0,
+        note: cell(row, 6),
+        currentCar: null,
+      }))
+      .filter(d => d.driverId);
+  }
+}
+
+function _normalizeDriverRow(r) {
+  const cur =
+    r.currentCar != null && String(r.currentCar).trim() !== ''
+      ? String(r.currentCar).trim()
+      : '';
+  const name = String(r.name ?? r.fio ?? '');
+  return {
+    driverId: String(r.driverId ?? '').trim(),
+    fio: name,
+    phone: String(r.phone ?? ''),
+    vu: String(r.license ?? r.vu ?? ''),
+    status: String(r.status ?? '').trim(),
+    deposit: Number(r.deposit) || 0,
+    note: String(r.note ?? ''),
+    currentCar: cur || null,
+    carId: cur,
+  };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
