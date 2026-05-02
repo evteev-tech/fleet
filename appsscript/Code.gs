@@ -18,7 +18,7 @@
   Редактирование существующего не обновляет рабочий URL.
 */
 
-const ALLOWED_ORIGIN = 'https://github.com/evteev-tech/fleet.git'; // заменить на реальный URL после деплоя фронтенда
+const ALLOWED_ORIGIN = 'https://evteev-tech.github.io';
 
 const SS_ID = '1z4raGK4oamjZNznow-OesTljRz649_wCFYIFOh3mufg';
 
@@ -44,8 +44,9 @@ function doOptions(e) {
     .setMimeType(ContentService.MimeType.TEXT)
     .setHeaders({
       'Access-Control-Allow-Origin':  ALLOWED_ORIGIN,
-      'Access-Control-Allow-Methods': 'POST',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Max-Age':       '3600',
     });
 }
 
