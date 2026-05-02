@@ -290,9 +290,8 @@ export async function postAction(action, data) {
   let res;
   try {
     res = await fetch(url, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ action, ...data }),
+      method: 'POST',
+      body:   JSON.stringify({ action, ...data }),
     });
   } catch {
     throw new Error('NO_CONNECTION');
