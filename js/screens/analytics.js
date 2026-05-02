@@ -239,6 +239,7 @@ async function _refreshViewOnly() {
     const empty = !_dashboardHasContent(dash);
     root.innerHTML = _fullHtml(dash, empty ? 'Нет данных за выбранный период' : '');
   } catch (err) {
+    console.error('Analytics _refreshViewOnly:', err);
     root.innerHTML = _errorHTML(err.message === 'NO_CONNECTION');
   }
 }
@@ -256,6 +257,7 @@ async function _applyPeriod(year, month) {
     const empty = !_dashboardHasContent(dash);
     root.innerHTML = _fullHtml(dash, empty ? 'Нет данных за выбранный период' : '');
   } catch (err) {
+    console.error('Analytics _applyPeriod:', err);
     root.innerHTML = _errorHTML(err.message === 'NO_CONNECTION');
   }
 }

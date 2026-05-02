@@ -114,24 +114,51 @@ export async function renderDashboard() {
   const monthEl = document.getElementById('dashMonthLabel');
   if (monthEl) monthEl.textContent = _monthLabel();
 
-  try {
-    [_allOps, _fleet] = await Promise.all([getOperations(), getFleet()]);
-  } catch (err) {
-    _setAmountSkeleton(false);
-    const ta = document.getElementById('dashTotalAmount');
-    if (ta) ta.textContent = '—';
-    const body = _dashboardBodyEl();
-    if (body) body.innerHTML = _offlineHTML(err.message === 'NO_CONNECTION');
-    document.getElementById('dash-retry')?.addEventListener('click', renderDashboard);
+  const settled = await Promise.allSettled([getOperations(), getFleet()]);
+  if (settled[0].status === 'rejected') {
+    console.error('Dashboard: getOperations rejected:', settled[0].reason);
+  }
+  if (settled[1].status === 'rejected') {
+    console.error('Dashboard: getFleet rejected:', settled[1].reason);
+  }
+
+  if (settled[0].status === 'rejected' || settled[1].status === 'rejected') {
+    const firstErr =
+      settled[0].status === 'rejected' ? settled[0].reason : settled[1].reason;
+    console.error('Dashboard load error:', firstErr);
+    _showDashboardError(firstErr?.message === 'NO_CONNECTION');
     return;
   }
 
-  _restoreDashboardBody();
-  document.getElementById('dashKassaList').innerHTML = _kassasHTML();
-  document.getElementById('dashFleetList').innerHTML = _fleetHTML();
-  document.getElementById('dashFleetLabel').textContent = `Парк · ${_fleet.length} авто`;
+  _allOps = settled[0].value;
+  _fleet = settled[1].value;
 
-  _refreshMonthUI();
+  const data = {
+    operationsCount: _allOps?.length,
+    fleetCount: _fleet?.length,
+  };
+
+  try {
+    _restoreDashboardBody();
+    document.getElementById('dashKassaList').innerHTML = _kassasHTML();
+    document.getElementById('dashFleetList').innerHTML = _fleetHTML();
+    document.getElementById('dashFleetLabel').textContent = `Парк · ${_fleet.length} авто`;
+
+    _refreshMonthUI();
+  } catch (err) {
+    console.error('Dashboard parse/render error:', err);
+    console.error('Raw data:', { ...data, fleetSample: _fleet?.slice?.(0, 2) });
+    _showDashboardError(false);
+  }
+}
+
+function _showDashboardError(isNoConn) {
+  _setAmountSkeleton(false);
+  const ta = document.getElementById('dashTotalAmount');
+  if (ta) ta.textContent = '—';
+  const body = _dashboardBodyEl();
+  if (body) body.innerHTML = _offlineHTML(isNoConn);
+  document.getElementById('dash-retry')?.addEventListener('click', renderDashboard);
 }
 
 function _fillUserHeader() {

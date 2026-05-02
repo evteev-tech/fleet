@@ -188,9 +188,28 @@ export async function getOperations({ kassaId = null, month = null, year = null 
  * @returns {Promise<Array<{carId,name,color,status,dateBuy,priceBuy,rateDay,note,mileage,toMileage}>>}
  */
 export async function getFleet() {
-  const body = await postAction('GET_FLEET', {});
-  const rows = body.fleet ?? [];
-  return rows.map(_normalizeFleetRow).filter(c => c.carId);
+  try {
+    const body = await postAction('GET_FLEET', {});
+    const rows = body.fleet ?? [];
+    return rows.map(_normalizeFleetRow).filter(c => c.carId);
+  } catch (err) {
+    console.warn('[api] GET_FLEET failed, using Sheets API fallback:', err?.message ?? err);
+    const rows = await readSheet(SHEETS.CARS);
+    return rows
+      .map(row => _normalizeFleetRow({
+        carId: row[0],
+        name: row[1],
+        color: row[2],
+        status: row[3],
+        dateBuy: row[4],
+        priceBuy: row[5],
+        rateDay: row[6],
+        note: row[7],
+        mileage: row[8],
+        toMileage: row[9],
+      }))
+      .filter(c => c.carId);
+  }
 }
 
 function _normalizeFleetRow(r) {
@@ -334,7 +353,12 @@ export async function postAction(action, data) {
 /** Данные листа «Дашборд» для экрана «Аналитика» (Apps Script GET_DASHBOARD). */
 export async function fetchDashboardAnalytics() {
   const body = await postAction('GET_DASHBOARD', {});
-  return body.dashboard ?? null;
+  const dash = body?.dashboard;
+  if (!dash || typeof dash !== 'object') {
+    console.warn('[api] GET_DASHBOARD: expected body.dashboard object, got:', body);
+    return null;
+  }
+  return dash;
 }
 
 /** Записывает год и месяц в B2:B3 листа «Дашборд». */
