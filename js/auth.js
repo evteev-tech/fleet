@@ -6,7 +6,7 @@
  */
 
 import { getUsers } from './api.js';
-import { showScreen, renderNavbar } from './router.js';
+import { showScreen, renderNavbar } from './router.js?v=navbar-icons-2';
 import { showToast } from './ui.js';
 import { ROLES } from './config.js';
 
