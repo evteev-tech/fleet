@@ -1,4 +1,4 @@
-// v=5
+// v=6
 /**
  * router.js — управление экранами и navbar.
  *
@@ -17,6 +17,7 @@ const ICON_ASSETS = {
   history:   'assets/icons/history.svg',
   analytics: 'assets/icons/analytics.svg',
   settings:  'assets/icons/settings.svg',
+  fleet:     'assets/icons/fleet.svg',
 };
 
 // ─── Inline-иконки для экранов без отдельного asset ──────────────────────────
@@ -26,15 +27,6 @@ const ICON_ADD = `<svg viewBox="0 0 24 24" fill="none"
   stroke-linecap="round" stroke-linejoin="round">
   <circle cx="12" cy="12" r="9" fill="none"/>
   <path d="M12 8v8M8 12h8" fill="none"/>
-</svg>`;
-
-const ICON_FLEET = `<svg viewBox="0 0 24 24" fill="none"
-  stroke="currentColor" stroke-width="1.5"
-  stroke-linecap="round" stroke-linejoin="round">
-  <path d="M5 17H3v-5l2-5h14l2 5v5h-2" fill="none"/>
-  <path d="M5 17h14" fill="none"/>
-  <circle cx="7.5" cy="17" r="1.5" fill="none"/>
-  <circle cx="16.5" cy="17" r="1.5" fill="none"/>
 </svg>`;
 
 const ICON_DRIVERS = `<svg viewBox="0 0 24 24" fill="none"
@@ -50,7 +42,7 @@ const NAVBAR_CONFIG = {
   [ROLES.MECHANIC]: [
     { id: 'screen-home',    label: 'Главная',  iconPath: ICON_ASSETS.home },
     { id: 'screen-history', label: 'Касса',    iconPath: ICON_ASSETS.history },
-    { id: 'screen-fleet',   label: 'Гараж',    iconHtml: ICON_FLEET },
+    { id: 'screen-fleet',   label: 'Парк',     iconPath: ICON_ASSETS.fleet },
     { id: 'screen-drivers', label: 'Водители', iconHtml: ICON_DRIVERS },
   ],
 
@@ -58,7 +50,7 @@ const NAVBAR_CONFIG = {
     { id: 'screen-dashboard', label: 'Главная',   iconPath: ICON_ASSETS.home },
     { id: 'screen-add',       label: 'Операция',  iconHtml: ICON_ADD },
     { id: 'screen-analytics', label: 'Аналитика', iconPath: ICON_ASSETS.analytics },
-    { id: 'screen-fleet',     label: 'Парк',      iconHtml: ICON_FLEET },
+    { id: 'screen-fleet',     label: 'Парк',      iconPath: ICON_ASSETS.fleet },
     { id: 'screen-drivers',   label: 'Водители',  iconHtml: ICON_DRIVERS },
   ],
 

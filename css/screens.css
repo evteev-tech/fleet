@@ -1402,148 +1402,226 @@
    ЭКРАН: ПАРК МАШИН
 ───────────────────────────────────────────── */
 
-/* ── Хедер ── */
-.fleet-hdr {
-  background: var(--color-dark);
-  padding: max(48px, calc(env(safe-area-inset-top) + 36px)) var(--space-lg) var(--space-lg);
+.fleet-page {
+  min-height: 100%;
+  background: ***REMOVED***f0f1f3;
+  padding-bottom: var(--space-lg);
 }
 
-.fleet-hdr--skeleton {
-  padding: 48px var(--space-lg) var(--space-lg);
+.fleet-page--center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
 }
 
-.fleet-hdr__top {
+.fleet-page__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--space-md);
+  padding: max(44px, calc(env(safe-area-inset-top) + 28px)) var(--space-lg) var(--space-md);
+  background: ***REMOVED***1a1a1a;
 }
 
-.fleet-hdr__total {
-  font-size: 12px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.45);
+.fleet-page__header--skel {
+  align-items: flex-start;
 }
 
-/* ── Счётчики ── */
-.fleet-counters {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-sm);
-}
-
-.fleet-counter {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  padding: var(--space-md) var(--space-sm);
-  border-radius: var(--radius-md);
-}
-
-.fleet-counter--yellow {
-  background: var(--color-yellow);
-}
-
-.fleet-counter--ghost {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.fleet-counter__num {
+.fleet-page__title {
+  margin: 0;
   font-size: 22px;
-  font-weight: 900;
-  line-height: 1;
-}
-
-.fleet-counter--yellow .fleet-counter__num { color: var(--color-dark); }
-.fleet-counter--ghost  .fleet-counter__num { color: var(--color-white); }
-
-.fleet-counter__lbl {
-  font-size: 10px;
-  font-weight: 600;
-  text-align: center;
-}
-
-.fleet-counter--yellow .fleet-counter__lbl { color: rgba(0, 0, 0, 0.5); }
-.fleet-counter--ghost  .fleet-counter__lbl { color: rgba(255, 255, 255, 0.6); }
-
-/* ── Секции ── */
-.fleet-sections {
-  padding: var(--space-lg);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-lg);
-}
-
-.fleet-section-wrap {
-  scroll-margin-top: 8px;
-}
-
-.fleet-sec-title {
-  font-size: 12px;
   font-weight: 700;
-  color: var(--color-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: var(--space-sm);
+  color: ***REMOVED***fff;
+  letter-spacing: -0.02em;
+}
+
+.fleet-page__count {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.fleet-page__tabs {
   display: flex;
-  align-items: center;
-  gap: var(--space-sm);
+  gap: 8px;
+  padding: var(--space-md) var(--space-lg);
+  background: ***REMOVED***f0f1f3;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
-.fleet-sec-count {
-  font-size: 11px;
-  font-weight: 700;
-  background: var(--color-border);
-  color: var(--color-muted);
-  padding: 1px 7px;
-  border-radius: 10px;
+.fleet-page__tabs--skel {
+  padding-top: var(--space-md);
 }
 
-/* ── Карточка-список ── */
-.fleet-card {
-  background: var(--color-white);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-
-/* ── Строка машины ── */
-.fleet-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
-  padding: 14px var(--space-lg);
-  cursor: pointer;
-  transition: background var(--transition-fast);
-}
-
-.fleet-row + .fleet-row {
-  border-top: 0.5px solid var(--color-border);
-}
-
-.fleet-row:active {
-  background: var(--color-bg);
-}
-
-.fleet-row__body {
+.fleet-tab {
   flex: 1;
   min-width: 0;
-}
-
-.fleet-row__plate {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--color-dark);
-  letter-spacing: 0.02em;
-}
-
-.fleet-row__driver {
+  padding: 10px 12px;
+  border: none;
+  border-radius: 10px;
   font-size: 12px;
-  color: var(--color-muted);
-  margin-top: 2px;
+  font-weight: 600;
+  font-family: inherit;
+  background: rgba(0, 0, 0, 0.06);
+  color: ***REMOVED***8a8a8e;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+}
+
+.fleet-tab--active {
+  background: ***REMOVED***ffdd2d;
+  color: ***REMOVED***1a1a1a;
+}
+
+.fleet-tab:active {
+  opacity: 0.85;
+}
+
+.fleet-page__body {
+  padding: 0 var(--space-lg) var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.fleet-car {
+  background: ***REMOVED***fff;
+  border-radius: 12px;
+  padding: var(--space-md) var(--space-lg);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.fleet-car:active {
+  transform: scale(0.992);
+}
+
+.fleet-car--skeleton {
+  cursor: default;
+  pointer-events: none;
+}
+
+.fleet-car__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.fleet-car__plate {
+  font-size: 20px;
+  font-weight: 800;
+  color: ***REMOVED***1a1a1a;
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+}
+
+.fleet-car__subtitle {
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: ***REMOVED***8a8a8e;
+  line-height: 1.3;
+}
+
+.fleet-car__badge {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 8px;
+}
+
+.fleet-car__badge--rent {
+  background: ***REMOVED***e8f5e9;
+  color: ***REMOVED***2e7d32;
+}
+
+.fleet-car__badge--idle {
+  background: ***REMOVED***fff8e1;
+  color: ***REMOVED***f57f17;
+}
+
+.fleet-car__badge--repair {
+  background: ***REMOVED***ffebee;
+  color: ***REMOVED***c62828;
+}
+
+.fleet-car__rule {
+  height: 0.5px;
+  background: ***REMOVED***e8e8ed;
+  margin: var(--space-md) 0;
+}
+
+.fleet-car__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md) var(--space-lg);
+}
+
+.fleet-car__lbl {
+  font-size: 11px;
+  font-weight: 600;
+  color: ***REMOVED***8a8a8e;
+  margin-bottom: 4px;
+}
+
+.fleet-car__val {
+  font-size: 14px;
+  font-weight: 600;
+  color: ***REMOVED***1a1a1a;
+}
+
+.fleet-car__km--bad {
+  color: ***REMOVED***c62828;
+}
+
+.fleet-car__km--warn {
+  color: ***REMOVED***f57f17;
+}
+
+.fleet-car__km--ok {
+  color: ***REMOVED***2e7d32;
+}
+
+.fleet-car__note {
+  margin-top: var(--space-md);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: ***REMOVED***f0f1f3;
+  font-size: 13px;
+  color: ***REMOVED***5c5c61;
+  line-height: 1.35;
+}
+
+.fleet-car__note-icon {
+  flex-shrink: 0;
+}
+
+.fleet-empty {
+  text-align: center;
+  padding: var(--space-xl) var(--space-lg);
+  font-size: 14px;
+  font-weight: 500;
+  color: ***REMOVED***8a8a8e;
+}
+
+.fleet-error {
+  text-align: center;
+  padding: var(--space-xl);
+}
+
+.fleet-error__text {
+  font-size: 15px;
+  font-weight: 600;
+  color: ***REMOVED***1a1a1a;
+  margin-bottom: var(--space-lg);
 }
 
 /* ── Bottomsheet: детали машины ── */

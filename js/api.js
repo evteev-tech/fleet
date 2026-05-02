@@ -6,6 +6,7 @@
  */
 
 import { SHEET_ID, API_KEY, WEBHOOK_URL, CACHE_TTL_MS, SHEETS } from './config.js';
+import { parseSheetDate } from './utils/date.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // КЭШ
@@ -181,28 +182,30 @@ export async function getOperations({ kassaId = null, month = null, year = null 
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Колонки: A=car_id, B=название, C=цвет, D=статус,
- *          E=дата_покупки, F=цена_покупки, G=ставка_день,
- *          H=примечание, I=Текущий пробег, J=ТО на пробеге
+ * Машины с листа «Машины» через Apps Script GET_FLEET.
+ * Колонки: A=car_id … J=ТО на пробеге (см. Code.gs handleGetFleet).
  *
- * @returns {Promise<Array<{carId,name,color,status,rateDay,mileage,toMileage,note}>>}
+ * @returns {Promise<Array<{carId,name,color,status,dateBuy,priceBuy,rateDay,note,mileage,toMileage}>>}
  */
 export async function getFleet() {
-  const rows = await readSheet(SHEETS.CARS);
-  return rows
-    .map(row => ({
-      carId:      cell(row, 0),
-      name:       cell(row, 1),
-      color:      cell(row, 2),
-      status:     cell(row, 3),
-      dateBuy:    parseDate(cell(row, 4)),
-      priceBuy:   parseFloat(cell(row, 5)) || 0,
-      rateDay:    parseFloat(cell(row, 6)) || 0,
-      note:       cell(row, 7),
-      mileage:    parseInt(cell(row, 8)) || 0,
-      toMileage:  parseInt(cell(row, 9)) || 0,
-    }))
-    .filter(c => c.carId);
+  const body = await postAction('GET_FLEET', {});
+  const rows = body.fleet ?? [];
+  return rows.map(_normalizeFleetRow).filter(c => c.carId);
+}
+
+function _normalizeFleetRow(r) {
+  return {
+    carId:     String(r.carId ?? '').trim(),
+    name:      String(r.name ?? ''),
+    color:     String(r.color ?? ''),
+    status:    String(r.status ?? '').trim(),
+    dateBuy:   parseSheetDate(r.dateBuy),
+    priceBuy:  Number(r.priceBuy) || 0,
+    rateDay:   Number(r.rateDay) || 0,
+    note:      String(r.note ?? ''),
+    mileage:   Math.round(Number(r.mileage ?? 0)) || 0,
+    toMileage: Math.round(Number(r.toMileage ?? 0)) || 0,
+  };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

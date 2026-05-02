@@ -9,7 +9,7 @@
 
 import { getFleet, postAction, invalidateCache } from '../api.js';
 import { getCurrentUser }                         from '../auth.js';
-import { showScreen }                             from '../router.js?v=5';
+import { showScreen }                             from '../router.js?v=6';
 import { showToast }                              from '../ui.js';
 import { KASSA_ID, ROLES, CAR_STATUSES }          from '../config.js';
 
