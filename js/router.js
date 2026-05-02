@@ -9,112 +9,74 @@
 import { getCurrentUser } from './auth.js';
 import { ROLES }         from './config.js';
 
+// ─── Иконки navbar (пути и атрибуты — строго по макету) ─────────────────────
+
+const ICON_HOME = `<svg viewBox="0 0 24 24" width="24" height="24" fill="none"
+  stroke="currentColor" stroke-width="1.5"
+  stroke-linecap="round" stroke-linejoin="round">
+  <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H15v-5h-6v5H4a1 1 0 0 1-1-1V9.5z"/>
+</svg>`;
+
+const ICON_HISTORY = `<svg viewBox="0 0 24 24" width="24" height="24" fill="none"
+  stroke="currentColor" stroke-width="1.5"
+  stroke-linecap="round" stroke-linejoin="round">
+  <rect x="4" y="3" width="16" height="18" rx="2"/>
+  <path d="M8 8h8M8 12h8M8 16h5"/>
+</svg>`;
+
+const ICON_ADD = `<svg viewBox="0 0 24 24" width="24" height="24" fill="none"
+  stroke="currentColor" stroke-width="1.5"
+  stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="12" cy="12" r="9"/>
+  <path d="M12 8v8M8 12h8"/>
+</svg>`;
+
+const ICON_FLEET = `<svg viewBox="0 0 24 24" width="24" height="24" fill="none"
+  stroke="currentColor" stroke-width="1.5"
+  stroke-linecap="round" stroke-linejoin="round">
+  <path d="M5 17H3v-5l2-5h14l2 5v5h-2"/>
+  <path d="M5 17h14"/>
+  <circle cx="7.5" cy="17" r="1.5"/>
+  <circle cx="16.5" cy="17" r="1.5"/>
+</svg>`;
+
+const ICON_DRIVERS = `<svg viewBox="0 0 24 24" width="24" height="24" fill="none"
+  stroke="currentColor" stroke-width="1.5"
+  stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="12" cy="7" r="4"/>
+  <path d="M4 21v-1a8 8 0 0 1 16 0v1"/>
+</svg>`;
+
+const ICON_SETTINGS = `<svg viewBox="0 0 24 24" width="24" height="24" fill="none"
+  stroke="currentColor" stroke-width="1.5"
+  stroke-linecap="round" stroke-linejoin="round">
+  <path d="M4 6h16M4 12h16M4 18h16"/>
+  <circle cx="8" cy="6" r="2" fill="white"/>
+  <circle cx="16" cy="12" r="2" fill="white"/>
+  <circle cx="10" cy="18" r="2" fill="white"/>
+</svg>`;
+
 // ─── Конфиг navbar по ролям ──────────────────────────────────────────────────
 
 const NAVBAR_CONFIG = {
   [ROLES.MECHANIC]: [
-    {
-      id: 'screen-home',
-      label: 'Главная',
-      icon: `<svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-               <path d="M3 9.5L11 3L19 9.5V19C19 19.5523 18.5523 20 18 20H14V15H8V20H4C3.44772 20 3 19.5523 3 19V9.5Z"
-                 stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
-             </svg>`,
-    },
-    {
-      id: 'screen-history',
-      label: 'Касса',
-      icon: `<svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-               <rect x="3" y="5" width="16" height="12" rx="2" stroke="currentColor" stroke-width="1.7"/>
-               <path d="M3 9H19" stroke="currentColor" stroke-width="1.7"/>
-               <path d="M7 14H10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-             </svg>`,
-    },
-    {
-      id: 'screen-fleet',
-      label: 'Гараж',
-      icon: `<svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-               <path d="M4 14H18M4 14L5.5 9H16.5L18 14M4 14V17H18V14" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
-               <circle cx="7" cy="17" r="1.5" stroke="currentColor" stroke-width="1.5"/>
-               <circle cx="15" cy="17" r="1.5" stroke="currentColor" stroke-width="1.5"/>
-             </svg>`,
-    },
-    {
-      id: 'screen-drivers',
-      label: 'Водители',
-      icon: `<svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-               <circle cx="11" cy="8" r="3.5" stroke="currentColor" stroke-width="1.7"/>
-               <path d="M4 19C4 15.6863 7.13401 13 11 13C14.866 13 18 15.6863 18 19" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-             </svg>`,
-    },
+    { id: 'screen-home',    label: 'Главная',  icon: ICON_HOME },
+    { id: 'screen-history', label: 'Касса',    icon: ICON_HISTORY },
+    { id: 'screen-fleet',   label: 'Гараж',    icon: ICON_FLEET },
+    { id: 'screen-drivers', label: 'Водители', icon: ICON_DRIVERS },
   ],
 
   [ROLES.OPERATIONS]: [
-    {
-      id: 'screen-dashboard',
-      label: 'Главная',
-      icon: `<svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-               <rect x="3" y="3" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.7"/>
-               <rect x="12" y="3" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.7"/>
-               <rect x="3" y="12" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.7"/>
-               <rect x="12" y="12" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.7"/>
-             </svg>`,
-    },
-    {
-      id: 'screen-add',
-      label: 'Операция',
-      icon: `<svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-               <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="1.7"/>
-               <path d="M11 7V15M7 11H15" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-             </svg>`,
-    },
-    {
-      id: 'screen-fleet',
-      label: 'Парк',
-      icon: `<svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-               <path d="M4 14H18M4 14L5.5 9H16.5L18 14M4 14V17H18V14" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
-               <circle cx="7" cy="17" r="1.5" stroke="currentColor" stroke-width="1.5"/>
-               <circle cx="15" cy="17" r="1.5" stroke="currentColor" stroke-width="1.5"/>
-             </svg>`,
-    },
-    {
-      id: 'screen-drivers',
-      label: 'Водители',
-      icon: `<svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-               <circle cx="11" cy="8" r="3.5" stroke="currentColor" stroke-width="1.7"/>
-               <path d="M4 19C4 15.6863 7.13401 13 11 13C14.866 13 18 15.6863 18 19" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-             </svg>`,
-    },
+    { id: 'screen-dashboard', label: 'Главная',  icon: ICON_HOME },
+    { id: 'screen-add',       label: 'Операция', icon: ICON_ADD },
+    { id: 'screen-fleet',     label: 'Парк',     icon: ICON_FLEET },
+    { id: 'screen-drivers',   label: 'Водители', icon: ICON_DRIVERS },
   ],
 
   [ROLES.INVESTOR]: [
-    {
-      id: 'screen-dashboard',
-      label: 'Главная',
-      icon: `<svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-               <rect x="3" y="3" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.7"/>
-               <rect x="12" y="3" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.7"/>
-               <rect x="3" y="12" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.7"/>
-               <rect x="12" y="12" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.7"/>
-             </svg>`,
-    },
-    {
-      id: 'screen-history',
-      label: 'История',
-      icon: `<svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-               <path d="M11 5V11L14 14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
-               <path d="M3.5 11C3.5 6.85786 6.85786 3.5 11 3.5C15.1421 3.5 18.5 6.85786 18.5 11C18.5 15.1421 15.1421 18.5 11 18.5C8.5 18.5 6.25 17.3 4.8 15.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-             </svg>`,
-    },
-    {
-      id: 'screen-settings',
-      label: 'Настройки',
-      icon: `<svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-               <circle cx="11" cy="11" r="2.5" stroke="currentColor" stroke-width="1.7"/>
-               <path d="M11 3V5M11 17V19M3 11H5M17 11H19M5.22 5.22L6.64 6.64M15.36 15.36L16.78 16.78M5.22 16.78L6.64 15.36M15.36 6.64L16.78 5.22"
-                 stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-             </svg>`,
-    },
+    { id: 'screen-dashboard', label: 'Главная',   icon: ICON_HOME },
+    { id: 'screen-history',   label: 'История',   icon: ICON_HISTORY },
+    { id: 'screen-settings',  label: 'Настройки', icon: ICON_SETTINGS },
   ],
 };
 
