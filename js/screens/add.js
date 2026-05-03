@@ -44,7 +44,10 @@ export function initAdd() {
   });
 
   document.addEventListener('screen:activated', e => {
-    if (e.detail.screenId === 'screen-add') _openAdd();
+    if (e.detail.screenId !== 'screen-add') return;
+    const t = e.detail.addType;
+    if (t === 'ДОХОД' || t === 'РАСХОД' || t === 'ПЕРЕВОД') _type = t;
+    _openAdd();
   });
 
   // Кнопка «назад» в хедере

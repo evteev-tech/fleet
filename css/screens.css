@@ -652,7 +652,14 @@
   font-weight: 900;
   color: var(--color-white);
   letter-spacing: -1px;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
+}
+
+.home-hdr__kassa {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 6px;
 }
 
 .home-hdr__delta {
@@ -767,47 +774,67 @@
   color: var(--color-muted);
 }
 
-.home-fleet__grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-sm);
+.home-fleet__legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin-bottom: 10px;
 }
 
-.home-fleet__tile {
-  display: flex;
-  flex-direction: column;
+.home-fleet__legend-item {
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: var(--space-md) var(--space-sm);
-  background: var(--color-bg);
-  border-radius: var(--radius-md);
+  gap: 6px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-dark);
   cursor: pointer;
-  transition: transform var(--transition-fast);
+  -webkit-user-select: none;
+  user-select: none;
+  transition: opacity var(--transition-fast);
+}
+
+.home-fleet__legend-item:active {
+  opacity: 0.65;
+}
+
+.home-fleet__legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.home-fleet__bar {
+  display: flex;
+  flex-direction: row;
+  gap: 2px;
+  height: 28px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--color-border);
+}
+
+.home-fleet__bar-seg {
+  border: none;
+  padding: 0;
+  margin: 0;
+  min-height: 28px;
+  cursor: pointer;
+  transition: filter var(--transition-fast), transform var(--transition-fast);
   -webkit-user-select: none;
   user-select: none;
 }
 
-.home-fleet__tile:active {
-  transform: scale(0.94);
-}
-
-.home-fleet__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
-
-.home-fleet__name {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--color-muted);
-}
-
-.home-fleet__num {
-  font-size: 28px;
-  font-weight: 900;
-  letter-spacing: -0.03em;
-  line-height: 1;
+.home-fleet__bar-seg:active {
+  filter: brightness(0.92);
+  transform: scaleY(0.96);
 }
 
 /* ── Секция операций ── */

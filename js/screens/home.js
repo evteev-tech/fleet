@@ -1,7 +1,8 @@
 /**
  * home.js — главный экран механика (Азамат).
  *
- * Данные: getOperations({ kassaId: KASSA_ID.AZAMAT }) + getFleet()
+ * Данные: getOperations({ kassaId: KASSA_ID.AZAMAT }) + getFleet();
+ *   список и баланс — только строки с kassaId === K_AZAMAT.
  * Расчёты: остаток, дельта сегодня, статистика парка.
  * Бесконечный скролл: клиентская пагинация по 20 записей через IntersectionObserver.
  */
@@ -58,11 +59,12 @@ export async function renderHome() {
     return;
   }
 
-  // ── Вычисления ────────────────────────────────────────────────────────────
-  _allOps = [...ops].sort((a, b) => _tsOp(b) - _tsOp(a));
+  // ── Вычисления (только касса Азамата; защита от чужих строк в таблице) ───
+  const azamatOps = ops.filter(op => op.kassaId === KASSA_ID.AZAMAT);
+  _allOps = [...azamatOps].sort((a, b) => _tsOp(b) - _tsOp(a));
 
-  const balance = _calcBalance(ops);
-  const delta   = _calcDelta(ops);
+  const balance = _calcBalance(azamatOps);
+  const delta   = _calcDelta(azamatOps);
   const fleetStats = _calcFleet(fleet);
 
   // ── Рендер ───────────────────────────────────────────────────────────────
@@ -89,6 +91,7 @@ export async function renderHome() {
         </button>
       </div>
       <div class="home-hdr__balance">${_fmt(Math.abs(balance))}</div>
+      <div class="home-hdr__kassa">Касса Азамата</div>
       <div class="home-hdr__delta ${delta >= 0 ? 'home-hdr__delta--pos' : 'home-hdr__delta--neg'}">
         ${delta >= 0 ? '+' : '−'}${_fmt(Math.abs(delta))} сегодня
       </div>
@@ -118,22 +121,22 @@ export async function renderHome() {
         <span class="home-fleet__title">Здоровье парка</span>
         <span class="home-fleet__total">Всего — ${fleet.length}</span>
       </div>
-      <div class="home-fleet__grid">
-        <div class="home-fleet__tile" data-filter="${CAR_STATUSES.RENT}">
-          <span class="home-fleet__dot" style="background:var(--color-green)"></span>
-          <span class="home-fleet__name">Аренда</span>
-          <span class="home-fleet__num" style="color:var(--color-green)">${fleetStats.rent}</span>
-        </div>
-        <div class="home-fleet__tile" data-filter="${CAR_STATUSES.IDLE}">
-          <span class="home-fleet__dot" style="background:var(--color-orange)"></span>
-          <span class="home-fleet__name">Простой</span>
-          <span class="home-fleet__num" style="color:var(--color-orange)">${fleetStats.idle}</span>
-        </div>
-        <div class="home-fleet__tile" data-filter="${CAR_STATUSES.REPAIR}">
-          <span class="home-fleet__dot" style="background:var(--color-red)"></span>
-          <span class="home-fleet__name">Ремонт</span>
-          <span class="home-fleet__num" style="color:var(--color-red)">${fleetStats.repair}</span>
-        </div>
+      <div class="home-fleet__legend">
+        <button type="button" class="home-fleet__legend-item" data-filter="${CAR_STATUSES.RENT}" aria-label="Аренда, ${fleetStats.rent}">
+          <span class="home-fleet__legend-dot" style="background:***REMOVED***4CAF50"></span>
+          <span>Аренда ${fleetStats.rent}</span>
+        </button>
+        <button type="button" class="home-fleet__legend-item" data-filter="${CAR_STATUSES.IDLE}" aria-label="Простой, ${fleetStats.idle}">
+          <span class="home-fleet__legend-dot" style="background:***REMOVED***FFC107"></span>
+          <span>Простой ${fleetStats.idle}</span>
+        </button>
+        <button type="button" class="home-fleet__legend-item" data-filter="${CAR_STATUSES.REPAIR}" aria-label="Ремонт, ${fleetStats.repair}">
+          <span class="home-fleet__legend-dot" style="background:***REMOVED***F44336"></span>
+          <span>Ремонт ${fleetStats.repair}</span>
+        </button>
+      </div>
+      <div class="home-fleet__bar" role="group" aria-label="Распределение парка по статусам">
+        ${_fleetBarSegmentsHTML(fleetStats)}
       </div>
     </div>
 
@@ -159,8 +162,7 @@ export async function renderHome() {
   });
 
   document.getElementById('home-btn-expense')?.addEventListener('click', () => {
-    document.dispatchEvent(new CustomEvent('add:prefill', { detail: { type: 'РАСХОД' } }));
-    showScreen('screen-add');
+    showScreen('screen-add', { addType: 'РАСХОД' });
   });
 
   document.getElementById('home-ops-all')?.addEventListener('click', () => {
@@ -168,11 +170,15 @@ export async function renderHome() {
     document.dispatchEvent(new CustomEvent('screen:activated', { detail: { screenId: 'screen-history' } }));
   });
 
-  body.querySelectorAll('.home-fleet__tile').forEach(tile => {
-    tile.addEventListener('click', () => {
-      document.dispatchEvent(new CustomEvent('fleet:filter', { detail: { status: tile.dataset.filter } }));
-      showScreen('screen-fleet');
-      document.dispatchEvent(new CustomEvent('screen:activated', { detail: { screenId: 'screen-fleet' } }));
+  const _goFleetFilter = (status) => {
+    document.dispatchEvent(new CustomEvent('fleet:filter', { detail: { status } }));
+    showScreen('screen-fleet');
+  };
+
+  body.querySelectorAll('.home-fleet__legend-item, .home-fleet__bar-seg').forEach(el => {
+    el.addEventListener('click', () => {
+      const st = el.dataset.filter;
+      if (st) _goFleetFilter(st);
     });
   });
 
@@ -332,14 +338,48 @@ function _calcDelta(ops) {
     }, 0);
 }
 
+/** Как в fleet.js — для строк статуса с отличиями в регистре/формулировке */
+function _fleetStatusBucket(raw) {
+  const s = String(raw || '').toLowerCase().trim();
+  if (s.includes('аренд')) return 'rent';
+  if (s.includes('ремонт')) return 'repair';
+  if (s.includes('прост')) return 'idle';
+  return 'idle';
+}
+
 function _calcFleet(fleet) {
   const r = { rent: 0, idle: 0, repair: 0 };
   fleet.forEach(c => {
-    if (c.status === CAR_STATUSES.RENT)   r.rent++;
-    if (c.status === CAR_STATUSES.IDLE)   r.idle++;
-    if (c.status === CAR_STATUSES.REPAIR) r.repair++;
+    const st = String(c.status || '').trim();
+    if (st === CAR_STATUSES.RENT) r.rent++;
+    else if (st === CAR_STATUSES.IDLE) r.idle++;
+    else if (st === CAR_STATUSES.REPAIR) r.repair++;
+    else {
+      const b = _fleetStatusBucket(c.status);
+      if (b === 'rent') r.rent++;
+      else if (b === 'repair') r.repair++;
+      else r.idle++;
+    }
   });
   return r;
+}
+
+/** Сегменты прогресс-бара парка (flex-пропорции, min 8% для тапа) */
+function _fleetBarSegmentsHTML(stats) {
+  const rows = [
+    { status: CAR_STATUSES.RENT, color: '***REMOVED***4CAF50', n: stats.rent },
+    { status: CAR_STATUSES.IDLE, color: '***REMOVED***FFC107', n: stats.idle },
+    { status: CAR_STATUSES.REPAIR, color: '***REMOVED***F44336', n: stats.repair },
+  ];
+  return rows
+    .filter(row => row.n > 0)
+    .map(row => `
+      <button type="button" class="home-fleet__bar-seg"
+        data-filter="${row.status}"
+        style="flex:${row.n} 1 0;min-width:8%;background:${row.color}"
+        aria-label="${row.n} маш."></button>
+    `)
+    .join('');
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
