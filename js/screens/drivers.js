@@ -333,7 +333,7 @@ async function _saveDriver(existing, fleet, drivers) {
       phone,
       vu: '',
       car_id: '',
-      status: existing?.status ?? 'активен',
+      status: existing?.status ?? 'активный',
       comment: note,
     });
 

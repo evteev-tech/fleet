@@ -309,9 +309,9 @@ async function _openCarSheet(car) {
     ? `
     <div class="fleet-bs-section-label">Водитель</div>
     <div class="fleet-bs-driver">
-      <div class="fleet-bs-avatar">${escapeHtml(_initials(assigned.fio))}</div>
+      <div class="fleet-bs-avatar">${escapeHtml(_initials(assigned.name))}</div>
       <div>
-        <div class="fleet-bs-driver-name">${escapeHtml(assigned.fio)}</div>
+        <div class="fleet-bs-driver-name">${escapeHtml(assigned.name)}</div>
         <div class="fleet-bs-driver-phone">${assigned.phone ? escapeHtml(String(assigned.phone)) : 'нет телефона'}</div>
       </div>
     </div>`
@@ -406,9 +406,9 @@ async function _openDriverSelectSheet(car) {
     <div class="fleet-driver-list" id="fleet-driver-list">
       ${active.map(d => `
         <div class="fleet-driver-item" data-driver-id="${escapeAttr(d.driverId)}">
-          <div class="fleet-driver-avatar">${escapeHtml(_initials(d.fio))}</div>
+          <div class="fleet-driver-avatar">${escapeHtml(_initials(d.name))}</div>
           <div class="fleet-driver-info">
-            <div class="fleet-driver-name">${escapeHtml(d.fio)}</div>
+            <div class="fleet-driver-name">${escapeHtml(d.name)}</div>
             <div class="fleet-driver-car">${d.currentCar ? escapeHtml(d.currentCar) : 'без машины'}</div>
           </div>
           <div class="fleet-driver-check hidden">✓</div>
