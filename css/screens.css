@@ -2683,6 +2683,15 @@
 
 ***REMOVED***screen-analytics.screen--active {
   overflow: hidden;
+  min-height: 100dvh;
+  /**
+   * Высота фиксированного подвала (.analytics-bottom-bar):
+   * padding-top + ряд точек + navbar + нижний padding (включая safe-area).
+   * Должна совпадать по смыслу с реальной высотой панели — см. блок .analytics-bottom-bar.
+   */
+  --analytics-fixed-footer-h: calc(
+    8px + 26px + (var(--navbar-height) - 8px) + 6px + var(--safe-bottom)
+  );
 }
 
 .analytics-root {
@@ -2789,7 +2798,8 @@
   overflow-y: auto;
   overflow-x: hidden;
   scroll-snap-align: start;
-  padding: 12px 12px 16px;
+  /* нижний отступ под фиксированный подвал (вариант A) */
+  padding: 12px 12px calc(16px + var(--analytics-fixed-footer-h, 96px));
   scrollbar-width: none;
 }
 
@@ -2806,7 +2816,12 @@
 }
 
 .analytics-bottom-bar {
-  flex-shrink: 0;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 90;
+  box-sizing: border-box;
   background: ***REMOVED***111;
   padding-bottom: calc(var(--safe-bottom) + 6px);
   padding-top: 8px;
