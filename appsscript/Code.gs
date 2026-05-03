@@ -35,39 +35,20 @@ const SHEET = {
 // Утилиты ответа
 // -----------------------------------------------------------------------------
 
-/**
- * Отдаёт JSON-тело для веб-хука.
- * @param {object} payload
- */
 function jsonOut(payload) {
   return ContentService
     .createTextOutput(JSON.stringify(payload))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-/**
- * Успешный ответ.
- * @param {object} data
- */
 function ok(data) {
   return jsonOut({ status: 'ok', ...data });
 }
 
-/**
- * Ошибка без throw — doPost всегда возвращает JSON.
- * @param {string} message
- */
 function err(message) {
   return jsonOut({ error: true, status: 'error', message: String(message || 'UNKNOWN_ERROR') });
 }
 
-/**
- * Запись строки в лист Лог_ошибок.
- * @param {GoogleAppsScript.Spreadsheet.Spreadsheet} ss
- * @param {string} action
- * @param {string} code
- * @param {string} reason
- */
 function logFailure(ss, action, code, reason) {
   try {
     const sheet = ss.getSheetByName(SHEET.FAIL_LOG);
@@ -76,31 +57,74 @@ function logFailure(ss, action, code, reason) {
   } catch (_) {}
 }
 
+// -----------------------------------------------------------------------------
+// Утилиты дат
+// -----------------------------------------------------------------------------
+
 /**
- * Разбор POST: JSON в теле или в form поле data (URLSearchParams с ключом data).
+ * Форматирует дату в строку DD.MM.YYYY для записи в таблицу.
+ * @param {Date} date
+ * @returns {string}
  */
+function formatDate(date) {
+  if (!date || !(date instanceof Date)) return '';
+  var d = String(date.getDate()).padStart(2, '0');
+  var m = String(date.getMonth() + 1).padStart(2, '0');
+  var y = date.getFullYear();
+  return d + '.' + m + '.' + y;
+}
+
+/**
+ * Конвертирует строку DD.MM.YYYY в Excel serial number.
+ * @param {string} ddmmyyyy
+ * @returns {number}
+ */
+function dateToExcelSerial(ddmmyyyy) {
+  var parts = String(ddmmyyyy).split('.');
+  if (parts.length !== 3) return 0;
+  var jsDate = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+  return Math.round((jsDate.getTime() / 86400000) + 25569);
+}
+
+/**
+ * Унифицированный разбор даты из ячейки (Date / число Excel / DD.MM.YYYY / ISO-строка).
+ */
+function parseDate(val) {
+  if (!val && val !== 0) return null;
+  if (val instanceof Date) return val;
+  if (typeof val === 'number') {
+    return new Date((val - 25569) * 86400 * 1000);
+  }
+  var str = String(val).trim();
+  if (!str) return null;
+  if (/^\d{2}\.\d{2}\.\d{4}$/.test(str)) {
+    var parts = str.split('.');
+    return new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+  }
+  var f = new Date(str);
+  return isNaN(f.getTime()) ? null : f;
+}
+
+// -----------------------------------------------------------------------------
+// Прочие утилиты
+// -----------------------------------------------------------------------------
+
 function parseRequestBody_(e) {
   if (!e) return {};
   if (e.parameter && e.parameter.data) {
-    try {
-      return JSON.parse(e.parameter.data);
-    } catch (_) {}
+    try { return JSON.parse(e.parameter.data); } catch (_) {}
   }
   if (!e.postData || !e.postData.contents) return {};
   var c = String(e.postData.contents).trim();
   if (c.charAt(0) === '{') {
-    try {
-      return JSON.parse(c);
-    } catch (_) {}
+    try { return JSON.parse(c); } catch (_) {}
   }
   var pairs = c.split('&');
   for (var i = 0; i < pairs.length; i++) {
     var kv = pairs[i].split('=');
     if (kv.length < 2) continue;
     if (decodeURIComponent(kv[0]) === 'data') {
-      try {
-        return JSON.parse(decodeURIComponent(kv[1].replace(/\+/g, ' ')));
-      } catch (_) {}
+      try { return JSON.parse(decodeURIComponent(kv[1].replace(/\+/g, ' '))); } catch (_) {}
     }
   }
   return {};
@@ -113,8 +137,27 @@ function cellNum_(v) {
 }
 
 /**
- * Отладка листа «Аренда»: последние 10 строк (сырые даты и типы).
+ * Следующий порядковый ID вида PREFIX + трёхзначный номер.
+ * Смотрит колонку A, берёт максимальный числовой суффикс.
  */
+function getNextId(sheet, prefix) {
+  var data = sheet.getDataRange().getValues();
+  var max = 0;
+  for (var i = 1; i < data.length; i++) {
+    var cell = String(data[i][0] || '');
+    if (cell.startsWith(prefix)) {
+      var num = parseInt(cell.slice(prefix.length), 10);
+      if (!isNaN(num) && num > max) max = num;
+    }
+  }
+  var next = max + 1;
+  return prefix + String(next).padStart(4, '0');
+}
+
+// -----------------------------------------------------------------------------
+// Отладка
+// -----------------------------------------------------------------------------
+
 function handleDebugRental(ss) {
   const sheet = ss.getSheetByName('\u0410\u0440\u0435\u043d\u0434\u0430');
   if (!sheet) {
@@ -144,14 +187,12 @@ function handleDebugRental(ss) {
 // -----------------------------------------------------------------------------
 
 function doPost(e) {
-  /** Одна книга на запрос: только SpreadsheetApp.openById(SS_ID), не getActiveSpreadsheet(). */
   let SS = null;
   try {
     SS = SpreadsheetApp.openById(SS_ID);
     const body = parseRequestBody_(e);
     const action = body.action || 'ADD_OPERATION';
 
-    // Отладка: список имён листов
     if (action === 'DEBUG_SHEETS') {
       const names = SS.getSheets().map(function (s) { return s.getName(); });
       return ContentService
@@ -159,9 +200,8 @@ function doPost(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
 
-    if (action === 'DEBUG_RENTAL') {
-      return handleDebugRental(SS);
-    }
+    if (action === 'DEBUG_RENTAL') return handleDebugRental(SS);
+    if (action === 'DEBUG_DRIVERS') return handleDebugDrivers(SS);
 
     switch (action) {
       case 'ADD_OPERATION':     return handleAddOperation(SS, body);
@@ -192,10 +232,6 @@ function doPost(e) {
 // ADD_OPERATION
 // -----------------------------------------------------------------------------
 
-/**
- * Поля: date, kassa_id, direction (приход/расход/перевод),
- *       amount, type, category, car_id, driver_id, comment, provel
- */
 function handleAddOperation(ss, body) {
   const {
     date, kassa_id, direction, amount,
@@ -216,7 +252,6 @@ function handleAddOperation(ss, body) {
 
   const op_id = getNextId(sheet, 'CO');
 
-  // Класс для сводки (согласовано с add.js: type = категория)
   let klass_itog;
   const typeLower = String(type).toLowerCase();
   const dirStr = String(direction || '');
@@ -232,11 +267,8 @@ function handleAddOperation(ss, body) {
     klass_itog = 'revenue';
   }
 
-  // Итог: class_override или авто-класс
   const finalClass = class_override || klass_itog;
 
-  // A  B      C         D          E       F     G         H       I          J        K       L               M
-  // id дата  kassa_id  направление сумма  тип   категория car_id  driver_id  комм.   провёл  class_override  class_final
   sheet.appendRow([
     op_id, date, kassa_id, direction, Number(amount),
     type, category, car_id, driver_id, comment, provel,
@@ -250,13 +282,9 @@ function handleAddOperation(ss, body) {
 // UPDATE_CAR_STATUS
 // -----------------------------------------------------------------------------
 
-/**
- * Поля: car_id, new_status
- * Ожидаемые статусы: 'в аренде' | 'в ремонте' | 'простой'
- */
 function handleUpdateCarStatus(ss, body) {
   const { car_id, new_status } = body;
-  if (!car_id)    return err('MISSING_FIELD: car_id');
+  if (!car_id)     return err('MISSING_FIELD: car_id');
   if (!new_status) return err('MISSING_FIELD: new_status');
 
   const sheet = ss.getSheetByName(SHEET.CARS);
@@ -265,17 +293,15 @@ function handleUpdateCarStatus(ss, body) {
     return err('SHEET_NOT_FOUND');
   }
 
-  const data    = sheet.getDataRange().getValues();
-  const rowIdx  = data.findIndex((row, i) => i > 0 && String(row[0]) === String(car_id));
+  const data   = sheet.getDataRange().getValues();
+  const rowIdx = data.findIndex((row, i) => i > 0 && String(row[0]) === String(car_id));
 
   if (rowIdx === -1) {
     logFailure(ss, 'UPDATE_CAR_STATUS', 'CAR_NOT_FOUND', car_id);
     return err('CAR_NOT_FOUND');
   }
 
-  // Колонка D (индекс 4) — статус
   sheet.getRange(rowIdx + 1, 4).setValue(new_status);
-
   return ok({ car_id, new_status });
 }
 
@@ -283,14 +309,10 @@ function handleUpdateCarStatus(ss, body) {
 // SAVE_DRIVER
 // -----------------------------------------------------------------------------
 
-/**
- * Поля: driver_id (пусто = создать), fio, phone,
- *       vu, car_id, status, comment
- */
 function handleSaveDriver(ss, body) {
   const {
     driver_id = '', fio = '', phone = '',
-    vu = '', car_id = '', status = '\u0430\u043a\u0442\u0438\u0432\u0435\u043d', comment = '',
+    vu = '', car_id = '', status = '\u0430\u043a\u0442\u0438\u0432\u043d\u044b\u0439', comment = '',
   } = body;
 
   const sheet = ss.getSheetByName(SHEET.DRIVERS);
@@ -299,23 +321,15 @@ function handleSaveDriver(ss, body) {
     return err('SHEET_NOT_FOUND');
   }
 
-  // Новый водитель
   if (!driver_id) {
     const newId = getNextId(sheet, 'D');
-
-    // A         B    C      D   E       F(депозит)  G
-    // driver_id ФИО  телефон ВУ статус  0           комментарий
     sheet.appendRow([newId, fio, phone, vu, status, 0, comment]);
-
-    // Привязка машины — статус авто
     if (car_id) {
       handleUpdateCarStatus(ss, { car_id, new_status: '\u0432 \u0430\u0440\u0435\u043d\u0434\u0435' });
     }
-
     return ok({ driver_id: newId });
   }
 
-  // Обновление строки
   const data   = sheet.getDataRange().getValues();
   const rowIdx = data.findIndex((row, i) => i > 0 && String(row[0]) === String(driver_id));
 
@@ -325,10 +339,8 @@ function handleSaveDriver(ss, body) {
   }
 
   const sheetRow = rowIdx + 1;
-  // Колонки B–E и G (F — депозит, не трогаем здесь)
   sheet.getRange(sheetRow, 2, 1, 4).setValues([[fio, phone, vu, status]]);
   sheet.getRange(sheetRow, 7).setValue(comment);
-
   return ok({ driver_id });
 }
 
@@ -336,9 +348,6 @@ function handleSaveDriver(ss, body) {
 // ADD_DEPOSIT
 // -----------------------------------------------------------------------------
 
-/**
- * Поля: driver_id, car_id, amount, comment
- */
 function handleAddDeposit(ss, body) {
   const { driver_id, car_id = '', amount, comment = '' } = body;
 
@@ -351,15 +360,12 @@ function handleAddDeposit(ss, body) {
   if (!depSheet)    return err('SHEET_NOT_FOUND: ' + SHEET.DEPOSITS);
   if (!driverSheet) return err('SHEET_NOT_FOUND: ' + SHEET.DRIVERS);
 
-  const dep_op_id     = getNextId(depSheet, 'DP');
-  const status_src    = Number(amount) > 0 ? '\u043f\u0440\u0438\u0445\u043e\u0434' : '\u0440\u0430\u0441\u0445\u043e\u0434';
-  const today         = formatDate(new Date());
+  const dep_op_id  = getNextId(depSheet, 'DP');
+  const status_src = Number(amount) > 0 ? '\u043f\u0440\u0438\u0445\u043e\u0434' : '\u0440\u0430\u0441\u0445\u043e\u0434';
+  const today      = formatDate(new Date());
 
-  // A          B      C          D       E       F                 G
-  // dep_op_id  дата   driver_id  car_id  сумма   статус_исходный  комментарий
   depSheet.appendRow([dep_op_id, today, driver_id, car_id, Number(amount), status_src, comment]);
 
-  // Обновить депозит_текущий у водителя (колонка F, индекс 5)
   const driverData = driverSheet.getDataRange().getValues();
   const dRowIdx    = driverData.findIndex((row, i) => i > 0 && String(row[0]) === String(driver_id));
 
@@ -375,20 +381,16 @@ function handleAddDeposit(ss, body) {
 // ADD_RENTAL
 // -----------------------------------------------------------------------------
 
-/**
- * Поля: car_id, driver_id, date_start (DD.MM.YYYY),
- *       date_end (DD.MM.YYYY), rate_day, comment
- */
 function handleAddRental(ss, body) {
   const {
-    car_id, driver_id, date_start, date_end,
+    car_id, driver_id, date_start,
+    date_end = '',
     rate_day, comment = '',
   } = body;
 
   if (!car_id)     return err('MISSING_FIELD: car_id');
   if (!driver_id)  return err('MISSING_FIELD: driver_id');
   if (!date_start) return err('MISSING_FIELD: date_start');
-  if (!date_end)   return err('MISSING_FIELD: date_end');
   if (!rate_day && rate_day !== 0) return err('MISSING_FIELD: rate_day');
 
   const sheet = ss.getSheetByName(SHEET.RENTALS);
@@ -397,33 +399,25 @@ function handleAddRental(ss, body) {
     return err('SHEET_NOT_FOUND');
   }
 
-  const rental_id    = getNextId(sheet, 'R');
-  const serialStart  = dateToExcelSerial(date_start);
-  const serialEnd    = dateToExcelSerial(date_end);
+  const rental_id   = getNextId(sheet, 'R');
+  const serialStart = dateToExcelSerial(date_start);
+  const serialEnd     = date_end ? dateToExcelSerial(date_end) : '';
 
-  // A          B       C          D             E             F            G
-  // rental_id  car_id  driver_id  дата_начала   дата_окончания ставка_день комментарий
   sheet.appendRow([rental_id, car_id, driver_id, serialStart, serialEnd, Number(rate_day), comment]);
 
-  // Формат дат в колонках D и E
   const newRow = sheet.getLastRow();
   sheet.getRange(newRow, 4).setNumberFormat('DD.MM.YYYY');
-  sheet.getRange(newRow, 5).setNumberFormat('DD.MM.YYYY');
-
-  // Машина в аренде
-  handleUpdateCarStatus(ss, { car_id, new_status: '\u0432 \u0430\u0440\u0435\u043d\u0434\u0435' });
+  if (serialEnd) {
+    sheet.getRange(newRow, 5).setNumberFormat('DD.MM.YYYY');
+  }
 
   return ok({ rental_id });
 }
 
 // -----------------------------------------------------------------------------
-// Дашборд (лист «Дашборд») — GET_DASHBOARD, UPDATE_PERIOD
+// GET_DASHBOARD / UPDATE_PERIOD
 // -----------------------------------------------------------------------------
 
-/**
- * Читает период из ячеек B2:B3 и блоки данных для экрана аналитики.
- * Opens SS_ID and sheet by name locally (no global SHEET.* for this path).
- */
 function handleGetDashboard(ss) {
   const sheet = ss.getSheetByName('\u0414\u0430\u0448\u0431\u043e\u0440\u0434');
   if (!sheet) {
@@ -431,18 +425,18 @@ function handleGetDashboard(ss) {
     return err('SHEET_NOT_FOUND');
   }
 
-  const year = Number(sheet.getRange('B2').getValue()) || new Date().getFullYear();
+  const year  = Number(sheet.getRange('B2').getValue()) || new Date().getFullYear();
   const month = Number(sheet.getRange('B3').getValue()) || (new Date().getMonth() + 1);
 
   const summaryLabels = ['\u0412\u044b\u0440\u0443\u0447\u043a\u0430', 'OPEX', 'CAPEX', '\u041f\u0440\u0438\u0431\u044b\u043b\u044c'];
-  const summaryKeys = ['revenue', 'opex', 'capex', 'profit'];
+  const summaryKeys   = ['revenue', 'opex', 'capex', 'profit'];
   const sumVals = sheet.getRange(10, 2, 13, 3).getValues();
   var summary = [];
   for (var si = 0; si < 4; si++) {
     summary.push({
-      key: summaryKeys[si],
-      label: summaryLabels[si],
-      current: cellNum_(sumVals[si][0]),
+      key:      summaryKeys[si],
+      label:    summaryLabels[si],
+      current:  cellNum_(sumVals[si][0]),
       previous: cellNum_(sumVals[si][1]),
     });
   }
@@ -452,15 +446,11 @@ function handleGetDashboard(ss) {
   for (var oi = 0; oi < opexRaw.length; oi++) {
     var name = String(opexRaw[oi][0] || '').trim();
     if (!name) continue;
-    var amt = cellNum_(opexRaw[oi][1]);
+    var amt      = cellNum_(opexRaw[oi][1]);
     var shareRaw = opexRaw[oi][2];
-    var share = cellNum_(shareRaw);
+    var share    = cellNum_(shareRaw);
     if (share !== null && share > 1) share = share / 100;
-    opex.push({
-      name: name,
-      amount: amt !== null ? amt : 0,
-      share: share !== null ? share : null,
-    });
+    opex.push({ name, amount: amt !== null ? amt : 0, share: share !== null ? share : null });
   }
 
   var pnlRaw = sheet.getRange(30, 1, 44, 4).getValues();
@@ -469,46 +459,33 @@ function handleGetDashboard(ss) {
     var carName = String(pnlRaw[pi][0] || '').trim();
     if (!carName) continue;
     pnl.push({
-      car: carName,
-      revenue: cellNum_(pnlRaw[pi][1]) !== null ? cellNum_(pnlRaw[pi][1]) : 0,
-      expense: cellNum_(pnlRaw[pi][2]) !== null ? cellNum_(pnlRaw[pi][2]) : 0,
-      profit: cellNum_(pnlRaw[pi][3]) !== null ? cellNum_(pnlRaw[pi][3]) : 0,
+      car:     carName,
+      revenue: cellNum_(pnlRaw[pi][1]) || 0,
+      expense: cellNum_(pnlRaw[pi][2]) || 0,
+      profit:  cellNum_(pnlRaw[pi][3]) || 0,
     });
   }
 
   var utilRaw = sheet.getRange(47, 1, 70, 2).getValues();
   var utilization = [];
   for (var ui = 0; ui < utilRaw.length; ui++) {
-    var carU = String(utilRaw[ui][0] || '').trim();
+    var carU   = String(utilRaw[ui][0] || '').trim();
     if (!carU) continue;
     var pctRaw = cellNum_(utilRaw[ui][1]);
-    var pct = pctRaw;
+    var pct    = pctRaw;
     if (pct !== null && pct >= 0 && pct <= 1) pct = pct * 100;
-    utilization.push({ car: carU, pct: pct });
+    utilization.push({ car: carU, pct });
   }
 
-  return ok({
-    dashboard: {
-      year: year,
-      month: month,
-      summary: summary,
-      opex: opex,
-      pnl: pnl,
-      utilization: utilization,
-    },
-  });
+  return ok({ dashboard: { year, month, summary, opex, pnl, utilization } });
 }
 
-/** Same payload as GET_DASHBOARD; use from Apps Script editor for smoke tests. */
 function getDashboardData() {
   return handleGetDashboard(SpreadsheetApp.openById(SS_ID));
 }
 
-/**
- * Записать год и месяц в B2:B3 на листе «Дашборд» (период для сводки).
- */
 function handleUpdatePeriod(ss, body) {
-  var year = Number(body.year);
+  var year  = Number(body.year);
   var month = Number(body.month);
   if (!year || month < 1 || month > 12) return err('INVALID_PERIOD');
 
@@ -520,15 +497,13 @@ function handleUpdatePeriod(ss, body) {
 
   sheet.getRange('B2').setValue(year);
   sheet.getRange('B3').setValue(month);
-
   return ok({});
 }
 
-/**
- * Все машины с листа «Машины» (строка 1 — заголовки).
- * Колонки A–J: car_id, название, цвет, статус, дата_покупки, цена_покупки,
- * ставка_день, примечание, пробег ПО, ТО по пробегу.
- */
+// -----------------------------------------------------------------------------
+// GET_FLEET
+// -----------------------------------------------------------------------------
+
 function handleGetFleet(ss) {
   const sheet = ss.getSheetByName('\u041c\u0430\u0448\u0438\u043d\u044b');
   if (!sheet) {
@@ -538,129 +513,123 @@ function handleGetFleet(ss) {
   var values = sheet.getDataRange().getValues();
   var fleet = [];
   for (var i = 1; i < values.length; i++) {
-    var row = values[i];
+    var row   = values[i];
     var carId = row[0];
     if (carId === '' || carId === null || carId === undefined) continue;
     fleet.push({
-      carId: String(carId).trim(),
-      name: row[1] != null ? String(row[1]) : '',
-      color: row[2] != null ? String(row[2]) : '',
-      status: row[3] != null ? String(row[3]).trim() : '',
-      dateBuy: row[4],
-      priceBuy: cellNum_(row[5]),
-      rateDay: cellNum_(row[6]),
-      note: row[7] != null ? String(row[7]) : '',
-      mileage: cellNum_(row[8]),
+      carId:     String(carId).trim(),
+      name:      row[1] != null ? String(row[1]) : '',
+      color:     row[2] != null ? String(row[2]) : '',
+      status:    row[3] != null ? String(row[3]).trim() : '',
+      dateBuy:   row[4],
+      priceBuy:  cellNum_(row[5]),
+      rateDay:   cellNum_(row[6]),
+      note:      row[7] != null ? String(row[7]) : '',
+      mileage:   cellNum_(row[8]),
       toMileage: cellNum_(row[9]),
     });
   }
-  return ok({ fleet: fleet });
+  return ok({ fleet });
 }
 
-/**
- * Унифицированный разбор даты из ячейки (Date / число Excel / DD.MM.YYYY / ISO-строка).
- */
-function parseDate(val) {
-  if (!val && val !== 0) return null;
-  if (val instanceof Date) return val;
-  if (typeof val === 'number') {
-    return new Date((val - 25569) * 86400 * 1000);
-  }
-  var str = String(val).trim();
-  if (!str) return null;
-  if (/^\d{2}\.\d{2}\.\d{4}$/.test(str)) {
-    var parts = str.split('.');
-    var d = parts[0];
-    var m = parts[1];
-    var y = parts[2];
-    return new Date(Number(y), Number(m) - 1, Number(d));
-  }
-  var f = new Date(str);
-  return isNaN(f.getTime()) ? null : f;
-}
+// -----------------------------------------------------------------------------
+// GET_DRIVERS
+// -----------------------------------------------------------------------------
 
-/**
- * GET_DRIVERS — листы «Водители» + «Аренда», активная аренда → currentCar (car_id).
- */
 function handleGetDrivers(ss) {
-  var dSheet = ss.getSheetByName('\u0412\u043e\u0434\u0438\u0442\u0435\u043b\u0438');
-  var rSheet = ss.getSheetByName('\u0410\u0440\u0435\u043d\u0434\u0430');
-  if (!dSheet || !rSheet) {
-    logFailure(ss, 'GET_DRIVERS', 'SHEET_NOT_FOUND', !dSheet ? '\u0412\u043e\u0434\u0438\u0442\u0435\u043b\u0438' : '\u0410\u0440\u0435\u043d\u0434\u0430');
+  var dSheet = ss.getSheetByName(SHEET.DRIVERS);
+  var rSheet = ss.getSheetByName(SHEET.RENTALS);
+  var cSheet = ss.getSheetByName(SHEET.CARS);
+
+  if (!dSheet || !rSheet || !cSheet) {
+    logFailure(ss, 'GET_DRIVERS', 'SHEET_NOT_FOUND', 'DRIVERS/RENTALS/CARS');
     return err('SHEET_NOT_FOUND');
   }
-  var dVals = dSheet.getDataRange().getValues();
-  var rVals = rSheet.getDataRange().getValues();
-  var today = new Date();
-  today.setHours(0, 0, 0, 0);
 
-  var rentalsByDriver = {};
-  var ri;
-  for (ri = 1; ri < rVals.length; ri++) {
-    var rw = rVals[ri];
-    var did = String(rw[2] || '').trim();
-    if (!did) continue;
-    if (!rentalsByDriver[did]) rentalsByDriver[did] = [];
-    rentalsByDriver[did].push({
-      carId: String(rw[1] || '').trim(),
-      dateStart: parseDate(rw[3]),
-      dateEndRaw: rw[4],
-      dateEndParsed: parseDate(rw[4]),
-    });
-  }
+  var statusRent = '\u0432 \u0430\u0440\u0435\u043d\u0434\u0435';
 
-  function currentCarForDriver_(driverId) {
-    var list = rentalsByDriver[driverId] || [];
-    var bestCar = null;
-    var bestStartTs = -1;
-    for (var j = 0; j < list.length; j++) {
-      var r = list[j];
-      var rawEnd = r.dateEndRaw;
-      var dateEndEmpty = rawEnd === '' || rawEnd === null || rawEnd === undefined;
-      var active = false;
-      if (dateEndEmpty) {
-        active = true;
-      } else {
-        var pe = r.dateEndParsed;
-        if (pe && pe.getTime() >= today.getTime()) active = true;
-      }
-      if (!active) continue;
-      var st = r.dateStart ? r.dateStart.getTime() : 0;
-      if (st > bestStartTs) {
-        bestStartTs = st;
-        bestCar = r.carId ? String(r.carId) : null;
-      }
+  var cVals = cSheet.getDataRange().getValues();
+  var rentedCars = {};
+  for (var ci = 1; ci < cVals.length; ci++) {
+    var carStatus = String(cVals[ci][3] || '').trim();
+    var carId = String(cVals[ci][0] || '').trim();
+    if (carId && carStatus === statusRent) {
+      rentedCars[carId] = true;
     }
-    return bestCar;
   }
 
+  var rVals = rSheet.getDataRange().getValues();
+  var carToDriver = {};
+
+  for (var ri = 1; ri < rVals.length; ri++) {
+    var rw = rVals[ri];
+    var rCarId = String(rw[1] || '').trim();
+    var rDriverId = String(rw[2] || '').trim();
+
+    if (!rentedCars[rCarId]) continue;
+    if (!rDriverId) continue;
+
+    var rDateStart = parseDate(rw[3]);
+    var rTs = rDateStart ? rDateStart.getTime() : 0;
+
+    if (!carToDriver[rCarId] || rTs > carToDriver[rCarId].ts) {
+      carToDriver[rCarId] = { driverId: rDriverId, ts: rTs };
+    }
+  }
+
+  var driverToCar = {};
+  for (var cid in carToDriver) {
+    if (!carToDriver.hasOwnProperty(cid)) continue;
+    var did = carToDriver[cid].driverId;
+    driverToCar[did] = cid;
+  }
+
+  var dVals = dSheet.getDataRange().getValues();
   var out = [];
+
   for (var di = 1; di < dVals.length; di++) {
     var row = dVals[di];
     var driverId = String(row[0] || '').trim();
     if (!driverId) continue;
+
     var depNum = cellNum_(row[5]);
     out.push({
-      driverId: driverId,
-      name: row[1] != null ? String(row[1]) : '',
-      phone: row[2] != null ? String(row[2]) : '',
-      license: row[3] != null ? String(row[3]) : '',
-      status: row[4] != null ? String(row[4]).trim() : '',
-      deposit: depNum !== null && depNum !== undefined ? depNum : 0,
-      note: row[6] != null ? String(row[6]) : '',
-      currentCar: currentCarForDriver_(driverId),
+      driverId:   driverId,
+      name:       row[1] != null ? String(row[1]) : '',
+      phone:      row[2] != null ? String(row[2]) : '',
+      license:    row[3] != null ? String(row[3]) : '',
+      status:     row[4] != null ? String(row[4]).trim() : '',
+      deposit:    depNum !== null ? depNum : 0,
+      note:       row[6] != null ? String(row[6]) : '',
+      currentCar: driverToCar[driverId] || null,
     });
   }
+
   return ok({ drivers: out });
 }
 
+function handleDebugDrivers(ss) {
+  var dSheet = ss.getSheetByName('\u0412\u043e\u0434\u0438\u0442\u0435\u043b\u0438');
+  if (!dSheet) return err('SHEET_NOT_FOUND');
+  var rows = dSheet.getDataRange().getValues();
+  var result = rows.slice(1, 6).map(function(row) {
+    return {
+      driverId:     row[0],
+      status_raw:   row[4],
+      status_type:  typeof row[4],
+      status_length: String(row[4]).length,
+      status_charCodes: Array.from(String(row[4])).map(function(c) { return c.charCodeAt(0); }),
+    };
+  });
+  return ContentService
+    .createTextOutput(JSON.stringify({ rows: result }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
 // -----------------------------------------------------------------------------
-// GET_INCOME_FORM — MAX(дата_окончания) по «Аренда» для машин «в аренде»
+// GET_INCOME_FORM
 // -----------------------------------------------------------------------------
 
-/**
- * Для каждой машины со статусом «в аренде» — максимальная дата_окончания из листа «Аренда».
- */
 function handleGetIncomeForm(ss) {
   var carsSheet = ss.getSheetByName(SHEET.CARS);
   var rentSheet = ss.getSheetByName(SHEET.RENTALS);
@@ -668,33 +637,36 @@ function handleGetIncomeForm(ss) {
     logFailure(ss, 'GET_INCOME_FORM', 'SHEET_NOT_FOUND', 'CARS/RENTALS');
     return err('SHEET_NOT_FOUND');
   }
+
   var statusRent = '\u0432 \u0430\u0440\u0435\u043d\u0434\u0435';
-  var cVals = carsSheet.getDataRange().getValues();
-  var rentedIds = {};
-  var ci;
-  for (ci = 1; ci < cVals.length; ci++) {
+  var cVals      = carsSheet.getDataRange().getValues();
+  var rentedIds  = {};
+
+  for (var ci = 1; ci < cVals.length; ci++) {
     var st = String(cVals[ci][3] != null ? cVals[ci][3] : '').trim();
     if (st === statusRent) {
       var id = String(cVals[ci][0] != null ? cVals[ci][0] : '').trim();
       if (id) rentedIds[id] = true;
     }
   }
-  var rVals = rentSheet.getDataRange().getValues();
+
+  var rVals  = rentSheet.getDataRange().getValues();
   var maxEnd = {};
-  var rj;
-  for (rj = 1; rj < rVals.length; rj++) {
+
+  for (var rj = 1; rj < rVals.length; rj++) {
     var carId = String(rVals[rj][1] != null ? rVals[rj][1] : '').trim();
     if (!carId || !rentedIds[carId]) continue;
     var endRaw = rVals[rj][4];
-    var endDt = parseDate(endRaw);
+    var endDt  = parseDate(endRaw);
     if (!endDt) continue;
     var ts = endDt.getTime();
     if (!maxEnd[carId] || ts > maxEnd[carId]) maxEnd[carId] = ts;
   }
+
   var out = [];
   for (var cid in rentedIds) {
     if (!rentedIds.hasOwnProperty(cid)) continue;
-    var ms = maxEnd[cid];
+    var ms      = maxEnd[cid];
     var lastStr = '';
     if (ms) {
       lastStr = Utilities.formatDate(new Date(ms), Session.getScriptTimeZone(), 'dd.MM.yyyy');
@@ -704,12 +676,15 @@ function handleGetIncomeForm(ss) {
   return ok({ incomeForm: out });
 }
 
+// -----------------------------------------------------------------------------
+// ADD_INCOME (атомарная запись: касса + аренда)
+// -----------------------------------------------------------------------------
+
 function deleteOperationRowByOpId_(ss, opId) {
   var sheet = ss.getSheetByName(SHEET.OPERATIONS);
   if (!sheet) return false;
   var data = sheet.getDataRange().getValues();
-  var ri;
-  for (ri = 1; ri < data.length; ri++) {
+  for (var ri = 1; ri < data.length; ri++) {
     if (String(data[ri][0]) === String(opId)) {
       sheet.deleteRow(ri + 1);
       return true;
@@ -722,47 +697,37 @@ function parseContentJson_(textOutput) {
   return JSON.parse(textOutput.getContent());
 }
 
-/**
- * Приход аренды: касса + строка аренды; при ошибке аренды — откат операции.
- */
 function handleAddIncome(ss, body) {
   var lock = LockService.getScriptLock();
-  try {
-    lock.waitLock(30000);
-  } catch (eLock) {
-    return err('LOCK_TIMEOUT');
-  }
+  try { lock.waitLock(30000); } catch (eLock) { return err('LOCK_TIMEOUT'); }
 
   try {
-    var car_id = body.car_id;
+    var car_id    = body.car_id;
     var driver_id = body.driver_id;
-    var amount = body.amount;
+    var amount    = body.amount;
     var date_from = body.date_from;
-    var date_to = body.date_to;
-    var rate = body.rate;
-    var comment = body.comment || '';
-    var kassa_id = body.kassa_id || 'K_AZAMAT';
-    var provel = body.provel || '\u0410\u0437\u0430\u043c\u0430\u0442';
+    var date_to   = body.date_to;
+    var rate      = body.rate;
+    var comment   = body.comment || '';
+    var kassa_id  = body.kassa_id || 'K_AZAMAT';
+    var provel    = body.provel   || '\u0410\u0437\u0430\u043c\u0430\u0442';
 
-    if (!car_id) return err('MISSING: car_id');
-    if (!driver_id) return err('MISSING: driver_id');
+    if (!car_id)                                          return err('MISSING: car_id');
+    if (!driver_id)                                       return err('MISSING: driver_id');
     if (amount === undefined || amount === null || amount === '') return err('MISSING: amount');
-    if (!date_from) return err('MISSING: date_from');
-    if (!date_to) return err('MISSING: date_to');
-
-    var dirPrihod = '\u043f\u0440\u0438\u0445\u043e\u0434';
-    var typeArenda = '\u0430\u0440\u0435\u043d\u0434\u0430';
+    if (!date_from)                                       return err('MISSING: date_from');
+    if (!date_to)                                         return err('MISSING: date_to');
 
     var opOut = handleAddOperation(ss, {
-      date: formatDate(new Date()),
-      kassa_id: String(kassa_id),
-      direction: dirPrihod,
-      amount: Number(amount),
-      type: typeArenda,
-      category: typeArenda,
-      car_id: car_id,
-      driver_id: driver_id,
-      comment: comment,
+      date:      formatDate(new Date()),
+      kassa_id:  String(kassa_id),
+      direction: '\u043f\u0440\u0438\u0445\u043e\u0434',
+      amount:    Number(amount),
+      type:      '\u0430\u0440\u0435\u043d\u0434\u0430',
+      category:  '\u0430\u0440\u0435\u043d\u0434\u0430',
+      car_id,
+      driver_id,
+      comment,
       provel: String(provel),
     });
 
@@ -773,12 +738,12 @@ function handleAddIncome(ss, body) {
     var op_id = opData.op_id;
 
     var rentalOut = handleAddRental(ss, {
-      car_id: car_id,
-      driver_id: driver_id,
+      car_id,
+      driver_id,
       date_start: date_from,
-      date_end: date_to,
-      rate_day: rate,
-      comment: comment,
+      date_end:   date_to,
+      rate_day:   rate,
+      comment,
     });
 
     var rentalData = parseContentJson_(rentalOut);
@@ -787,56 +752,28 @@ function handleAddIncome(ss, body) {
       return err('RENTAL_FAILED: ' + (rentalData.message || ''));
     }
 
-    return ok({
-      op_id: op_id,
-      rental_id: rentalData.rental_id,
-    });
+    return ok({ op_id, rental_id: rentalData.rental_id });
   } finally {
     lock.releaseLock();
   }
 }
 
 // -----------------------------------------------------------------------------
-// Локальные тесты (запуск из редактора Apps Script)
+// Локальные тесты
 // -----------------------------------------------------------------------------
 
 function testAll() {
   const ss = SpreadsheetApp.openById(SS_ID);
   Logger.log('=== testAll START ===');
 
-  // Тест ADD_OPERATION (тело без отправки)
-  Logger.log('--- ADD_OPERATION ---');
-  const fakePost = {
-    postData: {
-      contents: JSON.stringify({
-        action:     'ADD_OPERATION',
-        date:       formatDate(new Date()),
-        kassa_id:   'K_AZAMAT',
-        direction:  '\u043f\u0440\u0438\u0445\u043e\u0434',
-        amount:     5000,
-        type:       '\u0430\u0440\u0435\u043d\u0434\u0430',
-        category:   '\u0430\u0440\u0435\u043d\u0434\u0430',
-        car_id:     'TEST_CAR',
-        driver_id:  'TEST_DRIVER',
-        comment:    '\u0441\u043c\u043e\u043a testAll()',
-        provel:     'system',
-      })
-    }
-  };
-
-  // Dry-run: следующий ID без записи в таблицу
   const sheet  = ss.getSheetByName(SHEET.OPERATIONS);
   const nextId = getNextId(sheet, 'CO');
-  Logger.log('следующий op_id: ' + nextId);
-
-  // Тест formatDate
+  Logger.log('\u0441\u043b\u0435\u0434\u0443\u044e\u0449\u0438\u0439 op_id: ' + nextId);
   Logger.log('formatDate(new Date()): ' + formatDate(new Date()));
 
-  // Тест dateToExcelSerial
   const serial = dateToExcelSerial('02.05.2026');
-  Logger.log('dateToExcelSerial("02.05.2026"): ' + serial + ' (ожидаем ~45749)');
+  Logger.log('dateToExcelSerial("02.05.2026"): ' + serial + ' (\u043e\u0436\u0438\u0434\u0430\u0435\u043c ~45749)');
 
-  // Тест getNextId по основным листам
   const sheets = [
     { name: SHEET.OPERATIONS, prefix: 'CO' },
     { name: SHEET.DRIVERS,    prefix: 'D'  },
@@ -846,13 +783,11 @@ function testAll() {
   sheets.forEach(({ name, prefix }) => {
     const s = ss.getSheetByName(name);
     if (s) {
-      Logger.log(`getNextId("${name}", "${prefix}"): ` + getNextId(s, prefix));
+      Logger.log('getNextId("' + name + '", "' + prefix + '"): ' + getNextId(s, prefix));
     } else {
-      Logger.log(`пропуск: лист "${name}" не найден`);
+      Logger.log('\u043f\u0440\u043e\u043f\u0443\u0441\u043a: \u043b\u0438\u0441\u0442 "' + name + '" \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d');
     }
   });
 
   Logger.log('=== testAll END ===');
 }
-
-
