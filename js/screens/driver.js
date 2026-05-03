@@ -7,8 +7,9 @@
  */
 
 import { getDrivers, getFleet, getDeposits, postAction, invalidateCache } from '../api.js';
+import { SHEETS }                                                         from '../config.js';
 import { showScreen }                                                       from '../router.js?v=7';
-import { showToast }                                                        from '../ui.js';
+import { showBottomSheet, hideBottomSheet, showToast }                     from '../ui.js';
 import { openDriverForm }                                                   from './drivers.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -65,7 +66,7 @@ export async function renderDriver(driverId) {
     return;
   }
 
-  if (nameEl) nameEl.textContent = driver.fio || 'Водитель';
+  if (nameEl) nameEl.textContent = driver.name || 'Водитель';
 
   const car          = fleet.find(c => c.carId === driver.carId);
   const driverDeps   = deposits
@@ -77,8 +78,8 @@ export async function renderDriver(driverId) {
 
     <!-- Основные данные -->
     <div class="drv-profile-card">
-      <div class="drv-profile-avatar">${_initials(driver.fio)}</div>
-      <div class="drv-profile-name">${_esc(driver.fio)}</div>
+      <div class="drv-profile-avatar">${_initials(driver.name)}</div>
+      <div class="drv-profile-name">${_esc(driver.name)}</div>
 
       ${driver.phone ? `
         <a class="drv-profile-phone" href="tel:${_cleanPhone(driver.phone)}">
@@ -105,8 +106,17 @@ export async function renderDriver(driverId) {
     <!-- Депозит -->
     <div class="fleet-card" style="margin:0 0 12px">
       <div class="drv-deposit-row">
-        <span class="drv-deposit-label">Текущий депозит</span>
-        <span class="drv-deposit-amount">${_fmt(currentDeposit)}</span>
+        <div>
+          <div class="drv-deposit-label">Депозит</div>
+          <div class="drv-deposit-amount ${currentDeposit > 0 ? 'drv-deposit--pos' : currentDeposit < 0 ? 'drv-deposit--neg' : 'drv-deposit--zero'}">
+            ${_fmt(currentDeposit)}
+          </div>
+        </div>
+        ${currentDeposit > 0 ? `
+          <button type="button" class="drv-deposit-return-btn" id="driver-deposit-return">
+            Вернуть
+          </button>
+        ` : ''}
       </div>
 
       ${driverDeps.length ? `
@@ -131,6 +141,10 @@ export async function renderDriver(driverId) {
     </div>
   `;
 
+  document.getElementById('driver-deposit-return')?.addEventListener('click', () => {
+    _openReturnSheet(driver, currentDeposit);
+  });
+
   // Редактировать
   document.getElementById('driver-edit')?.addEventListener('click', async () => {
     let fl, drv;
@@ -150,7 +164,7 @@ export async function renderDriver(driverId) {
     try {
       await postAction('SAVE_DRIVER', {
         driver_id: driver.driverId,
-        fio:       driver.fio,
+        fio:       driver.name,
         phone:     driver.phone ?? '',
         vu:        '',
         car_id:    driver.carId ?? '',
@@ -210,4 +224,110 @@ function _parseDate(s)  {
   const [d, m, y] = String(s).split('.');
   if (y) return new Date(+y, +m - 1, +d).getTime();
   return new Date(s).getTime() || 0;
+}
+
+function _openReturnSheet(driver, currentDeposit) {
+  const driverName = driver.name || driver.fio || '—';
+
+  showBottomSheet(`
+    <div class="drv-return-sheet">
+      <div class="drv-return-title">Возврат депозита</div>
+      <div class="drv-return-sub">${_esc(driverName)} · остаток ${_fmt(currentDeposit)}</div>
+
+      <div class="drv-return-field">
+        <label class="drv-return-label">Сумма возврата, ₽</label>
+        <input
+          id="drv-return-amount"
+          type="number"
+          inputmode="numeric"
+          class="drv-return-input"
+          placeholder="0"
+          min="1"
+          max="${currentDeposit}"
+        />
+        <div class="drv-return-remain hidden" id="drv-return-remain"></div>
+        <div class="drv-return-err hidden" id="drv-return-err"></div>
+      </div>
+
+      <div class="drv-return-field">
+        <label class="drv-return-label">Комментарий (необязательно)</label>
+        <input
+          id="drv-return-comment"
+          type="text"
+          class="drv-return-input"
+          placeholder="Причина возврата"
+        />
+      </div>
+
+      <button type="button" class="drv-return-submit" id="drv-return-submit" disabled>
+        Вернуть
+      </button>
+    </div>
+  `);
+
+  setTimeout(() => {
+    const amountInput = document.getElementById('drv-return-amount');
+    const remainEl    = document.getElementById('drv-return-remain');
+    const errEl       = document.getElementById('drv-return-err');
+    const submitBtn   = document.getElementById('drv-return-submit');
+
+    amountInput?.addEventListener('input', () => {
+      const val = parseFloat(amountInput.value) || 0;
+      errEl.classList.add('hidden');
+
+      if (val <= 0) {
+        remainEl.classList.add('hidden');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Вернуть';
+        return;
+      }
+
+      if (val > currentDeposit) {
+        errEl.textContent = `Максимум ${_fmt(currentDeposit)}`;
+        errEl.classList.remove('hidden');
+        remainEl.classList.add('hidden');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Вернуть';
+        return;
+      }
+
+      const remain = currentDeposit - val;
+      remainEl.textContent = `После возврата остаток: ${_fmt(remain)}`;
+      remainEl.classList.remove('hidden');
+      submitBtn.textContent = `Вернуть ${_fmt(val)}`;
+      submitBtn.disabled = false;
+    });
+
+    submitBtn?.addEventListener('click', async () => {
+      const val     = parseFloat(amountInput.value) || 0;
+      const comment = document.getElementById('drv-return-comment')?.value.trim() || '';
+
+      if (val <= 0 || val > currentDeposit) return;
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Сохраняем…';
+
+      try {
+        await postAction('ADD_DEPOSIT', {
+          driver_id: driver.driverId,
+          car_id:    driver.currentCar || driver.carId || '',
+          amount:    -Math.round(val),
+          comment:   comment || 'Возврат депозита',
+        });
+
+        invalidateCache(SHEETS.DRIVERS);
+        invalidateCache(SHEETS.DEPOSITS);
+
+        showToast(`Возврат ${_fmt(val)} записан ✓`, 'success');
+        hideBottomSheet(() => renderDriver(driver.driverId));
+      } catch (err) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = `Вернуть ${_fmt(val)}`;
+        showToast(
+          err.message === 'NO_CONNECTION' ? 'Нет соединения' : 'Ошибка записи',
+          'error',
+        );
+      }
+    });
+  }, 0);
 }

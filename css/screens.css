@@ -2384,19 +2384,96 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--space-sm) var(--space-md);
+  padding: 10px 0;
 }
+
 .drv-deposit-label {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--color-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: 11px;
+  color: ***REMOVED***aaa;
+  margin-bottom: 3px;
 }
+
 .drv-deposit-amount {
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 700;
-  color: var(--color-dark);
+}
+
+.drv-deposit--pos  { color: ***REMOVED***16a34a; }
+.drv-deposit--neg  { color: ***REMOVED***ef4444; }
+.drv-deposit--zero { color: ***REMOVED***aaa; }
+
+.drv-deposit-return-btn {
+  padding: 8px 16px;
+  background: ***REMOVED***111;
+  color: ***REMOVED***fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Шит возврата депозита */
+.drv-return-sheet { padding: 4px 0; }
+.drv-return-title { font-size: 16px; font-weight: 700; color: ***REMOVED***111; margin-bottom: 4px; }
+.drv-return-sub   { font-size: 12px; color: ***REMOVED***aaa; margin-bottom: 16px; }
+
+.drv-return-field { margin-bottom: 12px; }
+.drv-return-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: ***REMOVED***aaa;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.drv-return-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid ***REMOVED***e0e0e0;
+  border-radius: 10px;
+  font-size: 15px;
+  color: ***REMOVED***111;
+  background: ***REMOVED***f9f9f9;
+  outline: none;
+}
+
+.drv-return-input:focus {
+  border-color: ***REMOVED***111;
+  background: ***REMOVED***fff;
+}
+
+.drv-return-remain {
+  font-size: 12px;
+  color: ***REMOVED***16a34a;
+  margin-top: 6px;
+}
+
+.drv-return-err {
+  font-size: 12px;
+  color: ***REMOVED***ef4444;
+  margin-top: 6px;
+}
+
+.drv-return-submit {
+  width: 100%;
+  padding: 15px;
+  background: ***REMOVED***FFDD2D;
+  color: ***REMOVED***111;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.drv-return-submit:disabled {
+  background: ***REMOVED***f0f0f0;
+  color: ***REMOVED***bbb;
+  cursor: default;
 }
 
 /* История депозитов */
