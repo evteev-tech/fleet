@@ -705,6 +705,9 @@
 .home-action-wrap {
   padding: 16px;
   background: ***REMOVED***1A1A1A;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .home-action-wrap .home-action {
@@ -738,6 +741,16 @@
 
 .home-action--income .home-action__arrow,
 .home-action--income .home-action__label {
+  color: ***REMOVED***1A1A1A;
+}
+
+.home-action--expense-main {
+  background: ***REMOVED***FFFFFF;
+  border: 1px solid ***REMOVED***e0e0e0;
+}
+
+.home-action--expense-main .home-action__arrow,
+.home-action--expense-main .home-action__label {
   color: ***REMOVED***1A1A1A;
 }
 

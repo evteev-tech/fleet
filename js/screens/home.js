@@ -95,11 +95,15 @@ export async function renderHome() {
       <div class="home-hdr__delta ${deltaClass}">${deltaText}</div>
     </div>
 
-    <!-- Блок 2 — одна кнопка -->
+    <!-- Блок 2 — действия -->
     <div class="home-action-wrap">
       <button type="button" class="home-action home-action--income" id="home-btn-income">
         <span class="home-action__arrow">↓</span>
         <span class="home-action__label">Принять платёж</span>
+      </button>
+      <button type="button" class="home-action home-action--expense-main" id="home-btn-expense-main">
+        <span class="home-action__arrow">↑</span>
+        <span class="home-action__label">Расход</span>
       </button>
     </div>
 
@@ -158,8 +162,12 @@ export async function renderHome() {
     showScreen('screen-income');
   });
 
+  document.getElementById('home-btn-expense-main')?.addEventListener('click', () => {
+    showScreen('screen-expense');
+  });
+
   document.getElementById('home-ops-expense')?.addEventListener('click', () => {
-    showScreen('screen-add', { addType: 'РАСХОД' });
+    showScreen('screen-expense');
   });
 
   const _goFleetFilter = (status) => {
@@ -268,6 +276,7 @@ function _skeletonHTML() {
       ${skel(45)}
     </div>
     <div class="home-action-wrap" style="pointer-events:none">
+      <div class="skeleton" style="height:56px;border-radius:14px"></div>
       <div class="skeleton" style="height:56px;border-radius:14px"></div>
     </div>
     <div class="skeleton" style="height:140px;border-radius:12px;margin:16px"></div>

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * app.js — точка входа.
  * Инициализирует авторизацию и все экраны приложения.
  */
@@ -19,6 +19,7 @@ import { initDriver }    from './screens/driver.js';
 import { initSettings }  from './screens/settings.js';
 import { initAnalytics } from './screens/analytics.js';
 import { initIncome } from './screens/income.js';
+import { initExpense } from './screens/expense.js';
 
 // ─── Старт ────────────────────────────────────────────────────────────────────
 
@@ -27,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initHome();
   initDashboard();
   initIncome();
+  initExpense();
   initAdd();
   initHistory();
   initAnalytics();
