@@ -27,14 +27,6 @@ function isArchiveStatus(raw) {
   return String(raw || '').toLowerCase().includes('архив');
 }
 
-function activeCountLabel(n) {
-  const k = Math.abs(n) % 100;
-  const d = n % 10;
-  if (k > 10 && k < 20) return `${n} активных`;
-  if (d === 1) return `${n} активный`;
-  return `${n} активных`;
-}
-
 const nfRub = new Intl.NumberFormat('ru-RU');
 
 function formatPhoneRu(raw) {
@@ -96,8 +88,6 @@ export async function renderDrivers() {
 }
 
 function _paint(body, drivers, tabId) {
-  const activeN = drivers.filter(d => isActiveStatus(d.status)).length;
-
   const filtered = drivers.filter(c => {
     const tab = TABS.find(t => t.id === tabId) ?? TABS[0];
     return tab.match(c.status);
@@ -107,7 +97,7 @@ function _paint(body, drivers, tabId) {
     <div class="drivers-page">
       <header class="drivers-page__header">
         <h1 class="drivers-page__title">Водители</h1>
-        <span class="drivers-page__count">${activeCountLabel(activeN)}</span>
+        <button type="button" class="drivers-add-btn" id="drivers-add-btn">+ Добавить</button>
       </header>
 
       <div class="drivers-page__tabs">
@@ -143,6 +133,13 @@ function _paint(body, drivers, tabId) {
   });
 
   _bindRows(body, filtered);
+
+  document.getElementById('drivers-add-btn')?.addEventListener('click', async () => {
+    let fleet, drivers;
+    try { [fleet, drivers] = await Promise.all([getFleet(), getDrivers()]); }
+    catch { showToast('Ошибка загрузки', 'error'); return; }
+    openDriverForm(null, fleet, drivers);
+  });
 }
 
 function _listHTML(list, driversWasEmpty) {
