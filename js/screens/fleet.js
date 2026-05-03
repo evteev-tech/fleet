@@ -388,15 +388,16 @@ async function _openCarSheet(car) {
 
 async function _openDriverSelectSheet(car) {
   invalidateCache(SHEETS.DRIVERS);
-  let drivers = [];
+  let drivers;
   try {
     drivers = await getDrivers();
   } catch {
-    drivers = [];
+    showToast('Ошибка загрузки водителей', 'error');
+    return;
   }
 
   const active = drivers.filter(d =>
-    d.status === 'активный' || d.status === 'активен',
+    (d.status === 'активный' || d.status === 'активен') && !d.currentCar
   );
 
   showBottomSheet(`
