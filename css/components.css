@@ -376,7 +376,6 @@ select.field-input {
   height: 24px;
   display: block;
   margin: 0 auto 3px;
-  color: ***REMOVED***9e9e9e;
 }
 
 .nav-icon svg {
@@ -385,58 +384,60 @@ select.field-input {
   display: block;
 }
 
-.nav-icon svg path,
-.nav-icon svg rect,
-.nav-icon svg circle {
-  fill: ***REMOVED***9e9e9e;
-  transition: fill 0.2s ease, stroke 0.2s ease;
+/* Неактивная иконка — серая (не трогаем fill="none" — там stroke) */
+.nav-icon svg path:not([fill='none']):not([fill="none"]),
+.nav-icon svg rect:not([fill='none']):not([fill="none"]),
+.nav-icon svg circle:not([fill='none']):not([fill="none"]),
+.nav-icon svg polyline:not([fill='none']):not([fill="none"]),
+.nav-icon svg polygon:not([fill='none']):not([fill="none"]) {
+  fill: ***REMOVED***9E9E9E;
+  stroke: none;
+  transition: fill 0.15s ease;
 }
 
-.nav-icon--inline svg {
-  stroke: currentColor;
+.nav-icon svg line {
+  stroke: ***REMOVED***9E9E9E;
+  fill: none;
+  transition: stroke 0.15s ease;
 }
 
-.nav-icon svg path[fill='none'] {
+/* Если явно задан stroke */
+.nav-icon svg [stroke] {
+  stroke: ***REMOVED***9E9E9E;
   fill: none !important;
+  transition: stroke 0.15s ease;
 }
 
 .nav-label {
   font-size: 10px;
-  font-weight: 500;
-  color: ***REMOVED***8a8a8e;
+  color: ***REMOVED***9E9E9E;
+  transition: color 0.15s ease;
 }
 
 .nav-item__dot {
   display: none;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--color-yellow);
-  position: absolute;
-  bottom: 6px;
 }
 
-.nav-item.active .nav-label {
-  font-weight: 700;
-  color: ***REMOVED***1a1a1a;
+.nav-item.active .nav-icon svg path:not([fill='none']):not([fill="none"]),
+.nav-item.active .nav-icon svg rect:not([fill='none']):not([fill="none"]),
+.nav-item.active .nav-icon svg circle:not([fill='none']):not([fill="none"]),
+.nav-item.active .nav-icon svg polyline:not([fill='none']):not([fill="none"]),
+.nav-item.active .nav-icon svg polygon:not([fill='none']):not([fill="none"]) {
+  fill: ***REMOVED***FFDD2D;
 }
 
-.nav-item.active .nav-item__dot {
-  display: block;
+.nav-item.active .nav-icon svg line {
+  stroke: ***REMOVED***FFDD2D;
 }
 
-.nav-item.active .nav-icon svg path,
-.nav-item.active .nav-icon svg rect,
-.nav-item.active .nav-icon svg circle {
-  fill: ***REMOVED***ffdd2d;
-}
-
-.nav-item.active .nav-icon svg path[fill='none'] {
+.nav-item.active .nav-icon svg [stroke] {
+  stroke: ***REMOVED***FFDD2D;
   fill: none !important;
 }
 
-.nav-item.active .nav-icon {
-  color: ***REMOVED***ffdd2d;
+.nav-item.active .nav-label {
+  color: ***REMOVED***FFDD2D;
+  font-weight: 500;
 }
 
 /* ─────────────────────────────────────────────

@@ -10,7 +10,7 @@
 import { getOperations, getFleet } from '../api.js';
 import { getCurrentUser }          from '../auth.js';
 import { parseRuDate } from './history.js';
-import { showScreen }              from '../router.js?v=6';
+import { showScreen }              from '../router.js?v=7';
 import { showToast }               from '../ui.js';
 import { KASSA_ID, CAR_STATUSES }  from '../config.js';
 

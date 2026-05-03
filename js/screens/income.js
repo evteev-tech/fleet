@@ -12,7 +12,7 @@ import {
 } from '../api.js';
 import { SHEETS } from '../config.js';
 import { getCurrentUser } from '../auth.js';
-import { showScreen } from '../router.js?v=6';
+import { showScreen } from '../router.js?v=7';
 import { showToast } from '../ui.js';
 import { CAR_STATUSES, KASSA_ID, ROLES } from '../config.js';
 

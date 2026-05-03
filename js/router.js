@@ -1,4 +1,4 @@
-// v=6
+// v=7
 /**
  * router.js — управление экранами и navbar.
  *
@@ -12,46 +12,33 @@ import { ROLES }         from './config.js';
 
 // ─── SVG navbar (локальные файлы, GitHub Pages — относительные пути) ─────────
 
+/** Все иконки navbar — только файлы из assets/icons/ (единый стиль) */
 const ICON_ASSETS = {
   home:      'assets/icons/home.svg',
   history:   'assets/icons/history.svg',
   analytics: 'assets/icons/analytics.svg',
   settings:  'assets/icons/settings.svg',
   fleet:     'assets/icons/fleet.svg',
+  driver:    'assets/icons/driver.svg',
+  add:       'assets/icons/add.svg',
 };
 
-// ─── Inline-иконки для экранов без отдельного asset ──────────────────────────
-
-const ICON_ADD = `<svg viewBox="0 0 24 24" fill="none"
-  stroke="currentColor" stroke-width="1.5"
-  stroke-linecap="round" stroke-linejoin="round">
-  <circle cx="12" cy="12" r="9" fill="none"/>
-  <path d="M12 8v8M8 12h8" fill="none"/>
-</svg>`;
-
-const ICON_DRIVERS = `<svg viewBox="0 0 24 24" fill="none"
-  stroke="currentColor" stroke-width="1.5"
-  stroke-linecap="round" stroke-linejoin="round">
-  <circle cx="12" cy="7" r="4" fill="none"/>
-  <path d="M4 21v-1a8 8 0 0 1 16 0v1" fill="none"/>
-</svg>`;
-
-// ─── Конфиг navbar по ролям (iconPath | iconHtml) ───────────────────────────
+// ─── Конфиг navbar по ролям (только iconPath) ────────────────────────────────
 
 const NAVBAR_CONFIG = {
   [ROLES.MECHANIC]: [
     { id: 'screen-home',    label: 'Главная',  iconPath: ICON_ASSETS.home },
     { id: 'screen-history', label: 'Касса',    iconPath: ICON_ASSETS.history },
     { id: 'screen-fleet',   label: 'Парк',     iconPath: ICON_ASSETS.fleet },
-    { id: 'screen-drivers', label: 'Водители', iconHtml: ICON_DRIVERS },
+    { id: 'screen-drivers', label: 'Водители', iconPath: ICON_ASSETS.driver },
   ],
 
   [ROLES.OPERATIONS]: [
     { id: 'screen-dashboard', label: 'Главная',   iconPath: ICON_ASSETS.home },
-    { id: 'screen-add',       label: 'Операция',  iconHtml: ICON_ADD },
+    { id: 'screen-add',       label: 'Операция',  iconPath: ICON_ASSETS.add },
     { id: 'screen-analytics', label: 'Аналитика', iconPath: ICON_ASSETS.analytics },
     { id: 'screen-fleet',     label: 'Парк',      iconPath: ICON_ASSETS.fleet },
-    { id: 'screen-drivers',   label: 'Водители',  iconHtml: ICON_DRIVERS },
+    { id: 'screen-drivers',   label: 'Водители',  iconPath: ICON_ASSETS.driver },
   ],
 
   [ROLES.INVESTOR]: [
@@ -66,23 +53,22 @@ const NAVBAR_CONFIG = {
 let _currentScreen = null;
 
 /**
- * Вставляет SVG из файла и нормализует корневой svg.
+ * Подгружает SVG из assets и вставляет в контейнер navbar.
  * @param {string} path
  * @param {HTMLElement} container
  */
-async function loadIcon(path, container) {
-  const res = await fetch(path);
-  if (!res.ok) throw new Error('ICON_FETCH_' + res.status);
-  const svg = await res.text();
-  container.innerHTML = svg;
-  _stripSvgDimensions(container);
-}
-
-function _stripSvgDimensions(container) {
-  const svgEl = container.querySelector('svg');
-  if (!svgEl) return;
-  svgEl.removeAttribute('width');
-  svgEl.removeAttribute('height');
+async function loadNavIcon(path, container) {
+  try {
+    const res = await fetch(path);
+    if (!res.ok) return;
+    const svg = await res.text();
+    container.innerHTML = svg;
+    const svgEl = container.querySelector('svg');
+    if (svgEl) {
+      svgEl.removeAttribute('width');
+      svgEl.removeAttribute('height');
+    }
+  } catch (_) {}
 }
 
 /**
@@ -126,32 +112,19 @@ export async function renderNavbar(role) {
 
   const items = NAVBAR_CONFIG[role] ?? [];
 
-  navbar.innerHTML = items.map(item => {
-    const iconClass = item.iconPath ? 'nav-icon nav-icon--asset' : 'nav-icon nav-icon--inline';
-    return `
+  navbar.innerHTML = items.map(item => `
     <button type="button" class="nav-item" data-screen="${item.id}" aria-label="${item.label}">
-      <div class="${iconClass}" aria-hidden="true"></div>
+      <div class="nav-icon" aria-hidden="true"></div>
       <span class="nav-label">${item.label}</span>
       <span class="nav-item__dot"></span>
-    </button>`;
-  }).join('');
+    </button>`).join('');
 
   const buttons = [...navbar.querySelectorAll('.nav-item')];
 
   await Promise.all(items.map(async (item, i) => {
     const iconEl = buttons[i].querySelector('.nav-icon');
-    if (!iconEl) return;
-    if (item.iconPath) {
-      try {
-        await loadIcon(item.iconPath, iconEl);
-      } catch (e) {
-        console.error('Navbar icon:', item.iconPath, e);
-        iconEl.innerHTML = '';
-      }
-    } else if (item.iconHtml) {
-      iconEl.innerHTML = item.iconHtml;
-      _stripSvgDimensions(iconEl);
-    }
+    if (!iconEl || !item.iconPath) return;
+    await loadNavIcon(item.iconPath, iconEl);
   }));
 
   buttons.forEach(btn => {
