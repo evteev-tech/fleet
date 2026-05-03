@@ -1,4 +1,4 @@
-/**
+﻿/**
  * api.js — все обращения к Google Sheets API v4 и Apps Script webhook.
  *
  * Чтение:  GET  sheets.googleapis.com/v4/spreadsheets/{id}/values/{sheet}?key=…
@@ -417,10 +417,10 @@ export async function postAddIncome(payload) {
 // ─── Какие листы сбрасываем после каждого action ─────────────────────────────
 const ACTION_INVALIDATES = {
   ADD_OPERATION:    [SHEETS.OPERATIONS],
-  UPDATE_CAR_STATUS:[SHEETS.CARS],
+  UPDATE_CAR_STATUS:[SHEETS.CARS, SHEETS.DRIVERS],
   SAVE_DRIVER:      [SHEETS.DRIVERS, SHEETS.CARS],
   ADD_DEPOSIT:      [SHEETS.DEPOSITS, SHEETS.DRIVERS],
-  ADD_RENTAL:       [SHEETS.RENTALS, SHEETS.CARS],
+  ADD_RENTAL:       [SHEETS.RENTALS, SHEETS.CARS, SHEETS.DRIVERS],
   ADD_INCOME:       [SHEETS.OPERATIONS, SHEETS.RENTALS, SHEETS.CARS],
 };
 
