@@ -2,7 +2,7 @@
  * fleet.js — экран «Парк»: данные GET_FLEET, фильтр по статусу, карточки Т-Банка.
  */
 
-import { getFleet, postAction, invalidateCache } from '../api.js';
+import { getFleet, getDrivers, postAction, invalidateCache } from '../api.js';
 import { showBottomSheet, hideBottomSheet, showToast } from '../ui.js';
 import { CAR_STATUSES, SHEETS } from '../config.js';
 
@@ -258,6 +258,20 @@ function escapeAttr(s) {
   return escapeHtml(s).replace(/'/g, '&***REMOVED***39;');
 }
 
+function _initials(name) {
+  const p = String(name || '').trim().split(/\s+/).filter(Boolean);
+  if (!p.length) return '?';
+  if (p.length === 1) return p[0].slice(0, 2).toUpperCase();
+  return (p[0][0] + p[1][0]).toUpperCase();
+}
+
+function _fmtDateForApi(d) {
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  return `${dd}.${mm}.${yyyy}`;
+}
+
 function _bindCardClicks(body, cars) {
   body.querySelectorAll('.fleet-car[data-car-id]').forEach(el => {
     el.addEventListener('click', () => {
@@ -279,13 +293,48 @@ function _pillClass(sk) {
   return 'pill--yellow';
 }
 
-function _openCarSheet(car) {
+async function _openCarSheet(car) {
+  let drivers = [];
+  try {
+    drivers = await getDrivers();
+  } catch {
+    drivers = [];
+  }
+
   const sk = statusKey(car.status);
   const opts = ['rent', 'idle', 'repair'].filter(k => k !== sk);
+
+  const toInfo = formatToMileage(car.mileage, car.toMileage);
+  const toHex = TO_MILEAGE_COLOR_HEX[toInfo.color] ?? '***REMOVED***9E9E9E';
+
+  const cid = String(car.carId ?? '').trim();
+  const assigned = drivers.find(d => String(d.currentCar ?? '').trim() === cid);
+  const noteTrim = String(car.note || '').trim();
+
+  const driverBlock = assigned
+    ? `
+    <div class="fleet-bs-section-label">Водитель</div>
+    <div class="fleet-bs-driver">
+      <div class="fleet-bs-avatar">${escapeHtml(_initials(assigned.fio))}</div>
+      <div>
+        <div class="fleet-bs-driver-name">${escapeHtml(assigned.fio)}</div>
+        <div class="fleet-bs-driver-phone">${assigned.phone ? escapeHtml(String(assigned.phone)) : 'нет телефона'}</div>
+      </div>
+    </div>`
+    : `
+    <div class="fleet-bs-section-label">Водитель</div>
+    <div class="fleet-bs-driver-empty">Водитель не назначен</div>`;
+
+  const noteBlock = noteTrim
+    ? `<div class="fleet-bs-note"><span>⚠</span><span>${escapeHtml(noteTrim)}</span></div>`
+    : '';
 
   const statusBtns = opts.map(k => {
     const api = _statusApiFromKey(k);
     const lbl = BADGE[k].label;
+    if (k === 'rent') {
+      return `<button type="button" class="fleet-status-btn fleet-status-btn--rent" data-new-status="${escapeAttr(api)}">${lbl} →</button>`;
+    }
     return `<button type="button" class="fleet-status-btn" data-new-status="${escapeAttr(api)}">${lbl}</button>`;
   }).join('');
 
@@ -297,6 +346,18 @@ function _openCarSheet(car) {
       ` : ''}
       <span class="pill ${_pillClass(sk)}">${BADGE[sk].label}</span>
     </div>
+    <div class="fleet-bs-grid">
+      <div class="fleet-bs-cell">
+        <div class="fleet-bs-lbl">Пробег</div>
+        <div class="fleet-bs-val">${fmtKm(car.mileage)}</div>
+      </div>
+      <div class="fleet-bs-cell">
+        <div class="fleet-bs-lbl">До ТО</div>
+        <div class="fleet-bs-val" style="color:${toHex}">${escapeHtml(toInfo.text)}</div>
+      </div>
+    </div>
+    ${driverBlock}
+    ${noteBlock}
     <div class="fleet-bs-change-label">Изменить статус</div>
     <div class="fleet-status-btns" id="fleet-status-btns">${statusBtns}</div>
   `);
@@ -305,9 +366,100 @@ function _openCarSheet(car) {
     document.getElementById('fleet-status-btns')?.addEventListener('click', async e => {
       const btn = e.target.closest('[data-new-status]');
       if (!btn) return;
+      if (btn.classList.contains('fleet-status-btn--rent')) {
+        _openDriverSelectSheet(car, drivers);
+        return;
+      }
       await _changeStatus(car, btn.dataset.newStatus);
     });
   }, 0);
+}
+
+function _openDriverSelectSheet(car, drivers) {
+  const active = drivers.filter(d =>
+    d.status === 'активный' || d.status === 'активен',
+  );
+
+  showBottomSheet(`
+    <div class="fleet-bs-back" id="fleet-bs-back">
+      <span>←</span><span>назад</span>
+    </div>
+    <div class="fleet-bs-title">Водитель для ${escapeHtml(car.carId)}</div>
+    <div class="fleet-driver-list" id="fleet-driver-list">
+      ${active.map(d => `
+        <div class="fleet-driver-item" data-driver-id="${escapeAttr(d.driverId)}">
+          <div class="fleet-driver-avatar">${escapeHtml(_initials(d.fio))}</div>
+          <div class="fleet-driver-info">
+            <div class="fleet-driver-name">${escapeHtml(d.fio)}</div>
+            <div class="fleet-driver-car">${d.currentCar ? escapeHtml(d.currentCar) : 'без машины'}</div>
+          </div>
+          <div class="fleet-driver-check hidden">✓</div>
+        </div>
+      `).join('')}
+    </div>
+    <button class="fleet-bs-confirm" id="fleet-bs-confirm" disabled>Перевести в аренду</button>
+  `);
+
+  let selectedDriverId = null;
+
+  setTimeout(() => {
+    document.getElementById('fleet-bs-back')?.addEventListener('click', () => {
+      hideBottomSheet(() => {
+        void _openCarSheet(car);
+      });
+    });
+
+    document.getElementById('fleet-driver-list')?.addEventListener('click', e => {
+      const item = e.target.closest('[data-driver-id]');
+      if (!item) return;
+      selectedDriverId = item.dataset.driverId;
+      document.querySelectorAll('.fleet-driver-item').forEach(el => {
+        el.classList.toggle('fleet-driver-item--selected', el.dataset.driverId === selectedDriverId);
+        el.querySelector('.fleet-driver-check')?.classList.toggle('hidden', el.dataset.driverId !== selectedDriverId);
+      });
+      const conf = document.getElementById('fleet-bs-confirm');
+      if (conf) conf.disabled = false;
+    });
+
+    document.getElementById('fleet-bs-confirm')?.addEventListener('click', async () => {
+      if (!selectedDriverId) return;
+      await _changeStatusWithDriver(car, CAR_STATUSES.RENT, selectedDriverId);
+    });
+  }, 0);
+}
+
+async function _changeStatusWithDriver(car, newStatus, driverId) {
+  const btn = document.getElementById('fleet-bs-confirm');
+  if (btn) {
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+  }
+
+  try {
+    await postAction('UPDATE_CAR_STATUS', { car_id: car.carId, new_status: newStatus });
+
+    const today = _fmtDateForApi(new Date());
+    await postAction('ADD_RENTAL', {
+      car_id: car.carId,
+      driver_id: driverId,
+      date_from: today,
+      rate: car.rateDay,
+      comment: 'выдача из Парка',
+    });
+
+    invalidateCache(SHEETS.CARS);
+    invalidateCache(SHEETS.RENTALS);
+    invalidateCache(SHEETS.DRIVERS);
+
+    showToast('Машина выдана ✓', 'success');
+    hideBottomSheet(() => renderFleet());
+  } catch (err) {
+    if (btn) {
+      btn.disabled = false;
+      btn.style.opacity = '';
+    }
+    showToast(err.message === 'NO_CONNECTION' ? 'Нет соединения' : 'Ошибка', 'error');
+  }
 }
 
 async function _changeStatus(car, newStatus) {

@@ -2004,6 +2004,186 @@
   transform: scale(0.95);
 }
 
+/* Контекст в bottomsheet: пробег, ТО, водитель, примечание */
+.fleet-bs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.fleet-bs-lbl {
+  font-size: 11px;
+  color: ***REMOVED***aaa;
+  margin-bottom: 2px;
+}
+
+.fleet-bs-val {
+  font-size: 14px;
+  font-weight: 600;
+  color: ***REMOVED***111;
+}
+
+.fleet-bs-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: ***REMOVED***aaa;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.fleet-bs-driver {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  background: ***REMOVED***f9f9f9;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+.fleet-bs-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: ***REMOVED***e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: ***REMOVED***555;
+  flex-shrink: 0;
+}
+
+.fleet-bs-driver-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: ***REMOVED***111;
+}
+
+.fleet-bs-driver-phone {
+  font-size: 11px;
+  color: ***REMOVED***aaa;
+}
+
+.fleet-bs-driver-empty {
+  font-size: 12px;
+  color: ***REMOVED***aaa;
+  padding: 8px 0;
+  margin-bottom: 12px;
+}
+
+.fleet-bs-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background: ***REMOVED***fef9c3;
+  border-radius: 8px;
+  font-size: 12px;
+  color: ***REMOVED***854d0e;
+  margin-bottom: 12px;
+}
+
+/* Второй шит — выбор водителя */
+.fleet-bs-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  font-size: 12px;
+  color: ***REMOVED***aaa;
+}
+
+.fleet-bs-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: ***REMOVED***111;
+  margin-bottom: 14px;
+}
+
+.fleet-driver-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.fleet-driver-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 10px;
+  background: ***REMOVED***f9f9f9;
+  cursor: pointer;
+}
+
+.fleet-driver-item--selected {
+  background: ***REMOVED***dcfce7;
+}
+
+.fleet-driver-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: ***REMOVED***e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: ***REMOVED***555;
+  flex-shrink: 0;
+}
+
+.fleet-driver-info {
+  flex: 1;
+}
+
+.fleet-driver-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: ***REMOVED***111;
+}
+
+.fleet-driver-car {
+  font-size: 11px;
+  color: ***REMOVED***aaa;
+}
+
+.fleet-driver-check {
+  font-size: 14px;
+  color: ***REMOVED***16a34a;
+}
+
+.fleet-driver-check.hidden {
+  display: none;
+}
+
+.fleet-bs-confirm {
+  width: 100%;
+  padding: 15px;
+  background: ***REMOVED***ffdd2d;
+  color: ***REMOVED***111;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.fleet-bs-confirm:disabled {
+  background: ***REMOVED***f0f0f0;
+  color: ***REMOVED***bbb;
+  cursor: default;
+}
+
 /* ═══════════════════════════════════════════════════════════
    ЭКРАН: СПИСОК ВОДИТЕЛЕЙ (screen-drivers)
 ═══════════════════════════════════════════════════════════ */
