@@ -377,7 +377,7 @@ async function _openCarSheet(car) {
       const btn = e.target.closest('[data-new-status]');
       if (!btn) return;
       if (btn.classList.contains('fleet-status-btn--rent')) {
-        _openDriverSelectSheet(car, drivers);
+        await _openDriverSelectSheet(car);
         return;
       }
       await _changeStatus(car, btn.dataset.newStatus);
@@ -385,7 +385,15 @@ async function _openCarSheet(car) {
   }, 0);
 }
 
-function _openDriverSelectSheet(car, drivers) {
+async function _openDriverSelectSheet(car) {
+  invalidateCache(SHEETS.DRIVERS);
+  let drivers = [];
+  try {
+    drivers = await getDrivers();
+  } catch {
+    drivers = [];
+  }
+
   const active = drivers.filter(d =>
     d.status === 'активный' || d.status === 'активен',
   );
