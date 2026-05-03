@@ -6,7 +6,16 @@
  */
 
 import { SHEET_ID, API_KEY, WEBHOOK_URL, CACHE_TTL_MS, SHEETS } from './config.js';
+import {
+  CACHE_KEYS,
+  SHEET_TO_CACHE_KEYS,
+  clearAllCache,
+  getWithSWR,
+  invalidateCache as invalidateSwrCache,
+} from './cache.js';
 import { parseSheetDate, formatDate } from './utils/date.js';
+
+export { clearAllCache, getWithSWR, CACHE_KEYS } from './cache.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // КЭШ
@@ -32,12 +41,13 @@ export function getApiStatus() {
 }
 
 /**
- * Удаляет запись листа из кэша.
- * Следующий вызов readSheet сделает свежий запрос к API.
- * @param {string} sheetName
+ * Удаляет запись листа из in-memory кэша readSheet и помечает SWR-ключи как stale.
+ * @param {string} sheetName — имя листа (SHEETS.*)
  */
 export function invalidateCache(sheetName) {
   _cache.delete(sheetName);
+  const keys = SHEET_TO_CACHE_KEYS[sheetName];
+  if (keys) keys.forEach(k => invalidateSwrCache(k));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -426,6 +436,9 @@ const ACTION_INVALIDATES = {
 function _invalidateByAction(action) {
   const sheets = ACTION_INVALIDATES[action] ?? [];
   sheets.forEach(s => invalidateCache(s));
+  if (action === 'UPDATE_PERIOD') {
+    invalidateSwrCache(CACHE_KEYS.DASHBOARD);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

@@ -6,7 +6,7 @@
  */
 
 import { getCurrentUser, clearCurrentUser } from '../auth.js';
-import { getApiStatus }                      from '../api.js';
+import { getApiStatus, clearAllCache }       from '../api.js';
 import { showScreen }                        from '../router.js?v=7';
 import { showToast, showBottomSheet, hideBottomSheet } from '../ui.js';
 import { WEBHOOK_URL, ROLES }                from '../config.js';
@@ -170,6 +170,7 @@ function _openWebhookSheet() {
 
 function _logout() {
   if (!confirm('Выйти из приложения?')) return;
+  clearAllCache();
   clearCurrentUser();
   document.getElementById('navbar')?.classList.add('hidden');
   showScreen('screen-login');
