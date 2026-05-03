@@ -3,6 +3,7 @@
  */
 
 import { getFleet, postAction, invalidateCache } from '../api.js';
+import { getWithSWR, CACHE_KEYS, invalidateCache as invalidateLocalCache } from '../cache.js';
 import { getCurrentUser } from '../auth.js';
 import { showScreen } from '../router.js?v=7';
 import { showToast } from '../ui.js';
@@ -105,15 +106,25 @@ export async function renderExpense() {
     showScreen('screen-home');
   });
 
-  try {
-    const fleet = await getFleet();
+  const loadingEl = root.querySelector('.expense-loading');
+  let filled = false;
+
+  const applyFleet = fleet => {
+    filled = true;
+    if (loadingEl) loadingEl.remove();
     _state.cars = [...fleet].sort((a, b) =>
       String(a.carId || '').localeCompare(String(b.carId || ''), 'ru'),
     );
     _renderExpenseShell(root);
-  } catch (err) {
-    console.error(err);
-    root.innerHTML = `
+  };
+
+  getWithSWR(CACHE_KEYS.CARS, () => getFleet(), {
+    onCached: d => applyFleet(d),
+    onFresh: d => applyFleet(d),
+    onFetchError: (_e, meta) => {
+      if (!meta?.hadCache) {
+        console.error('expense load');
+        root.innerHTML = `
       <header class="expense-header">
         <button type="button" class="btn-icon expense-header__back" id="expense-back-err">
           <svg width="20" height="20" viewBox="0 0 20 20"><path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
@@ -123,8 +134,16 @@ export async function renderExpense() {
       </header>
       <div class="expense-error">Не удалось загрузить данные</div>
     `;
-    document.getElementById('expense-back-err')?.addEventListener('click', () => showScreen('screen-home'));
-  }
+        document.getElementById('expense-back-err')?.addEventListener('click', () => showScreen('screen-home'));
+      }
+    },
+  });
+
+  setTimeout(() => {
+    if (!filled && loadingEl?.parentNode) {
+      loadingEl.textContent = 'Загрузка…';
+    }
+  }, 0);
 }
 
 function _calcClass(category, amount) {
@@ -374,6 +393,9 @@ async function _submit(root) {
     });
 
     invalidateCache(SHEETS.OPERATIONS);
+    invalidateLocalCache(CACHE_KEYS.CASH_OPS);
+    invalidateLocalCache(CACHE_KEYS.KASSAS);
+    invalidateLocalCache(CACHE_KEYS.DASHBOARD);
     showToast('Расход записан', 'success', 2000);
     showScreen('screen-home');
   } catch (e) {

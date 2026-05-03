@@ -8,6 +8,7 @@
  */
 
 import { getFleet, postAction, invalidateCache } from '../api.js';
+import { getWithSWR, CACHE_KEYS, invalidateCache as invalidateLocalCache } from '../cache.js';
 import { getCurrentUser }                         from '../auth.js';
 import { showScreen }                             from '../router.js?v=7';
 import { showToast }                              from '../ui.js';
@@ -59,15 +60,28 @@ async function _openAdd() {
   const body = document.getElementById('add-body');
   if (!body) return;
 
-  body.innerHTML = `<div class="loader-wrap"><div class="spinner"></div></div>`;
+  body.innerHTML = '';
+  let filled = false;
 
-  try {
-    _fleet = (await getFleet()).filter(c => c.status === CAR_STATUSES.RENT || c.status === CAR_STATUSES.IDLE);
-  } catch {
-    _fleet = [];
-  }
+  const applyFleet = raw => {
+    filled = true;
+    _fleet = raw.filter(c => c.status === CAR_STATUSES.RENT || c.status === CAR_STATUSES.IDLE);
+    _renderForm(body);
+  };
 
-  _renderForm(body);
+  getWithSWR(CACHE_KEYS.CARS, () => getFleet(), {
+    onCached: d => applyFleet(d),
+    onFresh: d => applyFleet(d),
+    onFetchError: (_e, meta) => {
+      if (!meta?.hadCache) applyFleet([]);
+    },
+  });
+
+  setTimeout(() => {
+    if (!filled) {
+      body.innerHTML = `<div class="loader-wrap"><div class="spinner"></div></div>`;
+    }
+  }, 0);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -304,6 +318,13 @@ async function _submit(user) {
     }
 
     invalidateCache('Касса_операции');
+    invalidateLocalCache(CACHE_KEYS.CASH_OPS);
+    invalidateLocalCache(CACHE_KEYS.KASSAS);
+    invalidateLocalCache(CACHE_KEYS.DASHBOARD);
+    if (isRent && carId) {
+      invalidateLocalCache(CACHE_KEYS.RENTALS);
+      invalidateLocalCache(CACHE_KEYS.INCOME_FORM);
+    }
     showToast('Записано ✓', 'success');
     _resetForm(isMech, dateISO, kassaId);
 

@@ -7,6 +7,7 @@
  */
 
 import { getDrivers, getFleet, getDeposits, postAction, invalidateCache } from '../api.js';
+import { getWithSWR, CACHE_KEYS, invalidateCache as invalidateLocalCache } from '../cache.js';
 import { SHEETS }                                                         from '../config.js';
 import { showScreen }                                                       from '../router.js?v=7';
 import { showBottomSheet, hideBottomSheet, showToast }                     from '../ui.js';
@@ -38,12 +39,11 @@ export function initDriver() {
 // ГЛАВНАЯ ФУНКЦИЯ
 // ═══════════════════════════════════════════════════════════════════════════
 
-export async function renderDriver(driverId) {
+export function renderDriver(driverId) {
   const body   = document.getElementById('driver-body');
   const nameEl = document.getElementById('driver-header-name');
   if (!body) return;
 
-  body.innerHTML = _skeletonHTML();
   if (nameEl) nameEl.textContent = 'Водитель';
 
   if (!driverId) {
@@ -51,30 +51,30 @@ export async function renderDriver(driverId) {
     return;
   }
 
-  let drivers, fleet, deposits;
-  try {
-    [drivers, fleet, deposits] = await Promise.all([getDrivers(), getFleet(), getDeposits()]);
-  } catch (err) {
-    body.innerHTML = _offlineHTML(err.message === 'NO_CONNECTION');
-    document.getElementById('driver-retry')?.addEventListener('click', () => renderDriver(driverId));
-    return;
-  }
+  body.innerHTML = '';
+  let drivers;
+  let fleet;
+  let deposits;
+  let cacheHit = false;
 
-  const driver = drivers.find(d => String(d.driverId) === String(driverId));
-  if (!driver) {
-    body.innerHTML = _errorHTML('Водитель не найден');
-    return;
-  }
+  const paint = () => {
+    if (drivers === undefined || fleet === undefined || deposits === undefined) return;
 
-  if (nameEl) nameEl.textContent = driver.name || 'Водитель';
+    const driver = drivers.find(d => String(d.driverId) === String(driverId));
+    if (!driver) {
+      body.innerHTML = _errorHTML('Водитель не найден');
+      return;
+    }
 
-  const car          = fleet.find(c => c.carId === driver.carId);
-  const driverDeps   = deposits
-    .filter(dep => String(dep.driverId) === String(driverId))
-    .sort((a, b) => _parseDate(b.date) - _parseDate(a.date));
-  const currentDeposit = driverDeps.reduce((s, d) => s + (d.amount || 0), 0);
+    if (nameEl) nameEl.textContent = driver.name || 'Водитель';
 
-  body.innerHTML = `
+    const car          = fleet.find(c => c.carId === driver.carId);
+    const driverDeps   = deposits
+      .filter(dep => String(dep.driverId) === String(driverId))
+      .sort((a, b) => _parseDate(b.date) - _parseDate(a.date));
+    const currentDeposit = driverDeps.reduce((s, d) => s + (d.amount || 0), 0);
+
+    body.innerHTML = `
 
     <!-- Основные данные -->
     <div class="drv-profile-card">
@@ -172,6 +172,7 @@ export async function renderDriver(driverId) {
         comment:   driver.note ?? '',
       });
       invalidateCache('Водители');
+      invalidateLocalCache(CACHE_KEYS.DRIVERS);
       showToast('Водитель архивирован', 'success');
       showScreen('screen-drivers');
     } catch (err) {
@@ -179,6 +180,61 @@ export async function renderDriver(driverId) {
       showToast(err.message === 'NO_CONNECTION' ? 'Нет соединения' : 'Ошибка архивации', 'error');
     }
   });
+  };
+
+  getWithSWR(CACHE_KEYS.DRIVERS, () => getDrivers(), {
+    onCached: d => {
+      cacheHit = true;
+      drivers = d;
+      paint();
+    },
+    onFresh: d => {
+      drivers = d;
+      paint();
+    },
+    onFetchError: (_e, meta) => {
+      if (!meta?.hadCache) drivers = [];
+      paint();
+    },
+  });
+
+  getWithSWR(CACHE_KEYS.CARS, () => getFleet(), {
+    onCached: d => {
+      cacheHit = true;
+      fleet = d;
+      paint();
+    },
+    onFresh: d => {
+      fleet = d;
+      paint();
+    },
+    onFetchError: (_e, meta) => {
+      if (!meta?.hadCache) fleet = [];
+      paint();
+    },
+  });
+
+  getWithSWR(CACHE_KEYS.DEPOSITS, () => getDeposits(), {
+    onCached: d => {
+      cacheHit = true;
+      deposits = d;
+      paint();
+    },
+    onFresh: d => {
+      deposits = d;
+      paint();
+    },
+    onFetchError: (_e, meta) => {
+      if (!meta?.hadCache) deposits = [];
+      paint();
+    },
+  });
+
+  setTimeout(() => {
+    if (!cacheHit && (drivers === undefined || fleet === undefined || deposits === undefined)) {
+      body.innerHTML = _skeletonHTML();
+    }
+  }, 0);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -327,6 +383,8 @@ function _openReturnSheet(driver, currentDeposit) {
 
         invalidateCache(SHEETS.DRIVERS);
         invalidateCache(SHEETS.DEPOSITS);
+        invalidateLocalCache(CACHE_KEYS.DRIVERS);
+        invalidateLocalCache(CACHE_KEYS.DEPOSITS);
 
         showToast(`Возврат ${_fmt(val)} записан ✓`, 'success');
         hideBottomSheet(() => renderDriver(driver.driverId));

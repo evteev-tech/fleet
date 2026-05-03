@@ -8,7 +8,6 @@
 import { SHEET_ID, API_KEY, WEBHOOK_URL, CACHE_TTL_MS, SHEETS } from './config.js';
 import {
   CACHE_KEYS,
-  SHEET_TO_CACHE_KEYS,
   clearAllCache,
   getWithSWR,
   invalidateCache as invalidateSwrCache,
@@ -16,6 +15,15 @@ import {
 import { parseSheetDate, formatDate } from './utils/date.js';
 
 export { clearAllCache, getWithSWR, CACHE_KEYS } from './cache.js';
+
+/** Лист таблицы → логические SWR-ключи (см. cache.js / CACHE_KEYS). */
+const SHEET_TO_CACHE_KEYS = {
+  [SHEETS.CARS]: [CACHE_KEYS.CARS, CACHE_KEYS.INCOME_FORM],
+  [SHEETS.DRIVERS]: [CACHE_KEYS.DRIVERS],
+  [SHEETS.RENTALS]: [CACHE_KEYS.RENTALS, CACHE_KEYS.INCOME_FORM],
+  [SHEETS.OPERATIONS]: [CACHE_KEYS.CASH_OPS, CACHE_KEYS.KASSAS, CACHE_KEYS.DASHBOARD],
+  [SHEETS.DEPOSITS]: [CACHE_KEYS.DRIVERS, CACHE_KEYS.DEPOSITS],
+};
 
 // ═══════════════════════════════════════════════════════════════════════════
 // КЭШ

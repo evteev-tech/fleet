@@ -7,11 +7,12 @@
  * Бесконечный скролл: клиентская пагинация по 20 записей через IntersectionObserver.
  */
 
-import { getOperations, getFleet, invalidateCache } from '../api.js';
+import { getOperations, getFleet } from '../api.js';
+import { getWithSWR, CACHE_KEYS } from '../cache.js';
 import { getCurrentUser }          from '../auth.js';
 import { parseRuDate } from './history.js';
 import { showScreen }              from '../router.js?v=7';
-import { KASSA_ID, CAR_STATUSES, SHEETS } from '../config.js';
+import { KASSA_ID, CAR_STATUSES } from '../config.js';
 
 // ─── Константы ────────────────────────────────────────────────────────────────
 const PAGE_SIZE = 20;
@@ -42,25 +43,57 @@ export async function renderHome() {
   _offset = 0;
   _destroyObserver();
 
-  // ── Скелетоны ────────────────────────────────────────────────────────────
-  body.innerHTML = _skeletonHTML();
+  body.innerHTML = '';
 
-  invalidateCache(SHEETS.OPERATIONS);
-  invalidateCache(SHEETS.CARS);
+  let opsAll;
+  let fleet;
+  let cacheHit = false;
 
-  // ── Загрузка ─────────────────────────────────────────────────────────────
-  let ops, fleet;
-  try {
-    [ops, fleet] = await Promise.all([
-      getOperations({ kassaId: KASSA_ID.AZAMAT }),
-      getFleet(),
-    ]);
-  } catch (err) {
-    body.innerHTML = _offlineHTML(err.message === 'NO_CONNECTION');
-    document.getElementById('home-retry')?.addEventListener('click', renderHome);
-    return;
-  }
+  const paint = () => {
+    if (opsAll === undefined || fleet === undefined) return;
+    _renderHomeWithData(body, opsAll, fleet);
+  };
 
+  getWithSWR(CACHE_KEYS.CASH_OPS, () => getOperations(), {
+    onCached: d => {
+      cacheHit = true;
+      opsAll = d;
+      paint();
+    },
+    onFresh: d => {
+      opsAll = d;
+      paint();
+    },
+    onFetchError: (_err, meta) => {
+      if (!meta?.hadCache) opsAll = [];
+      paint();
+    },
+  });
+
+  getWithSWR(CACHE_KEYS.CARS, () => getFleet(), {
+    onCached: d => {
+      cacheHit = true;
+      fleet = d;
+      paint();
+    },
+    onFresh: d => {
+      fleet = d;
+      paint();
+    },
+    onFetchError: (_err, meta) => {
+      if (!meta?.hadCache) fleet = [];
+      paint();
+    },
+  });
+
+  setTimeout(() => {
+    if (!cacheHit && (opsAll === undefined || fleet === undefined)) {
+      body.innerHTML = _skeletonHTML();
+    }
+  }, 0);
+}
+
+function _renderHomeWithData(body, ops, fleet) {
   // ── Только K_AZAMAT до рендера ───────────────────────────────────────────
   const azamatOps = ops.filter(
     op => String(op.kassaId ?? '').trim() === String(KASSA_ID.AZAMAT),

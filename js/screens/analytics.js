@@ -5,6 +5,7 @@
  */
 
 import { fetchDashboardAnalytics, updateAnalyticsPeriod } from '../api.js';
+import { getWithSWR, CACHE_KEYS } from '../cache.js';
 
 const fmtRub = n =>
   `${new Intl.NumberFormat('ru-RU').format(Math.round(Number(n) || 0))} ₽`;
@@ -224,12 +225,15 @@ let _loading = false;
 let _pendingYear = null;
 let _pendingMonth = null;
 
-async function _refreshViewOnly() {
+function _refreshViewOnly() {
   const root = document.getElementById('analytics-root');
   if (!root) return;
-  root.innerHTML = _skeletonHTML();
-  try {
-    const dash = await fetchDashboardAnalytics();
+  root.innerHTML = '';
+  let cacheHit = false;
+  let filled = false;
+
+  const apply = dash => {
+    filled = true;
     if (!dash) {
       root.innerHTML = _errorHTML(false);
       return;
@@ -238,10 +242,29 @@ async function _refreshViewOnly() {
     _pendingMonth = dash.month;
     const empty = !_dashboardHasContent(dash);
     root.innerHTML = _fullHtml(dash, empty ? 'Нет данных за выбранный период' : '');
-  } catch (err) {
-    console.error('Analytics _refreshViewOnly:', err);
-    root.innerHTML = _errorHTML(err.message === 'NO_CONNECTION');
-  }
+  };
+
+  getWithSWR(CACHE_KEYS.DASHBOARD, () => fetchDashboardAnalytics(), {
+    onCached: d => {
+      cacheHit = true;
+      apply(d);
+    },
+    onFresh: d => {
+      apply(d);
+    },
+    onFetchError: (err, meta) => {
+      if (!meta?.hadCache) {
+        console.error('Analytics _refreshViewOnly:', err);
+        root.innerHTML = _errorHTML(err?.message === 'NO_CONNECTION');
+      }
+    },
+  });
+
+  setTimeout(() => {
+    if (!cacheHit && !filled) {
+      root.innerHTML = _skeletonHTML();
+    }
+  }, 0);
 }
 
 async function _applyPeriod(year, month) {
@@ -269,7 +292,8 @@ function _onRootClick(e) {
   if (retry) {
     if (_loading) return;
     _loading = true;
-    _refreshViewOnly().finally(() => {
+    _refreshViewOnly();
+    requestAnimationFrame(() => {
       _loading = false;
     });
     return;

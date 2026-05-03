@@ -6,6 +6,7 @@
  */
 
 import { getOperations, getFleet } from '../api.js';
+import { getWithSWR, CACHE_KEYS } from '../cache.js';
 import { getCurrentUser }          from '../auth.js';
 import { parseRuDate }             from './history.js';
 import { showScreen }              from '../router.js?v=7';
@@ -114,43 +115,72 @@ export async function renderDashboard() {
   const monthEl = document.getElementById('dashMonthLabel');
   if (monthEl) monthEl.textContent = _monthLabel();
 
-  const settled = await Promise.allSettled([getOperations(), getFleet()]);
-  if (settled[0].status === 'rejected') {
-    console.error('Dashboard: getOperations rejected:', settled[0].reason);
-  }
-  if (settled[1].status === 'rejected') {
-    console.error('Dashboard: getFleet rejected:', settled[1].reason);
-  }
+  let ops;
+  let fleet;
+  let cacheHit = false;
 
-  if (settled[0].status === 'rejected' || settled[1].status === 'rejected') {
-    const firstErr =
-      settled[0].status === 'rejected' ? settled[0].reason : settled[1].reason;
-    console.error('Dashboard load error:', firstErr);
-    _showDashboardError(firstErr?.message === 'NO_CONNECTION');
-    return;
-  }
+  const finishPaint = () => {
+    if (ops === undefined || fleet === undefined) return;
+    _allOps = ops;
+    _fleet = fleet;
 
-  _allOps = settled[0].value;
-  _fleet = settled[1].value;
+    const data = {
+      operationsCount: _allOps?.length,
+      fleetCount: _fleet?.length,
+    };
 
-  const data = {
-    operationsCount: _allOps?.length,
-    fleetCount: _fleet?.length,
+    try {
+      _restoreDashboardBody();
+      document.getElementById('dashKassaList').innerHTML = _kassasHTML();
+      document.getElementById('dashFleetList').innerHTML = _fleetHTML();
+      document.getElementById('dashFleetLabel').textContent = `Парк · ${_fleet.length} авто`;
+
+      _refreshMonthUI();
+      _injectIncomeCta();
+    } catch (err) {
+      console.error('Dashboard parse/render error:', err);
+      console.error('Raw data:', { ...data, fleetSample: _fleet?.slice?.(0, 2) });
+      _showDashboardError(false);
+    }
   };
 
-  try {
-    _restoreDashboardBody();
-    document.getElementById('dashKassaList').innerHTML = _kassasHTML();
-    document.getElementById('dashFleetList').innerHTML = _fleetHTML();
-    document.getElementById('dashFleetLabel').textContent = `Парк · ${_fleet.length} авто`;
+  getWithSWR(CACHE_KEYS.CASH_OPS, () => getOperations(), {
+    onCached: d => {
+      cacheHit = true;
+      ops = d;
+      finishPaint();
+    },
+    onFresh: d => {
+      ops = d;
+      finishPaint();
+    },
+    onFetchError: (_e, meta) => {
+      if (!meta?.hadCache) ops = [];
+      finishPaint();
+    },
+  });
 
-    _refreshMonthUI();
-    _injectIncomeCta();
-  } catch (err) {
-    console.error('Dashboard parse/render error:', err);
-    console.error('Raw data:', { ...data, fleetSample: _fleet?.slice?.(0, 2) });
-    _showDashboardError(false);
-  }
+  getWithSWR(CACHE_KEYS.CARS, () => getFleet(), {
+    onCached: d => {
+      cacheHit = true;
+      fleet = d;
+      finishPaint();
+    },
+    onFresh: d => {
+      fleet = d;
+      finishPaint();
+    },
+    onFetchError: (_e, meta) => {
+      if (!meta?.hadCache) fleet = [];
+      finishPaint();
+    },
+  });
+
+  setTimeout(() => {
+    if (!cacheHit && (ops === undefined || fleet === undefined)) {
+      /* суммы уже в режиме skeleton (_setAmountSkeleton) */
+    }
+  }, 0);
 }
 
 /** Кнопка «Принять платёж» для роли operations (Владимир). */

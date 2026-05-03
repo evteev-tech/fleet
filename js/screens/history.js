@@ -8,6 +8,7 @@
  */
 
 import { getOperations, getFleet } from '../api.js';
+import { getWithSWR, CACHE_KEYS } from '../cache.js';
 import { getCurrentUser }          from '../auth.js';
 import { showBottomSheet }         from '../ui.js';
 import { KASSA_ID, ROLES }         from '../config.js';
@@ -119,28 +120,24 @@ export async function renderHistory() {
   _offset = 0;
   _destroyObserver();
 
-  // ── Скелетон ─────────────────────────────────────────────────────────────
-  body.innerHTML = _skeletonHTML();
+  body.innerHTML = '';
+  let rawOpsAll;
+  let fleet;
+  let cacheHit = false;
 
-  // ── Загрузка ─────────────────────────────────────────────────────────────
-  let rawOps, fleet;
-  try {
-    const kassaFilter = isMech ? KASSA_ID.AZAMAT : null;
-    [rawOps, fleet] = await Promise.all([
-      getOperations({ kassaId: kassaFilter }),
-      getFleet(),
-    ]);
-  } catch (err) {
-    body.innerHTML = _offlineHTML(err.message === 'NO_CONNECTION');
-    document.getElementById('hist-retry')?.addEventListener('click', renderHistory);
-    return;
-  }
+  const paintHistoryShell = () => {
+    if (rawOpsAll === undefined || fleet === undefined) return;
 
-  // ── Применить фильтры ─────────────────────────────────────────────────────
-  _filtered = _applyFilters(rawOps, isMech);
+    _offset = 0;
+    _destroyObserver();
 
-  // ── Рендер оболочки ───────────────────────────────────────────────────────
-  body.innerHTML = `
+    const rawOps = isMech
+      ? rawOpsAll.filter(op => String(op.kassaId ?? '').trim() === String(KASSA_ID.AZAMAT))
+      : rawOpsAll;
+
+    _filtered = _applyFilters(rawOps, isMech);
+
+    body.innerHTML = `
     <!-- ХЕДЕР С ФИЛЬТРАМИ -->
     <div class="hist-hdr">
       <div class="hist-hdr__top">
@@ -191,11 +188,47 @@ export async function renderHistory() {
     <div id="hist-sentinel" style="height:1px"></div>
   `;
 
-  // ── Рендер первой страницы ────────────────────────────────────────────────
-  _renderPage(rawOps, fleet);
+    _renderPage(rawOps, fleet);
+    _bindEvents(body, rawOps, fleet, isMech);
+  };
 
-  // ── Слушатели ─────────────────────────────────────────────────────────────
-  _bindEvents(body, rawOps, fleet, isMech);
+  getWithSWR(CACHE_KEYS.CASH_OPS, () => getOperations(), {
+    onCached: d => {
+      cacheHit = true;
+      rawOpsAll = d;
+      paintHistoryShell();
+    },
+    onFresh: d => {
+      rawOpsAll = d;
+      paintHistoryShell();
+    },
+    onFetchError: (_e, meta) => {
+      if (!meta?.hadCache) rawOpsAll = [];
+      paintHistoryShell();
+    },
+  });
+
+  getWithSWR(CACHE_KEYS.CARS, () => getFleet(), {
+    onCached: d => {
+      cacheHit = true;
+      fleet = d;
+      paintHistoryShell();
+    },
+    onFresh: d => {
+      fleet = d;
+      paintHistoryShell();
+    },
+    onFetchError: (_e, meta) => {
+      if (!meta?.hadCache) fleet = [];
+      paintHistoryShell();
+    },
+  });
+
+  setTimeout(() => {
+    if (!cacheHit && (rawOpsAll === undefined || fleet === undefined)) {
+      body.innerHTML = _skeletonHTML();
+    }
+  }, 0);
 }
 
 // ─── Страница списка ──────────────────────────────────────────────────────────

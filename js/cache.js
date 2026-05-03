@@ -1,31 +1,18 @@
 /**
- * stale-while-revalidate кэш в localStorage для экранов (Vanilla JS).
+ * stale-while-revalidate кэш в localStorage (Vanilla JS, без зависимостей).
  */
-
-import { SHEETS } from './config.js';
 
 const PREFIX = 'fleet_cache_';
 
-/** Логические ключи кэша */
 export const CACHE_KEYS = {
-  CARS: 'cars',
-  DRIVERS: 'drivers',
-  RENTALS: 'rentals',
-  CASH_OPS: 'cashOps',
-  KASSAS: 'kassas',
-  DASHBOARD: 'dashboard',
-};
-
-/**
- * Какие SWR-ключи инвалидировать при сбросе кэша листа (имя как в таблице).
- * @type {Record<string, string[]>}
- */
-export const SHEET_TO_CACHE_KEYS = {
-  [SHEETS.CARS]: [CACHE_KEYS.CARS],
-  [SHEETS.DRIVERS]: [CACHE_KEYS.DRIVERS],
-  [SHEETS.RENTALS]: [CACHE_KEYS.RENTALS],
-  [SHEETS.OPERATIONS]: [CACHE_KEYS.CASH_OPS, CACHE_KEYS.KASSAS, CACHE_KEYS.DASHBOARD],
-  [SHEETS.DEPOSITS]: [CACHE_KEYS.DRIVERS],
+  CARS:        'cars',
+  DRIVERS:     'drivers',
+  RENTALS:     'rentals',
+  CASH_OPS:    'cashOps',
+  KASSAS:      'kassas',
+  DASHBOARD:   'dashboard',
+  DEPOSITS:    'deposits',
+  INCOME_FORM: 'incomeForm',
 };
 
 function storageKey(key) {
@@ -47,86 +34,112 @@ function readEntry(key) {
 function writeEntry(key, entry) {
   try {
     localStorage.setItem(storageKey(key), JSON.stringify(entry));
-  } catch (e) {
-    console.warn('[cache] write failed', e);
+  } catch {
+    /* private mode / quota */
   }
 }
 
 /**
- * @param {string} key — логический ключ (см. CACHE_KEYS)
+ * @param {string} key
  * @param {() => Promise<any>} fetchFn
- * @param {{ ttl?: number, onCached?: (data: any) => void, onFresh?: (data: any) => void }} [options]
+ * @param {{ onCached?: (data: any) => void, onFresh?: (data: any) => void, onFetchError?: (err: unknown, meta: { hadCache: boolean }) => void, ttl?: number }} [options]
  */
 export function getWithSWR(key, fetchFn, options = {}) {
   const ttl = options.ttl ?? 300_000;
-  const { onCached, onFresh } = options;
+  const { onCached, onFresh, onFetchError } = options;
 
   const entry = readEntry(key);
-  const now = Date.now();
+  const hadCache = !!entry;
 
-  const needsRefetch =
-    !entry ||
-    entry.stale === true ||
-    entry.ts == null ||
-    now - entry.ts >= ttl;
-
-  if (!needsRefetch) {
-    if (entry.data !== undefined) {
+  if (entry) {
+    try {
       onCached?.(entry.data);
+    } catch {
+      /* callback не должен ломать кэш */
     }
-    return;
   }
 
-  if (entry && entry.data !== undefined) {
-    onCached?.(entry.data);
+  const isFresh =
+    entry &&
+    entry.stale !== true &&
+    entry.ts != null &&
+    entry.ts + ttl > Date.now();
+
+  if (isFresh) {
+    return;
   }
 
   void (async () => {
     let fresh;
     try {
       fresh = await fetchFn();
-    } catch {
+    } catch (err) {
+      try {
+        onFetchError?.(err, { hadCache });
+      } catch {
+        /* */
+      }
       return;
     }
-    const prevJson = entry ? JSON.stringify(entry.data) : null;
+
+    const cachedData = entry?.data;
+    const prevJson = JSON.stringify(cachedData);
     const nextJson = JSON.stringify(fresh);
+
     writeEntry(key, { data: fresh, ts: Date.now(), stale: false });
+
     if (prevJson !== nextJson) {
-      onFresh?.(fresh);
+      try {
+        onFresh?.(fresh);
+      } catch {
+        /* */
+      }
     }
   })();
 }
 
 /**
- * Помечает запись как устаревшую (stale), данные не удаляются.
- * @param {string} key — логический ключ
+ * Помечает запись как устаревшую (следующий getWithSWR сходит в сеть).
+ * @param {string} key
  */
 export function invalidateCache(key) {
-  const raw = localStorage.getItem(storageKey(key));
-  if (raw == null) return;
   try {
+    const raw = localStorage.getItem(storageKey(key));
+    if (raw == null) return;
     const entry = JSON.parse(raw);
     if (!entry || typeof entry !== 'object') {
-      localStorage.removeItem(storageKey(key));
+      try {
+        localStorage.removeItem(storageKey(key));
+      } catch {
+        /* */
+      }
       return;
     }
-    writeEntry(key, { ...entry, stale: true, ts: 0 });
+    writeEntry(key, { ...entry, stale: true });
   } catch {
-    localStorage.removeItem(storageKey(key));
+    try {
+      localStorage.removeItem(storageKey(key));
+    } catch {
+      /* */
+    }
   }
 }
 
-/** Удаляет все ключи с префиксом fleet_cache_ */
+/** Удаляет все ключи localStorage с префиксом fleet_cache_ */
 export function clearAllCache() {
   try {
     const keys = Object.keys(localStorage);
     for (let i = 0; i < keys.length; i++) {
       const k = keys[i];
       if (k.startsWith(PREFIX)) {
-        localStorage.removeItem(k);
+        try {
+          localStorage.removeItem(k);
+        } catch {
+          /* */
+        }
       }
     }
-  } catch (e) {
-    console.warn('[cache] clearAll failed', e);
+  } catch {
+    /* */
   }
 }

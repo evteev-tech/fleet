@@ -1,4 +1,4 @@
-/**
+﻿/**
  * auth.js — авторизация по PIN.
  *
  * Пользователи хранятся в Google Таблице, лист «Пользователи».
@@ -6,6 +6,7 @@
  */
 
 import { getUsers } from './api.js';
+import { clearAllCache } from './cache.js';
 import { showScreen, renderNavbar } from './router.js?v=7';
 import { showToast } from './ui.js';
 import { ROLES } from './config.js';
@@ -48,6 +49,7 @@ export function setCurrentUser(user) {
  * Удаляет сессию и возвращает на экран логина.
  */
 export function clearCurrentUser() {
+  clearAllCache();
   localStorage.removeItem(LS_KEY);
   document.getElementById('navbar')?.classList.add('hidden');
   showScreen('screen-login');

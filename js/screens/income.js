@@ -10,6 +10,7 @@ import {
   postAddIncome,
   invalidateCache,
 } from '../api.js';
+import { getWithSWR, CACHE_KEYS, invalidateCache as invalidateLocalCache } from '../cache.js';
 import { SHEETS } from '../config.js';
 import { getCurrentUser } from '../auth.js';
 import { showScreen } from '../router.js?v=7';
@@ -34,7 +35,7 @@ export function initIncome() {
   });
 }
 
-export async function renderIncome() {
+export function renderIncome() {
   const root = document.getElementById('income-root');
   if (!root) return;
 
@@ -66,12 +67,13 @@ export async function renderIncome() {
     showScreen(u?.role === ROLES.MECHANIC ? 'screen-home' : 'screen-dashboard');
   });
 
-  try {
-    const [fleet, drivers, incomeRows] = await Promise.all([
-      getFleet(),
-      getDrivers(),
-      fetchIncomeForm(),
-    ]);
+  let fleet;
+  let drivers;
+  let incomeRows;
+  let cacheHit = false;
+
+  const buildCars = () => {
+    if (fleet === undefined || drivers === undefined || incomeRows === undefined) return;
 
     const lastPaidMap = Object.fromEntries(
       incomeRows.map(r => [String(r.carId || '').trim(), r.lastPaidDate || '']),
@@ -107,23 +109,55 @@ export async function renderIncome() {
 
     _state.cars = cars;
     _renderIncomeShell(root);
-  } catch (err) {
-    console.error(err);
-    root.innerHTML = `
-      <header class="income-header">
-        <button type="button" class="btn-icon income-header__back" id="income-back-err">
-          <svg width="20" height="20" viewBox="0 0 20 20"><path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
-        </button>
-        <h1 class="income-header__title">Принять платёж</h1>
-        <div class="income-header__spacer"></div>
-      </header>
-      <div class="income-error">Не удалось загрузить данные</div>
-    `;
-    document.getElementById('income-back-err')?.addEventListener('click', () => {
-      const u = getCurrentUser();
-      showScreen(u?.role === ROLES.MECHANIC ? 'screen-home' : 'screen-dashboard');
-    });
-  }
+  };
+
+  getWithSWR(CACHE_KEYS.CARS, () => getFleet(), {
+    onCached: d => {
+      cacheHit = true;
+      fleet = d;
+      buildCars();
+    },
+    onFresh: d => {
+      fleet = d;
+      buildCars();
+    },
+    onFetchError: (_e, meta) => {
+      if (!meta?.hadCache) fleet = [];
+      buildCars();
+    },
+  });
+
+  getWithSWR(CACHE_KEYS.DRIVERS, () => getDrivers(), {
+    onCached: d => {
+      cacheHit = true;
+      drivers = d;
+      buildCars();
+    },
+    onFresh: d => {
+      drivers = d;
+      buildCars();
+    },
+    onFetchError: (_e, meta) => {
+      if (!meta?.hadCache) drivers = [];
+      buildCars();
+    },
+  });
+
+  getWithSWR(CACHE_KEYS.INCOME_FORM, () => fetchIncomeForm(), {
+    onCached: d => {
+      cacheHit = true;
+      incomeRows = d;
+      buildCars();
+    },
+    onFresh: d => {
+      incomeRows = d;
+      buildCars();
+    },
+    onFetchError: (_e, meta) => {
+      if (!meta?.hadCache) incomeRows = [];
+      buildCars();
+    },
+  });
 }
 
 function _renderIncomeShell(root) {
@@ -492,7 +526,13 @@ async function _submit(root) {
     invalidateCache(SHEETS.DRIVERS);
     invalidateCache(SHEETS.RENTALS);
     invalidateCache(SHEETS.OPERATIONS);
-    await Promise.all([getFleet(), getDrivers()]);
+    invalidateLocalCache(CACHE_KEYS.CARS);
+    invalidateLocalCache(CACHE_KEYS.DRIVERS);
+    invalidateLocalCache(CACHE_KEYS.RENTALS);
+    invalidateLocalCache(CACHE_KEYS.CASH_OPS);
+    invalidateLocalCache(CACHE_KEYS.KASSAS);
+    invalidateLocalCache(CACHE_KEYS.DASHBOARD);
+    invalidateLocalCache(CACHE_KEYS.INCOME_FORM);
 
     showToast('Операция записана', 'success', 2000);
     const u = getCurrentUser();

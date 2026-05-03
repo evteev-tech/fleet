@@ -3,6 +3,7 @@
  */
 
 import { getFleet, getDrivers, postAction, invalidateCache } from '../api.js';
+import { getWithSWR, CACHE_KEYS, invalidateCache as invalidateLocalCache } from '../cache.js';
 import { showBottomSheet, hideBottomSheet, showToast } from '../ui.js';
 import { CAR_STATUSES, SHEETS } from '../config.js';
 
@@ -127,19 +128,35 @@ export async function renderFleet() {
     _pendingTab = null;
   }
 
-  body.innerHTML = _skeletonHTML();
-
+  body.innerHTML = '';
   let fleet;
-  try {
-    fleet = await getFleet();
-  } catch {
-    body.innerHTML = _errorHTML();
-    document.getElementById('fleet-retry')?.addEventListener('click', () => renderFleet());
-    return;
-  }
+  let cacheHit = false;
 
-  _lastFleet = fleet;
-  _paint(body, fleet, _activeTab);
+  getWithSWR(CACHE_KEYS.CARS, () => getFleet(), {
+    onCached: d => {
+      cacheHit = true;
+      fleet = d;
+      _lastFleet = fleet;
+      _paint(body, fleet, _activeTab);
+    },
+    onFresh: d => {
+      fleet = d;
+      _lastFleet = fleet;
+      _paint(body, fleet, _activeTab);
+    },
+    onFetchError: (_e, meta) => {
+      if (!meta?.hadCache) {
+        body.innerHTML = _errorHTML();
+        document.getElementById('fleet-retry')?.addEventListener('click', () => renderFleet());
+      }
+    },
+  });
+
+  setTimeout(() => {
+    if (!cacheHit && fleet === undefined) {
+      body.innerHTML = _skeletonHTML();
+    }
+  }, 0);
 }
 
 function _paint(body, fleet, tabId) {
@@ -470,6 +487,10 @@ async function _changeStatusWithDriver(car, newStatus, driverId) {
     invalidateCache(SHEETS.CARS);
     invalidateCache(SHEETS.RENTALS);
     invalidateCache(SHEETS.DRIVERS);
+    invalidateLocalCache(CACHE_KEYS.CARS);
+    invalidateLocalCache(CACHE_KEYS.RENTALS);
+    invalidateLocalCache(CACHE_KEYS.DRIVERS);
+    invalidateLocalCache(CACHE_KEYS.INCOME_FORM);
 
     showToast('Машина выдана ✓', 'success');
     hideBottomSheet(() => renderFleet());
@@ -489,6 +510,8 @@ async function _changeStatus(car, newStatus) {
   try {
     await postAction('UPDATE_CAR_STATUS', { car_id: car.carId, new_status: newStatus });
     invalidateCache(SHEETS.CARS);
+    invalidateLocalCache(CACHE_KEYS.CARS);
+    invalidateLocalCache(CACHE_KEYS.INCOME_FORM);
     showToast('Статус обновлён ✓', 'success');
     hideBottomSheet(() => renderFleet());
   } catch (err) {

@@ -4,6 +4,7 @@
  */
 
 import { getDrivers, getFleet, postAction, invalidateCache } from '../api.js';
+import { getWithSWR, CACHE_KEYS, invalidateCache as invalidateLocalCache } from '../cache.js';
 import { showScreen } from '../router.js?v=7';
 import { showBottomSheet, hideBottomSheet, showToast } from '../ui.js';
 import { CAR_STATUSES, SHEETS } from '../config.js';
@@ -72,19 +73,35 @@ export async function renderDrivers() {
     _pendingTab = null;
   }
 
-  body.innerHTML = _skeletonHTML();
-
+  body.innerHTML = '';
   let drivers;
-  try {
-    drivers = await getDrivers();
-  } catch {
-    body.innerHTML = _errorHTML();
-    document.getElementById('drivers-retry')?.addEventListener('click', () => renderDrivers());
-    return;
-  }
+  let cacheHit = false;
 
-  _lastDrivers = drivers;
-  _paint(body, drivers, _activeTab);
+  getWithSWR(CACHE_KEYS.DRIVERS, () => getDrivers(), {
+    onCached: d => {
+      cacheHit = true;
+      drivers = d;
+      _lastDrivers = drivers;
+      _paint(body, drivers, _activeTab);
+    },
+    onFresh: d => {
+      drivers = d;
+      _lastDrivers = drivers;
+      _paint(body, drivers, _activeTab);
+    },
+    onFetchError: (_e, meta) => {
+      if (!meta?.hadCache) {
+        body.innerHTML = _errorHTML();
+        document.getElementById('drivers-retry')?.addEventListener('click', () => renderDrivers());
+      }
+    },
+  });
+
+  setTimeout(() => {
+    if (!cacheHit && drivers === undefined) {
+      body.innerHTML = _skeletonHTML();
+    }
+  }, 0);
 }
 
 function _paint(body, drivers, tabId) {
@@ -350,6 +367,11 @@ async function _saveDriver(existing, fleet, drivers) {
 
     invalidateCache(SHEETS.DRIVERS);
     invalidateCache(SHEETS.CARS);
+    invalidateLocalCache(CACHE_KEYS.DRIVERS);
+    invalidateLocalCache(CACHE_KEYS.CARS);
+    if (!existing && deposit > 0) {
+      invalidateLocalCache(CACHE_KEYS.DEPOSITS);
+    }
     showToast(existing ? 'Изменения сохранены ✓' : 'Водитель добавлен ✓', 'success');
 
     if (!existing) {
@@ -449,6 +471,10 @@ async function _openAssignCarSheet(driverId, driverName) {
         invalidateCache(SHEETS.CARS);
         invalidateCache(SHEETS.RENTALS);
         invalidateCache(SHEETS.DRIVERS);
+        invalidateLocalCache(CACHE_KEYS.CARS);
+        invalidateLocalCache(CACHE_KEYS.RENTALS);
+        invalidateLocalCache(CACHE_KEYS.DRIVERS);
+        invalidateLocalCache(CACHE_KEYS.INCOME_FORM);
 
         showToast('Машина выдана ✓', 'success');
         hideBottomSheet(() => renderDrivers());
