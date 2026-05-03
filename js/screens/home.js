@@ -89,7 +89,7 @@ export async function renderHome() {
       </div>
       <div class="home-hdr__subtitle">КАССА АЗАМАТА</div>
       <div class="home-hdr__balance-row">
-        <div class="home-hdr__balance">${_fmt(Math.abs(balance))}</div>
+        <div class="kassa-amount">${_fmtAmount(Math.abs(balance))}<sup class="kassa-currency">₽</sup></div>
         <button type="button" class="home-hdr__refresh" id="home-refresh" aria-label="Обновить">↻</button>
       </div>
       <div class="home-hdr__delta ${deltaClass}">${deltaText}</div>
@@ -115,25 +115,19 @@ export async function renderHome() {
       </div>
       <div class="home-fleet__legend">
         <button type="button" class="home-fleet__legend-col" data-filter="${CAR_STATUSES.RENT}" aria-label="Аренда, ${fleetStats.rent}">
-          <div class="home-fleet__legend-line">
-            <span class="home-fleet__legend-dot" style="background:***REMOVED***4CAF50"></span>
-            <span class="home-fleet__legend-label">Аренда</span>
-          </div>
+          <span class="home-fleet__legend-dot" style="background:***REMOVED***16a34a"></span>
           <span class="home-fleet__legend-num home-fleet__legend-num--rent">${fleetStats.rent}</span>
+          <span class="home-fleet__legend-label">Аренда</span>
         </button>
         <button type="button" class="home-fleet__legend-col" data-filter="${CAR_STATUSES.IDLE}" aria-label="Простой, ${fleetStats.idle}">
-          <div class="home-fleet__legend-line">
-            <span class="home-fleet__legend-dot" style="background:***REMOVED***FFC107"></span>
-            <span class="home-fleet__legend-label">Простой</span>
-          </div>
+          <span class="home-fleet__legend-dot" style="background:***REMOVED***f59e0b"></span>
           <span class="home-fleet__legend-num home-fleet__legend-num--idle">${fleetStats.idle}</span>
+          <span class="home-fleet__legend-label">Простой</span>
         </button>
         <button type="button" class="home-fleet__legend-col" data-filter="${CAR_STATUSES.REPAIR}" aria-label="Ремонт, ${fleetStats.repair}">
-          <div class="home-fleet__legend-line">
-            <span class="home-fleet__legend-dot" style="background:***REMOVED***F44336"></span>
-            <span class="home-fleet__legend-label">Ремонт</span>
-          </div>
+          <span class="home-fleet__legend-dot" style="background:***REMOVED***ef4444"></span>
           <span class="home-fleet__legend-num home-fleet__legend-num--repair">${fleetStats.repair}</span>
+          <span class="home-fleet__legend-label">Ремонт</span>
         </button>
       </div>
       <div class="home-fleet__bar" role="group" aria-label="Распределение парка по статусам">
@@ -241,9 +235,16 @@ function _destroyObserver() {
 // ВСПОМОГАТЕЛЬНЫЙ РЕНДЕР
 // ═══════════════════════════════════════════════════════════════════════════
 
+/** Цвет полосы операции: приход (в т.ч. аренда, депозит, перевод входящий) — зелёный; расход — красный */
+function _opBarColor(op) {
+  if (op.direction === 'расход') return '***REMOVED***ef4444';
+  if (op.direction === 'приход') return '***REMOVED***16a34a';
+  return '***REMOVED***888888';
+}
+
 function _renderOpRow(op) {
   const isIncome = op.direction === 'приход';
-  const dotColor = isIncome ? '***REMOVED***4CAF50' : '***REMOVED***FF5252';
+  const barColor = _opBarColor(op);
   const sign     = isIncome ? '+' : '−';
   const amtClass = isIncome ? 'op-row__amount--pos' : 'op-row__amount--neg';
   const meta     = [op.carId, op.provel].filter(Boolean).join(' · ');
@@ -251,7 +252,7 @@ function _renderOpRow(op) {
 
   return `
     <div class="op-row">
-      <span class="op-row__dot" style="background:${dotColor}"></span>
+      <span class="op-bar" style="background:${barColor}"></span>
       <div class="op-row__body">
         <div class="op-row__cat">${cat}</div>
         ${meta ? `<div class="op-row__meta">${meta}</div>` : ''}
@@ -282,7 +283,7 @@ function _skeletonHTML() {
     <div class="skeleton" style="height:140px;border-radius:12px;margin:16px"></div>
     ${[1,2,3,4,5].map(() => `
       <div class="op-row">
-        <span class="skeleton" style="width:10px;height:10px;border-radius:50%;flex-shrink:0"></span>
+        <span class="op-bar skeleton" style="width:3px;border-radius:2px;flex-shrink:0;align-self:stretch;background:***REMOVED***e8e8e8"></span>
         <div style="flex:1">
           ${skel(55)}
           ${skel(35)}
@@ -370,16 +371,16 @@ function _calcFleet(fleet) {
 /** Сегменты прогресс-бара парка (flex-пропорции, min 8% для тапа) */
 function _fleetBarSegmentsHTML(stats) {
   const rows = [
-    { status: CAR_STATUSES.RENT, color: '***REMOVED***4CAF50', n: stats.rent },
-    { status: CAR_STATUSES.IDLE, color: '***REMOVED***FFC107', n: stats.idle },
-    { status: CAR_STATUSES.REPAIR, color: '***REMOVED***F44336', n: stats.repair },
+    { status: CAR_STATUSES.RENT, color: '***REMOVED***16a34a', n: stats.rent },
+    { status: CAR_STATUSES.IDLE, color: '***REMOVED***f59e0b', n: stats.idle },
+    { status: CAR_STATUSES.REPAIR, color: '***REMOVED***ef4444', n: stats.repair },
   ];
   return rows
     .filter(row => row.n > 0)
     .map(row => `
       <button type="button" class="home-fleet__bar-seg"
         data-filter="${row.status}"
-        style="flex:${row.n} 1 0;min-width:8%;background:${row.color}"
+        style="--fleet-seg:${row.color};flex:${row.n} 1 0;min-width:8%"
         aria-label="${row.n} маш."></button>
     `)
     .join('');
@@ -392,6 +393,11 @@ function _fleetBarSegmentsHTML(stats) {
 /** Форматирует число: «12 500 ₽» */
 function _fmt(n) {
   return `${Math.round(n).toLocaleString('ru-RU')} ₽`;
+}
+
+/** Только сумма с пробелами (для блока кассы с ₽ в sup) */
+function _fmtAmount(n) {
+  return `${Math.round(n).toLocaleString('ru-RU')}`;
 }
 
 /** Ключ календарного дня для группировки */

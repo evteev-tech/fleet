@@ -662,12 +662,20 @@
   margin-bottom: 8px;
 }
 
-.home-hdr__balance {
+.kassa-amount {
   font-size: 36px;
   font-weight: 700;
-  color: ***REMOVED***FFFFFF;
-  letter-spacing: -0.03em;
-  line-height: 1.1;
+  color: ***REMOVED***fff;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.kassa-currency {
+  font-size: 16px;
+  font-weight: 400;
+  color: ***REMOVED***888;
+  vertical-align: super;
+  margin-left: 3px;
 }
 
 .home-hdr__refresh {
@@ -707,14 +715,14 @@
   background: ***REMOVED***1A1A1A;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .home-action-wrap .home-action {
   width: 100%;
-  height: 56px;
-  padding: 0 18px;
+  padding: 14px 20px;
   border-radius: 14px;
+  font-size: 15px;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -727,7 +735,6 @@
   transition: transform var(--transition-fast), opacity var(--transition-fast);
   -webkit-user-select: none;
   user-select: none;
-  border: none;
 }
 
 .home-action:active {
@@ -737,21 +744,23 @@
 
 .home-action--income {
   background: ***REMOVED***FFDD2D;
+  border: none;
 }
 
 .home-action--income .home-action__arrow,
 .home-action--income .home-action__label {
-  color: ***REMOVED***1A1A1A;
+  color: ***REMOVED***111;
+  font-weight: 700;
 }
 
 .home-action--expense-main {
-  background: ***REMOVED***FFFFFF;
-  border: 1px solid ***REMOVED***e0e0e0;
+  background: transparent;
+  border: 1px solid ***REMOVED***333;
 }
 
 .home-action--expense-main .home-action__arrow,
 .home-action--expense-main .home-action__label {
-  color: ***REMOVED***1A1A1A;
+  color: ***REMOVED***999;
 }
 
 .home-action__arrow {
@@ -761,7 +770,7 @@
 }
 
 .home-action__label {
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 700;
 }
 
@@ -796,9 +805,9 @@
 .home-fleet__legend {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .home-fleet__legend-col {
@@ -806,7 +815,8 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: flex-start;
   gap: 6px;
   padding: 0;
   margin: 0;
@@ -814,7 +824,7 @@
   background: none;
   font: inherit;
   cursor: pointer;
-  text-align: left;
+  text-align: center;
   -webkit-user-select: none;
   user-select: none;
   transition: opacity var(--transition-fast);
@@ -824,59 +834,89 @@
   opacity: 0.65;
 }
 
-.home-fleet__legend-line {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
 .home-fleet__legend-label {
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 500;
-  color: ***REMOVED***888888;
+  color: ***REMOVED***aaa;
 }
 
 .home-fleet__legend-num {
-  font-size: 20px;
+  font-size: 26px;
   font-weight: 700;
   line-height: 1;
+  color: ***REMOVED***1a1a1a;
 }
 
-.home-fleet__legend-num--rent { color: ***REMOVED***4CAF50; }
-.home-fleet__legend-num--idle { color: ***REMOVED***FFC107; }
-.home-fleet__legend-num--repair { color: ***REMOVED***F44336; }
+.home-fleet__legend-num--rent,
+.home-fleet__legend-num--idle,
+.home-fleet__legend-num--repair {
+  color: ***REMOVED***1a1a1a;
+}
 
 .home-fleet__legend-dot {
-  width: 8px;
-  height: 8px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
 .home-fleet__bar {
+  position: relative;
   display: flex;
   flex-direction: row;
   gap: 2px;
-  height: 28px;
-  border-radius: 6px;
-  overflow: hidden;
-  background: ***REMOVED***E8E8E8;
+  align-items: center;
+  min-height: 40px;
+  margin-top: 4px;
+  border-radius: 3px;
+  overflow: visible;
+  background: transparent;
+}
+
+.home-fleet__bar::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 5px;
+  background: ***REMOVED***e8e8e8;
+  border-radius: 3px;
+  z-index: 0;
+  pointer-events: none;
 }
 
 .home-fleet__bar-seg {
   border: none;
   padding: 0;
   margin: 0;
-  min-height: 28px;
+  align-self: stretch;
+  min-height: 40px;
   cursor: pointer;
-  transition: filter var(--transition-fast), transform var(--transition-fast);
+  background: transparent !important;
+  position: relative;
+  z-index: 1;
+  transition: opacity var(--transition-fast);
   -webkit-user-select: none;
   user-select: none;
 }
 
+.home-fleet__bar-seg::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 5px;
+  border-radius: 2px;
+  background: var(--fleet-seg, ***REMOVED***ccc);
+  z-index: 1;
+}
+
 .home-fleet__bar-seg:active {
-  filter: brightness(0.92);
-  transform: scaleY(0.96);
+  opacity: 0.75;
 }
 
 /* ── Блок 4 — операции ── */
@@ -913,8 +953,8 @@
   opacity: 0.75;
 }
 
-.home-ops .op-row__amount--pos { color: ***REMOVED***4CAF50; }
-.home-ops .op-row__amount--neg { color: ***REMOVED***FF5252; }
+.home-ops .op-row__amount--pos { color: ***REMOVED***16a34a; }
+.home-ops .op-row__amount--neg { color: ***REMOVED***ef4444; }
 
 .home-ops .op-row__meta {
   color: ***REMOVED***888888;
@@ -946,6 +986,23 @@
 
 .op-row:last-child {
   border-bottom: none;
+}
+
+.home-ops .op-row {
+  align-items: stretch;
+  gap: 12px;
+  border-bottom: 0.5px solid ***REMOVED***f2f2f2;
+}
+
+.home-ops .op-row:last-child {
+  border-bottom: none;
+}
+
+.op-bar {
+  width: 3px;
+  border-radius: 2px;
+  align-self: stretch;
+  flex-shrink: 0;
 }
 
 .op-row__dot {
@@ -1011,6 +1068,64 @@
 .home-offline__icon { font-size: 48px; margin-bottom: var(--space-md); }
 .home-offline__text { font-size: 17px; font-weight: 700; color: var(--color-dark); }
 .home-offline__sub  { font-size: 13px; color: var(--color-muted); margin-top: 4px; }
+
+/* Нижняя навигация: тёмный фон, жёлтый активный (переопределяет components.css) */
+***REMOVED***navbar {
+  background: ***REMOVED***111;
+  border-top: 0.5px solid ***REMOVED***222;
+}
+
+***REMOVED***navbar .nav-item .nav-label {
+  color: ***REMOVED***444;
+  font-size: 10px;
+}
+
+***REMOVED***navbar .nav-item.active .nav-label {
+  color: ***REMOVED***FFDD2D;
+  font-weight: 600;
+}
+
+***REMOVED***navbar .nav-item .nav-icon {
+  color: ***REMOVED***444;
+}
+
+***REMOVED***navbar .nav-item.active .nav-icon {
+  color: ***REMOVED***FFDD2D;
+}
+
+***REMOVED***navbar .nav-item .nav-icon svg path:not([fill='none']):not([fill="none"]),
+***REMOVED***navbar .nav-item .nav-icon svg rect:not([fill='none']):not([fill="none"]),
+***REMOVED***navbar .nav-item .nav-icon svg circle:not([fill='none']):not([fill="none"]),
+***REMOVED***navbar .nav-item .nav-icon svg polyline:not([fill='none']):not([fill="none"]) {
+  fill: ***REMOVED***444;
+  stroke: none;
+}
+
+***REMOVED***navbar .nav-item.active .nav-icon svg path:not([fill='none']):not([fill="none"]),
+***REMOVED***navbar .nav-item.active .nav-icon svg rect:not([fill='none']):not([fill="none"]),
+***REMOVED***navbar .nav-item.active .nav-icon svg circle:not([fill='none']):not([fill="none"]),
+***REMOVED***navbar .nav-item.active .nav-icon svg polyline:not([fill='none']):not([fill="none"]) {
+  fill: ***REMOVED***FFDD2D;
+  stroke: none;
+}
+
+***REMOVED***navbar .nav-item .nav-icon svg [stroke] {
+  stroke: ***REMOVED***444;
+  fill: none !important;
+}
+
+***REMOVED***navbar .nav-item.active .nav-icon svg [stroke] {
+  stroke: ***REMOVED***FFDD2D;
+  fill: none !important;
+}
+
+***REMOVED***navbar .nav-item .nav-icon svg line {
+  stroke: ***REMOVED***444;
+}
+
+***REMOVED***navbar .nav-item.active .nav-icon svg line {
+  stroke: ***REMOVED***FFDD2D;
+}
 
 /* ─────────────────────────────────────────────
    ЭКРАН: ДАШБОРД (новый макет)
