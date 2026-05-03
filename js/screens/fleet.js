@@ -289,6 +289,7 @@ function _statusApiFromKey(key) {
 
 async function _openCarSheet(car) {
   let drivers = [];
+  invalidateCache(SHEETS.DRIVERS);
   try {
     drivers = await getDrivers();
   } catch {
