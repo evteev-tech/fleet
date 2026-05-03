@@ -123,7 +123,7 @@ export async function renderDriver(driverId) {
         <div class="drv-dep-history">
           ${driverDeps.map(dep => `
             <div class="drv-dep-row">
-              <span class="drv-dep-date">${dep.date || '—'}</span>
+              <span class="drv-dep-date">${_fmtDate(dep.date)}</span>
               <span class="drv-dep-type ${dep.amount >= 0 ? 'drv-dep--income' : 'drv-dep--return'}">
                 ${dep.amount >= 0 ? 'Поступление' : 'Возврат'}
               </span>
@@ -224,6 +224,16 @@ function _parseDate(s)  {
   const [d, m, y] = String(s).split('.');
   if (y) return new Date(+y, +m - 1, +d).getTime();
   return new Date(s).getTime() || 0;
+}
+
+function _fmtDate(val) {
+  if (!val) return '—';
+  const d = val instanceof Date ? val : new Date(val);
+  if (isNaN(d.getTime())) return String(val);
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yy = String(d.getFullYear()).slice(-2);
+  return `${dd}.${mm}.${yy}`;
 }
 
 function _openReturnSheet(driver, currentDeposit) {
