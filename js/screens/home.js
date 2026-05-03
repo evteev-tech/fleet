@@ -7,12 +7,11 @@
  * Бесконечный скролл: клиентская пагинация по 20 записей через IntersectionObserver.
  */
 
-import { getOperations, getFleet } from '../api.js';
+import { getOperations, getFleet, invalidateCache } from '../api.js';
 import { getCurrentUser }          from '../auth.js';
 import { parseRuDate } from './history.js';
 import { showScreen }              from '../router.js?v=7';
-import { showToast }               from '../ui.js';
-import { KASSA_ID, CAR_STATUSES }  from '../config.js';
+import { KASSA_ID, CAR_STATUSES, SHEETS } from '../config.js';
 
 // ─── Константы ────────────────────────────────────────────────────────────────
 const PAGE_SIZE = 20;
@@ -45,6 +44,9 @@ export async function renderHome() {
 
   // ── Скелетоны ────────────────────────────────────────────────────────────
   body.innerHTML = _skeletonHTML();
+
+  invalidateCache(SHEETS.OPERATIONS);
+  invalidateCache(SHEETS.CARS);
 
   // ── Загрузка ─────────────────────────────────────────────────────────────
   let ops, fleet;
@@ -81,68 +83,55 @@ export async function renderHome() {
       : `${delta > 0 ? '+' : '−'}${_fmt(Math.abs(delta))} сегодня`;
 
   body.innerHTML = `
-    <!-- Блок 1 — хедер -->
-    <div class="home-hdr">
+    <div class="home-header">
       <div class="home-hdr__brand-row">
         <span class="home-hdr__logo">Матизы</span>
         <div class="home-hdr__avatar" aria-hidden="true">${avatarLetter}</div>
       </div>
-      <div class="home-hdr__subtitle">КАССА АЗАМАТА</div>
-      <div class="home-hdr__balance-row">
-        <div class="kassa-amount">${_fmtAmount(Math.abs(balance))}<sup class="kassa-currency">₽</sup></div>
-        <button type="button" class="home-hdr__refresh" id="home-refresh" aria-label="Обновить">↻</button>
-      </div>
+      <div class="kassa-label">КАССА АЗАМАТА</div>
+      <div class="kassa-amount">${_fmtAmount(Math.abs(balance))}<sup class="kassa-currency">₽</sup></div>
       <div class="home-hdr__delta ${deltaClass}">${deltaText}</div>
-    </div>
-
-    <!-- Блок 2 — действия -->
-    <div class="home-action-wrap">
-      <button type="button" class="home-action home-action--income" id="home-btn-income">
-        <span class="home-action__arrow">↓</span>
-        <span class="home-action__label">Принять платёж</span>
-      </button>
-      <button type="button" class="home-action home-action--expense-main" id="home-btn-expense-main">
-        <span class="home-action__arrow">↑</span>
-        <span class="home-action__label">Расход</span>
-      </button>
-    </div>
-
-    <!-- Блок 3 — парк -->
-    <div class="home-fleet">
-      <div class="home-fleet__header">
-        <span class="home-fleet__title">Здоровье парка</span>
-        <span class="home-fleet__total">Всего — ${fleet.length}</span>
-      </div>
-      <div class="home-fleet__legend">
-        <button type="button" class="home-fleet__legend-col" data-filter="${CAR_STATUSES.RENT}" aria-label="Аренда, ${fleetStats.rent}">
-          <span class="home-fleet__legend-dot" style="background:***REMOVED***16a34a"></span>
-          <span class="home-fleet__legend-num home-fleet__legend-num--rent">${fleetStats.rent}</span>
-          <span class="home-fleet__legend-label">Аренда</span>
-        </button>
-        <button type="button" class="home-fleet__legend-col" data-filter="${CAR_STATUSES.IDLE}" aria-label="Простой, ${fleetStats.idle}">
-          <span class="home-fleet__legend-dot" style="background:***REMOVED***f59e0b"></span>
-          <span class="home-fleet__legend-num home-fleet__legend-num--idle">${fleetStats.idle}</span>
-          <span class="home-fleet__legend-label">Простой</span>
-        </button>
-        <button type="button" class="home-fleet__legend-col" data-filter="${CAR_STATUSES.REPAIR}" aria-label="Ремонт, ${fleetStats.repair}">
-          <span class="home-fleet__legend-dot" style="background:***REMOVED***ef4444"></span>
-          <span class="home-fleet__legend-num home-fleet__legend-num--repair">${fleetStats.repair}</span>
-          <span class="home-fleet__legend-label">Ремонт</span>
-        </button>
-      </div>
-      <div class="home-fleet__bar" role="group" aria-label="Распределение парка по статусам">
-        ${_fleetBarSegmentsHTML(fleetStats)}
+      <div class="home-action-wrap">
+        <button type="button" class="btn-primary" id="home-btn-income">Принять платёж</button>
+        <button type="button" class="btn-secondary" id="home-btn-expense-main">Расход</button>
       </div>
     </div>
 
-    <!-- Блок 4 — операции -->
-    <div class="home-ops">
-      <div class="home-ops__header">
-        <span class="home-ops__title">Операции</span>
-        <button type="button" class="home-ops__expense" id="home-ops-expense">+ Расход</button>
+    <div class="home-content-sheet">
+      <div class="home-fleet">
+        <div class="home-fleet__header">
+          <span class="home-fleet__title">Здоровье парка</span>
+          <span class="home-fleet__total">Всего — ${fleet.length}</span>
+        </div>
+        <div class="home-fleet__legend">
+          <button type="button" class="home-fleet__legend-col" data-filter="${CAR_STATUSES.RENT}" aria-label="Аренда, ${fleetStats.rent}">
+            <span class="home-fleet__legend-dot" style="background:***REMOVED***16a34a"></span>
+            <span class="home-fleet__legend-num home-fleet__legend-num--rent">${fleetStats.rent}</span>
+            <span class="home-fleet__legend-label">Аренда</span>
+          </button>
+          <button type="button" class="home-fleet__legend-col" data-filter="${CAR_STATUSES.IDLE}" aria-label="Простой, ${fleetStats.idle}">
+            <span class="home-fleet__legend-dot" style="background:***REMOVED***f59e0b"></span>
+            <span class="home-fleet__legend-num home-fleet__legend-num--idle">${fleetStats.idle}</span>
+            <span class="home-fleet__legend-label">Простой</span>
+          </button>
+          <button type="button" class="home-fleet__legend-col" data-filter="${CAR_STATUSES.REPAIR}" aria-label="Ремонт, ${fleetStats.repair}">
+            <span class="home-fleet__legend-dot" style="background:***REMOVED***ef4444"></span>
+            <span class="home-fleet__legend-num home-fleet__legend-num--repair">${fleetStats.repair}</span>
+            <span class="home-fleet__legend-label">Ремонт</span>
+          </button>
+        </div>
+        <div class="fleet-bar home-fleet__bar" role="group" aria-label="Распределение парка по статусам">
+          ${_fleetBarSegmentsHTML(fleetStats)}
+        </div>
       </div>
-      <div id="home-ops-list"></div>
-      <div id="home-ops-sentinel" style="height:1px"></div>
+
+      <div class="home-ops">
+        <div class="ops-header">
+          <span class="ops-title">Операции</span>
+        </div>
+        <div id="home-ops-list"></div>
+        <div id="home-ops-sentinel" style="height:1px"></div>
+      </div>
     </div>
   `;
 
@@ -150,17 +139,11 @@ export async function renderHome() {
   _renderPage();
 
   // ── Навешиваем слушатели ───────────────────────────────────────────────
-  document.getElementById('home-refresh')?.addEventListener('click', renderHome);
-
   document.getElementById('home-btn-income')?.addEventListener('click', () => {
     showScreen('screen-income');
   });
 
   document.getElementById('home-btn-expense-main')?.addEventListener('click', () => {
-    showScreen('screen-expense');
-  });
-
-  document.getElementById('home-ops-expense')?.addEventListener('click', () => {
     showScreen('screen-expense');
   });
 
@@ -267,30 +250,32 @@ function _renderOpRow(op) {
 function _skeletonHTML() {
   const skel = (w) => `<div class="skeleton skeleton-line" style="width:${w}%;margin-bottom:8px"></div>`;
   return `
-    <div class="home-hdr home-hdr--skeleton">
-      <div style="display:flex;justify-content:space-between;margin-bottom:12px">
+    <div class="home-header home-header--skeleton">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
         ${skel(28)}
         <div class="skeleton" style="width:40px;height:40px;border-radius:50%"></div>
       </div>
       ${skel(35)}
-      <div class="skeleton skeleton-line skeleton-line--xl" style="width:55%;margin-bottom:8px"></div>
-      ${skel(45)}
-    </div>
-    <div class="home-action-wrap" style="pointer-events:none">
-      <div class="skeleton" style="height:56px;border-radius:14px"></div>
-      <div class="skeleton" style="height:56px;border-radius:14px"></div>
-    </div>
-    <div class="skeleton" style="height:140px;border-radius:12px;margin:16px"></div>
-    ${[1,2,3,4,5].map(() => `
-      <div class="op-row">
-        <span class="op-bar skeleton" style="width:3px;border-radius:2px;flex-shrink:0;align-self:stretch;background:***REMOVED***e8e8e8"></span>
-        <div style="flex:1">
-          ${skel(55)}
-          ${skel(35)}
-        </div>
-        <div class="skeleton skeleton-line" style="width:70px"></div>
+      <div class="skeleton skeleton-line skeleton-line--xl" style="width:55%;margin-bottom:6px"></div>
+      ${skel(40)}
+      <div class="home-action-wrap" style="pointer-events:none;margin-top:8px">
+        <div class="skeleton" style="height:52px;border-radius:14px"></div>
+        <div class="skeleton" style="height:40px;border-radius:14px"></div>
       </div>
-    `).join('')}
+    </div>
+    <div class="home-content-sheet">
+      <div class="skeleton" style="height:140px;border-radius:12px;margin-bottom:16px"></div>
+      ${[1,2,3,4,5].map(() => `
+        <div class="op-row">
+          <span class="op-bar skeleton" style="width:3px;border-radius:2px;flex-shrink:0;align-self:stretch;background:***REMOVED***e8e8e8"></span>
+          <div style="flex:1">
+            ${skel(55)}
+            ${skel(35)}
+          </div>
+          <div class="skeleton skeleton-line" style="width:70px"></div>
+        </div>
+      `).join('')}
+    </div>
   `;
 }
 
