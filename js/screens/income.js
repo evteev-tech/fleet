@@ -98,7 +98,7 @@ export async function renderIncome() {
           toMileage: c.toMileage || 0,
           kmLeft,
           lastPaidDate: lastPaidMap[cid] || '',
-          driverName: dr?.fio || '—',
+          driverName: dr?.name || '—',
           driverPhone: dr?.phone || '',
           driverId: dr?.driverId || '',
         };

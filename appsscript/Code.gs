@@ -536,6 +536,11 @@ function handleGetFleet(ss) {
 // GET_DRIVERS
 // -----------------------------------------------------------------------------
 
+function _rentalNum(rentalId) {
+  var m = String(rentalId).match(/(\d+)$/);
+  return m ? parseInt(m[1], 10) : 0;
+}
+
 function handleGetDrivers(ss) {
   var dSheet = ss.getSheetByName(SHEET.DRIVERS);
   var rSheet = ss.getSheetByName(SHEET.RENTALS);
@@ -572,8 +577,10 @@ function handleGetDrivers(ss) {
     var rDateStart = parseDate(rw[3]);
     var rTs = rDateStart ? rDateStart.getTime() : 0;
 
-    if (!carToDriver[rCarId] || rTs > carToDriver[rCarId].ts) {
-      carToDriver[rCarId] = { driverId: rDriverId, ts: rTs };
+    if (!carToDriver[rCarId]
+      || rTs > carToDriver[rCarId].ts
+      || (rTs === carToDriver[rCarId].ts && _rentalNum(rw[0]) > carToDriver[rCarId].num)) {
+      carToDriver[rCarId] = { driverId: rDriverId, ts: rTs, num: _rentalNum(rw[0]) };
     }
   }
 
