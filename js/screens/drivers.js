@@ -50,10 +50,11 @@ function formatPhoneRu(raw) {
   return `+7 ${a} ${b}-${c}-${e}`;
 }
 
-function depositStyle(deposit) {
-  const x = Number(deposit) || 0;
-  if (x > 0) return '***REMOVED***2E7D32';
+function depositStyle(driver) {
+  const x = Number(driver.deposit) || 0;
   if (x < 0) return '***REMOVED***C62828';
+  if (x > 0 && isArchiveStatus(driver.status)) return '***REMOVED***757575';
+  if (x > 0) return '***REMOVED***2E7D32';
   return '***REMOVED***757575';
 }
 
@@ -158,8 +159,8 @@ function _cardHTML(d) {
   const badge = badgeFor(d);
   const dep = Number(d.deposit) || 0;
   const depStr = `${nfRub.format(dep)} ₽`;
-  const depCol = depositStyle(dep);
-  const car = d.currentCar || d.carId;
+  const depCol = depositStyle(d);
+  const car = d.currentCar;
   const carStr = car ? escapeHtml(String(car)) : '—';
   const carCol = car ? '***REMOVED***2E7D32' : '***REMOVED***757575';
   const note = String(d.note || '').trim();
@@ -168,7 +169,7 @@ function _cardHTML(d) {
     <article class="drivers-card" data-driver-id="${escapeAttr(d.driverId)}">
       <div class="drivers-card__top">
         <div class="drivers-card__id-block">
-          <div class="drivers-card__name">${escapeHtml(d.fio || '—')}</div>
+          <div class="drivers-card__name">${escapeHtml(d.name || '—')}</div>
           <div class="drivers-card__did">${escapeHtml(d.driverId)}</div>
         </div>
         <span class="drivers-card__badge ${badge.class}">${badge.label}</span>
@@ -182,10 +183,6 @@ function _cardHTML(d) {
         <div class="drivers-card__cell">
           <div class="drivers-card__lbl">Депозит</div>
           <div class="drivers-card__val" style="color:${depCol}">${depStr}</div>
-        </div>
-        <div class="drivers-card__cell">
-          <div class="drivers-card__lbl">ВУ</div>
-          <div class="drivers-card__val">${escapeHtml(d.vu || '—')}</div>
         </div>
         <div class="drivers-card__cell">
           <div class="drivers-card__lbl">Машина</div>
@@ -239,7 +236,7 @@ function _skeletonHTML() {
       </div>
       <div class="drivers-card__rule"></div>
       <div class="drivers-card__grid">
-        ${[1, 2, 3, 4].map(() => `
+        ${[1, 2, 3].map(() => `
           <div class="drivers-card__cell">
             <div class="skeleton skeleton-line" style="width:50%;height:10px;margin-bottom:6px"></div>
             <div class="skeleton skeleton-line" style="width:85%;height:14px"></div>
@@ -276,9 +273,7 @@ function _errorHTML() {
 
 export function openDriverForm(driver, fleet, drivers) {
   const isEdit = !!driver;
-  const freeCars = fleet.filter(c => c.status === CAR_STATUSES.IDLE);
   const title = isEdit ? 'Редактировать водителя' : 'Новый водитель';
-  const todayISO = new Date().toISOString().slice(0, 10);
 
   showBottomSheet(`
     <p class="bottomsheet-title">${title}</p>
@@ -286,7 +281,7 @@ export function openDriverForm(driver, fleet, drivers) {
     <div class="add-field">
       <label class="add-label">ФИО</label>
       <input id="drv-fio" class="field-input" type="text"
-        placeholder="Иванов Иван Иванович" value="${_esc(driver?.fio ?? '')}" />
+        placeholder="Иванов Иван Иванович" value="${_esc(driver?.name ?? '')}" />
       <div class="add-field-err hidden" id="err-drv-fio"></div>
     </div>
 
@@ -297,27 +292,9 @@ export function openDriverForm(driver, fleet, drivers) {
     </div>
 
     <div class="add-field">
-      <label class="add-label">Машина (только свободные)</label>
-      <select id="drv-car" class="field-input">
-        <option value="">— без машины —</option>
-        ${freeCars.map(c => `
-          <option value="${c.carId}" ${driver?.carId === c.carId ? 'selected' : ''}>
-            ${c.carId}${c.name ? ' · ' + c.name : ''}
-          </option>
-        `).join('')}
-      </select>
-    </div>
-
-    <div class="add-field">
       <label class="add-label">Депозит, ₽</label>
       <input id="drv-deposit" class="field-input" type="number"
         inputmode="decimal" placeholder="0" value="${driver?.deposit ?? ''}" />
-    </div>
-
-    <div class="add-field">
-      <label class="add-label">Дата начала</label>
-      <input id="drv-hired" class="field-input" type="date"
-        value="${driver?.hired ? _ddmmyyyyToISO(driver.hired) : todayISO}" />
     </div>
 
     <div class="add-field">
@@ -339,9 +316,7 @@ export function openDriverForm(driver, fleet, drivers) {
 async function _saveDriver(existing, fleet, drivers) {
   const fio = document.getElementById('drv-fio')?.value.trim();
   const phone = document.getElementById('drv-phone')?.value.trim();
-  const carId = document.getElementById('drv-car')?.value;
   const deposit = parseFloat(document.getElementById('drv-deposit')?.value) || 0;
-  const hiredISO = document.getElementById('drv-hired')?.value;
   const note = document.getElementById('drv-comment')?.value.trim();
 
   const errFio = document.getElementById('err-drv-fio');
@@ -360,31 +335,31 @@ async function _saveDriver(existing, fleet, drivers) {
       fio,
       phone,
       vu: '',
-      car_id: carId,
+      car_id: '',
       status: existing?.status ?? 'активен',
       comment: note,
     });
 
-    if (carId) {
-      await postAction('UPDATE_CAR_STATUS', {
-        car_id: carId,
-        new_status: CAR_STATUSES.RENT,
-      }).catch(() => {});
-    }
-
     if (!existing && deposit > 0) {
       await postAction('ADD_DEPOSIT', {
         driver_id: res.driver_id,
-        car_id: carId,
+        car_id: '',
         amount: deposit,
         comment: 'Начальный депозит',
       }).catch(() => {});
     }
 
+    const newDriverId = res.driver_id || existing?.driverId;
+
     invalidateCache(SHEETS.DRIVERS);
     invalidateCache(SHEETS.CARS);
     showToast(existing ? 'Изменения сохранены ✓' : 'Водитель добавлен ✓', 'success');
-    hideBottomSheet(() => renderDrivers());
+
+    if (!existing) {
+      hideBottomSheet(() => _openAssignCarSheet(newDriverId, fio));
+    } else {
+      hideBottomSheet(() => renderDrivers());
+    }
   } catch (err) {
     if (btn) { btn.disabled = false; btn.textContent = 'Сохранить'; }
     showToast(err.message === 'NO_CONNECTION' ? 'Нет соединения' : 'Ошибка сохранения', 'error');
@@ -395,8 +370,103 @@ function _esc(s) {
   return String(s).replace(/"/g, '&quot;');
 }
 
-function _ddmmyyyyToISO(s) {
-  if (!s) return '';
-  const [d, m, y] = s.split('.');
-  return `${y}-${m?.padStart(2, '0')}-${d?.padStart(2, '0')}`;
+function _fmtDateForApi(d) {
+  const dd   = String(d.getDate()).padStart(2, '0');
+  const mm   = String(d.getMonth() + 1).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  return `${dd}.${mm}.${yyyy}`;
+}
+
+async function _openAssignCarSheet(driverId, driverName) {
+  let fleet;
+  try { fleet = await getFleet(); }
+  catch { renderDrivers(); return; }
+
+  const freeCars = fleet.filter(c => c.status === CAR_STATUSES.IDLE);
+
+  showBottomSheet(`
+    <div class="drv-assign-sheet">
+      <div class="drv-assign-title">Выдать машину?</div>
+      <div class="drv-assign-sub">${escapeHtml(driverName)}</div>
+
+      ${freeCars.length === 0 ? `
+        <div class="drv-assign-empty">Нет свободных машин</div>
+        <button type="button" class="drv-assign-skip" id="drv-assign-skip">Пропустить</button>
+      ` : `
+        <div class="drv-assign-cars" id="drv-assign-cars">
+          ${freeCars.map(c => `
+            <div class="drv-assign-car" data-car-id="${escapeAttr(c.carId)}">
+              <div class="drv-assign-car-id">${escapeHtml(c.carId)}</div>
+              <div class="drv-assign-car-meta">${escapeHtml([c.name, c.color].filter(Boolean).join(' · '))}</div>
+              <div class="drv-assign-car-rate">${Math.round(c.rateDay || 0).toLocaleString('ru-RU')} ₽/день</div>
+            </div>
+          `).join('')}
+        </div>
+        <button type="button" class="drv-assign-confirm" id="drv-assign-confirm" disabled>
+          Выдать
+        </button>
+        <button type="button" class="drv-assign-skip" id="drv-assign-skip">Пропустить</button>
+      `}
+    </div>
+  `);
+
+  let selectedCarId = null;
+
+  setTimeout(() => {
+    document.getElementById('drv-assign-cars')?.addEventListener('click', e => {
+      const item = e.target.closest('[data-car-id]');
+      if (!item) return;
+      selectedCarId = item.dataset.carId;
+      document.querySelectorAll('.drv-assign-car').forEach(el => {
+        el.classList.toggle('drv-assign-car--selected', el.dataset.carId === selectedCarId);
+      });
+      const confirmBtn = document.getElementById('drv-assign-confirm');
+      if (confirmBtn) confirmBtn.disabled = false;
+    });
+
+    document.getElementById('drv-assign-confirm')?.addEventListener('click', async () => {
+      if (!selectedCarId) return;
+      const btn = document.getElementById('drv-assign-confirm');
+      if (!btn) return;
+      btn.disabled = true;
+      btn.textContent = 'Выдаём…';
+
+      try {
+        const today = _fmtDateForApi(new Date());
+
+        await postAction('UPDATE_CAR_STATUS', {
+          car_id: selectedCarId,
+          new_status: CAR_STATUSES.RENT,
+        });
+
+        const car = freeCars.find(c => c.carId === selectedCarId);
+        await postAction('ADD_RENTAL', {
+          car_id:     selectedCarId,
+          driver_id:  driverId,
+          date_start: today,
+          date_end:   '',
+          rate_day:   car?.rateDay || 0,
+          comment:    'выдача при регистрации водителя',
+        });
+
+        invalidateCache(SHEETS.CARS);
+        invalidateCache(SHEETS.RENTALS);
+        invalidateCache(SHEETS.DRIVERS);
+
+        showToast('Машина выдана ✓', 'success');
+        hideBottomSheet(() => renderDrivers());
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Выдать';
+        showToast(
+          err.message === 'NO_CONNECTION' ? 'Нет соединения' : 'Ошибка выдачи',
+          'error',
+        );
+      }
+    });
+
+    document.getElementById('drv-assign-skip')?.addEventListener('click', () => {
+      hideBottomSheet(() => renderDrivers());
+    });
+  }, 0);
 }

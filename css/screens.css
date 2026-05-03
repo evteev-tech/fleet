@@ -1955,6 +1955,56 @@
   margin-bottom: var(--space-lg);
 }
 
+/* Выдача машины после добавления водителя */
+.drv-assign-sheet { padding: 4px 0; }
+.drv-assign-title { font-size: 16px; font-weight: 700; color: ***REMOVED***111; margin-bottom: 4px; }
+.drv-assign-sub   { font-size: 12px; color: ***REMOVED***aaa; margin-bottom: 16px; }
+.drv-assign-empty { font-size: 13px; color: ***REMOVED***aaa; text-align: center; padding: 20px 0; }
+
+.drv-assign-cars { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; max-height: 300px; overflow-y: auto; }
+
+.drv-assign-car {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: ***REMOVED***f9f9f9;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+}
+.drv-assign-car--selected {
+  background: ***REMOVED***dcfce7;
+  border-color: ***REMOVED***16a34a;
+}
+.drv-assign-car-id   { font-size: 15px; font-weight: 700; color: ***REMOVED***111; min-width: 50px; }
+.drv-assign-car-meta { font-size: 12px; color: ***REMOVED***aaa; flex: 1; }
+.drv-assign-car-rate { font-size: 12px; font-weight: 600; color: ***REMOVED***111; white-space: nowrap; }
+
+.drv-assign-confirm {
+  width: 100%;
+  padding: 14px;
+  background: ***REMOVED***FFDD2D;
+  color: ***REMOVED***111;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+.drv-assign-confirm:disabled { background: ***REMOVED***f0f0f0; color: ***REMOVED***bbb; cursor: default; }
+
+.drv-assign-skip {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  color: ***REMOVED***aaa;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+}
+
 /* ── Bottomsheet: детали машины ── */
 .fleet-bs-hero {
   margin-bottom: 0;
