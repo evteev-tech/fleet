@@ -1957,51 +1957,113 @@
 
 /* ── Bottomsheet: детали машины ── */
 .fleet-bs-hero {
-  margin-bottom: var(--space-lg);
+  margin-bottom: 0;
+}
+
+.fleet-bs-drag {
+  width: 36px;
+  height: 4px;
+  background: ***REMOVED***e0e0e0;
+  border-radius: 2px;
+  margin: 0 auto 16px;
+}
+
+.fleet-bs-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 14px;
 }
 
 .fleet-bs-plate {
-  font-size: 26px;
-  font-weight: 900;
-  color: var(--color-dark);
+  font-size: 22px;
+  font-weight: 700;
+  color: ***REMOVED***111;
+  margin-bottom: 2px;
   letter-spacing: 0.03em;
-  margin-bottom: 4px;
 }
 
 .fleet-bs-model {
-  font-size: 14px;
-  color: var(--color-muted);
-  font-weight: 500;
-  margin-bottom: var(--space-sm);
+  font-size: 12px;
+  color: ***REMOVED***aaa;
 }
 
-.fleet-bs-status {
-  font-size: 12px;
+.fleet-bs-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+  margin-top: 4px;
+}
+
+.fleet-bs-badge--rent {
+  background: ***REMOVED***dcfce7;
+  color: ***REMOVED***15803d;
+}
+
+.fleet-bs-badge--idle {
+  background: ***REMOVED***fef9c3;
+  color: ***REMOVED***854d0e;
+}
+
+.fleet-bs-badge--repair {
+  background: ***REMOVED***fee2e2;
+  color: ***REMOVED***991b1b;
+}
+
+.fleet-bs-divider {
+  height: 0.5px;
+  background: ***REMOVED***f0f0f0;
+  margin: 12px 0;
 }
 
 .fleet-bs-change-label {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--color-muted);
-  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 600;
   letter-spacing: 0.05em;
-  margin-bottom: var(--space-sm);
+  color: ***REMOVED***aaa;
+  text-transform: uppercase;
+  margin-bottom: 10px;
 }
 
 .fleet-status-btns {
   display: flex;
-  gap: var(--space-sm);
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .fleet-status-btn {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
   cursor: pointer;
+  text-align: left;
+  min-height: 48px;
   transition: opacity var(--transition-fast), transform var(--transition-fast);
 }
 
+.fleet-status-btn--rent {
+  background: ***REMOVED***dcfce7;
+  color: ***REMOVED***15803d;
+}
+
+.fleet-status-btn--idle {
+  background: ***REMOVED***fef9c3;
+  color: ***REMOVED***854d0e;
+}
+
+.fleet-status-btn--repair {
+  background: ***REMOVED***fee2e2;
+  color: ***REMOVED***991b1b;
+}
+
 .fleet-status-btn:active {
-  opacity: 0.7;
-  transform: scale(0.95);
+  opacity: 0.85;
+  transform: scale(0.99);
 }
 
 /* Контекст в bottomsheet: пробег, ТО, водитель, примечание */
@@ -2009,7 +2071,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 0;
 }
 
 .fleet-bs-lbl {
@@ -2037,10 +2099,10 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px;
-  background: ***REMOVED***f9f9f9;
+  padding: 10px 12px;
+  background: ***REMOVED***f5f5f5;
   border-radius: 10px;
-  margin-bottom: 12px;
+  margin-bottom: 0;
 }
 
 .fleet-bs-avatar {
@@ -2069,10 +2131,12 @@
 }
 
 .fleet-bs-driver-empty {
-  font-size: 12px;
+  padding: 10px 12px;
+  background: ***REMOVED***f5f5f5;
+  border-radius: 10px;
+  font-size: 13px;
   color: ***REMOVED***aaa;
-  padding: 8px 0;
-  margin-bottom: 12px;
+  margin-bottom: 0;
 }
 
 .fleet-bs-note {
@@ -2084,7 +2148,7 @@
   border-radius: 8px;
   font-size: 12px;
   color: ***REMOVED***854d0e;
-  margin-bottom: 12px;
+  margin-bottom: 0;
 }
 
 /* Второй шит — выбор водителя */

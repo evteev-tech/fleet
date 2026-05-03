@@ -287,12 +287,6 @@ function _statusApiFromKey(key) {
   return CAR_STATUSES.IDLE;
 }
 
-function _pillClass(sk) {
-  if (sk === 'rent') return 'pill--green';
-  if (sk === 'repair') return 'pill--red';
-  return 'pill--yellow';
-}
-
 async function _openCarSheet(car) {
   let drivers = [];
   try {
@@ -329,23 +323,36 @@ async function _openCarSheet(car) {
     ? `<div class="fleet-bs-note"><span>⚠</span><span>${escapeHtml(noteTrim)}</span></div>`
     : '';
 
+  const badgeCls =
+    sk === 'rent' ? 'fleet-bs-badge--rent' :
+    sk === 'repair' ? 'fleet-bs-badge--repair' :
+    'fleet-bs-badge--idle';
+
   const statusBtns = opts.map(k => {
     const api = _statusApiFromKey(k);
     const lbl = BADGE[k].label;
-    if (k === 'rent') {
-      return `<button type="button" class="fleet-status-btn fleet-status-btn--rent" data-new-status="${escapeAttr(api)}">${lbl} →</button>`;
-    }
-    return `<button type="button" class="fleet-status-btn" data-new-status="${escapeAttr(api)}">${lbl}</button>`;
+    const mod =
+      k === 'rent' ? 'fleet-status-btn--rent' :
+      k === 'repair' ? 'fleet-status-btn--repair' :
+      'fleet-status-btn--idle';
+    const labelHtml = k === 'rent' ? `${lbl} →` : lbl;
+    return `<button type="button" class="fleet-status-btn ${mod}" data-new-status="${escapeAttr(api)}">${labelHtml}</button>`;
   }).join('');
 
   showBottomSheet(`
     <div class="fleet-bs-hero">
-      <div class="fleet-bs-plate">${escapeHtml(car.carId)}</div>
-      ${car.name || car.color ? `
-        <div class="fleet-bs-model">${escapeHtml([car.name, car.color].filter(Boolean).join(' · '))}</div>
-      ` : ''}
-      <span class="pill ${_pillClass(sk)}">${BADGE[sk].label}</span>
+      <div class="fleet-bs-drag"></div>
+      <div class="fleet-bs-top">
+        <div>
+          <div class="fleet-bs-plate">${escapeHtml(car.carId)}</div>
+          ${car.name || car.color ? `
+            <div class="fleet-bs-model">${escapeHtml([car.name, car.color].filter(Boolean).join(' · '))}</div>
+          ` : ''}
+        </div>
+        <span class="fleet-bs-badge ${badgeCls}">${BADGE[sk].label}</span>
+      </div>
     </div>
+    <div class="fleet-bs-divider"></div>
     <div class="fleet-bs-grid">
       <div class="fleet-bs-cell">
         <div class="fleet-bs-lbl">Пробег</div>
@@ -356,8 +363,11 @@ async function _openCarSheet(car) {
         <div class="fleet-bs-val" style="color:${toHex}">${escapeHtml(toInfo.text)}</div>
       </div>
     </div>
-    ${driverBlock}
+    <div class="fleet-bs-divider"></div>
     ${noteBlock}
+    ${noteBlock ? '<div class="fleet-bs-divider"></div>' : ''}
+    ${driverBlock}
+    <div class="fleet-bs-divider"></div>
     <div class="fleet-bs-change-label">Изменить статус</div>
     <div class="fleet-status-btns" id="fleet-status-btns">${statusBtns}</div>
   `);
