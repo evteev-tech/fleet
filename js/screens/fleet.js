@@ -452,8 +452,8 @@ async function _changeStatusWithDriver(car, newStatus, driverId) {
     await postAction('ADD_RENTAL', {
       car_id: car.carId,
       driver_id: driverId,
-      date_from: today,
-      rate: car.rateDay,
+      date_start: today,
+      rate_day: car.rateDay,
       comment: 'выдача из Парка',
     });
 
