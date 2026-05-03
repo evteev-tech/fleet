@@ -85,6 +85,12 @@ export function showScreen(screenId, params = {}) {
   _currentScreen = screenId;
   _updateNavbar(screenId);
 
+  const navbar = document.getElementById('navbar');
+  if (navbar) {
+    const u = getCurrentUser();
+    navbar.classList.toggle('hidden', !!u && screenId === 'screen-analytics');
+  }
+
   // Скрол в начало
   window.scrollTo(0, 0);
 
@@ -106,32 +112,53 @@ export function currentScreen() {
  * Вызывается один раз сразу после успешного входа.
  * @param {string} role
  */
-export async function renderNavbar(role) {
-  const navbar = document.getElementById('navbar');
-  if (!navbar) return;
+/**
+ * Ренерит те же пункты нижнего меню, что и глобальный navbar, в произвольный контейнер.
+ * @param {HTMLElement} container
+ * @param {string} role
+ * @param {string|null} activeScreenId  — какой экран пометить .active (или null)
+ */
+export async function mountNavbarInContainer(container, role, activeScreenId = null) {
+  if (!container) return;
 
   const items = NAVBAR_CONFIG[role] ?? [];
 
-  navbar.innerHTML = items.map(item => `
+  container.innerHTML = items
+    .map(
+      item => `
     <button type="button" class="nav-item" data-screen="${item.id}" aria-label="${item.label}">
       <div class="nav-icon" aria-hidden="true"></div>
       <span class="nav-label">${item.label}</span>
       <span class="nav-item__dot"></span>
-    </button>`).join('');
+    </button>`,
+    )
+    .join('');
 
-  const buttons = [...navbar.querySelectorAll('.nav-item')];
+  const buttons = [...container.querySelectorAll('.nav-item')];
 
-  await Promise.all(items.map(async (item, i) => {
-    const iconEl = buttons[i].querySelector('.nav-icon');
-    if (!iconEl || !item.iconPath) return;
-    await loadNavIcon(item.iconPath, iconEl);
-  }));
+  await Promise.all(
+    items.map(async (item, i) => {
+      const iconEl = buttons[i].querySelector('.nav-icon');
+      if (!iconEl || !item.iconPath) return;
+      await loadNavIcon(item.iconPath, iconEl);
+    }),
+  );
 
   buttons.forEach(btn => {
     btn.addEventListener('click', () => {
       showScreen(btn.dataset.screen);
     });
+    if (activeScreenId) {
+      btn.classList.toggle('active', btn.dataset.screen === activeScreenId);
+    }
   });
+}
+
+export async function renderNavbar(role) {
+  const navbar = document.getElementById('navbar');
+  if (!navbar) return;
+
+  await mountNavbarInContainer(navbar, role, null);
 
   navbar.classList.remove('hidden');
 }
@@ -141,11 +168,11 @@ export async function renderNavbar(role) {
  * @param {string} screenId
  */
 function _updateNavbar(screenId) {
-  const navbar = document.getElementById('navbar');
-  if (!navbar) return;
-  navbar.querySelectorAll('.nav-item').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.screen === screenId);
-  });
+  document
+    .querySelectorAll('***REMOVED***navbar .nav-item, ***REMOVED***screen-analytics .analytics-navbar .nav-item')
+    .forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.screen === screenId);
+    });
 }
 
 // ─── Инициализация ────────────────────────────────────────────────────────────

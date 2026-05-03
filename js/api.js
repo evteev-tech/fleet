@@ -408,8 +408,17 @@ export async function fetchDashboardAnalytics() {
   return dash;
 }
 
-/** Записывает год и месяц в B2:B3 листа «Дашборд». */
-export async function updateAnalyticsPeriod(year, month) {
+/**
+ * Период аналитики: месяц (B2:B3) или «всё время» (маркер E99 на листе «Дашборд», см. Apps Script).
+ * @param {number|null} year
+ * @param {number|null} month
+ * @param {{ allTime?: boolean }} [options]
+ */
+export async function updateAnalyticsPeriod(year, month, options = {}) {
+  if (options.allTime) {
+    await postAction('UPDATE_PERIOD', { allTime: true });
+    return;
+  }
   await postAction('UPDATE_PERIOD', { year, month });
 }
 

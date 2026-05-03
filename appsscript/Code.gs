@@ -427,6 +427,9 @@ function handleGetDashboard(ss) {
 
   const year  = Number(sheet.getRange('B2').getValue()) || new Date().getFullYear();
   const month = Number(sheet.getRange('B3').getValue()) || (new Date().getMonth() + 1);
+  // Маркер UI «Всё время» (E99); при необходимости подключите к формулам листа.
+  var periodAllRaw = sheet.getRange('E99').getValue();
+  var allTime = String(periodAllRaw || '').trim().toUpperCase() === 'ALL';
 
   const summaryLabels = ['\u0412\u044b\u0440\u0443\u0447\u043a\u0430', 'OPEX', 'CAPEX', '\u041f\u0440\u0438\u0431\u044b\u043b\u044c'];
   const summaryKeys   = ['revenue', 'opex', 'capex', 'profit'];
@@ -477,7 +480,7 @@ function handleGetDashboard(ss) {
     utilization.push({ car: carU, pct });
   }
 
-  return ok({ dashboard: { year, month, summary, opex, pnl, utilization } });
+  return ok({ dashboard: { year, month, allTime: allTime, summary, opex, pnl, utilization } });
 }
 
 function getDashboardData() {
@@ -485,16 +488,22 @@ function getDashboardData() {
 }
 
 function handleUpdatePeriod(ss, body) {
-  var year  = Number(body.year);
-  var month = Number(body.month);
-  if (!year || month < 1 || month > 12) return err('INVALID_PERIOD');
-
   var sheet = ss.getSheetByName('\u0414\u0430\u0448\u0431\u043e\u0440\u0434');
   if (!sheet) {
     logFailure(ss, 'UPDATE_PERIOD', 'SHEET_NOT_FOUND', '\u0414\u0430\u0448\u0431\u043e\u0440\u0434');
     return err('SHEET_NOT_FOUND');
   }
 
+  if (body.allTime === true) {
+    sheet.getRange('E99').setValue('ALL');
+    return ok({});
+  }
+
+  var year  = Number(body.year);
+  var month = Number(body.month);
+  if (!year || month < 1 || month > 12) return err('INVALID_PERIOD');
+
+  sheet.getRange('E99').clearContent();
   sheet.getRange('B2').setValue(year);
   sheet.getRange('B3').setValue(month);
   return ok({});
