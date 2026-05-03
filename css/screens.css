@@ -605,61 +605,91 @@
   padding-bottom: calc(var(--navbar-height) + var(--safe-bottom) + var(--space-lg));
 }
 
-/* ── Хедер-баланс ── */
+/* ── Блок 1 — хедер (***REMOVED***1A1A1A) ── */
 .home-hdr {
-  background: var(--color-dark);
-  padding: 52px var(--space-xl) var(--space-xl);
-  padding-top: max(52px, calc(env(safe-area-inset-top) + 40px));
+  background: ***REMOVED***1A1A1A;
+  padding: 52px var(--space-lg) var(--space-lg);
+  padding-top: max(52px, calc(env(safe-area-inset-top) + 36px));
   position: relative;
 }
 
 .home-hdr--skeleton {
-  padding: 52px var(--space-xl) var(--space-xl);
+  padding: 52px var(--space-lg) var(--space-lg);
 }
 
-.home-hdr__top {
+.home-hdr__brand-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 6px;
+  margin-bottom: 10px;
 }
 
-.home-hdr__greeting {
-  font-size: 12px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.45);
+.home-hdr__logo {
+  font-size: 17px;
+  font-weight: 700;
+  color: ***REMOVED***FFFFFF;
+  letter-spacing: -0.02em;
 }
 
-.home-hdr__refresh {
+.home-hdr__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: ***REMOVED***FFDD2D;
+  color: ***REMOVED***1A1A1A;
+  font-size: 18px;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  flex-shrink: 0;
+}
+
+.home-hdr__subtitle {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: ***REMOVED***FFFFFF;
+  opacity: 0.6;
+  margin-bottom: 12px;
+}
+
+.home-hdr__balance-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.home-hdr__balance {
+  font-size: 36px;
+  font-weight: 700;
+  color: ***REMOVED***FFFFFF;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.home-hdr__refresh {
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  color: rgba(255, 255, 255, 0.5);
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 22px;
+  line-height: 1;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
   transition: color var(--transition-fast), background var(--transition-fast);
 }
 
 .home-hdr__refresh:active {
   background: rgba(255, 255, 255, 0.1);
-  color: var(--color-white);
-}
-
-.home-hdr__balance {
-  font-size: 32px;
-  font-weight: 900;
-  color: var(--color-white);
-  letter-spacing: -1px;
-  margin-bottom: 2px;
-}
-
-.home-hdr__kassa {
-  font-size: 12px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.5);
-  margin-bottom: 6px;
+  color: ***REMOVED***FFFFFF;
 }
 
 .home-hdr__delta {
@@ -667,52 +697,48 @@
   font-weight: 600;
 }
 
-.home-hdr__delta--pos { color: var(--color-green); }
-.home-hdr__delta--neg { color: var(--color-red); }
+.home-hdr__delta--pos { color: ***REMOVED***4CAF50; }
+.home-hdr__delta--neg { color: ***REMOVED***FF5252; }
+.home-hdr__delta--zero { color: ***REMOVED***888888; }
 
-/* ── Кнопки действий ── */
-.home-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-sm);
-  padding: var(--space-md) var(--space-lg);
-  background: var(--color-dark);   /* продолжение тёмного хедера */
-  padding-bottom: var(--space-xl);
+/* ── Блок 2 — одна кнопка «Принять платёж» ── */
+.home-action-wrap {
+  padding: 16px;
+  background: ***REMOVED***1A1A1A;
+}
+
+.home-action-wrap .home-action {
+  width: 100%;
+  height: 56px;
+  padding: 0 18px;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .home-action {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 2px;
-  height: 80px;
-  padding: var(--space-md);
-  border-radius: 16px;
   cursor: pointer;
   transition: transform var(--transition-fast), opacity var(--transition-fast);
   -webkit-user-select: none;
   user-select: none;
-  text-align: left;
+  border: none;
 }
 
 .home-action:active {
-  transform: scale(0.96);
-  opacity: 0.88;
+  transform: scale(0.98);
+  opacity: 0.92;
 }
 
 .home-action--income {
-  background: var(--color-green);
+  background: ***REMOVED***FFDD2D;
 }
 
-.home-action--expense {
-  background: var(--color-white);
-  border: 1.5px solid var(--color-border);
-}
-
-.home-action__row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.home-action--income .home-action__arrow,
+.home-action--income .home-action__label {
+  color: ***REMOVED***1A1A1A;
 }
 
 .home-action__arrow {
@@ -721,88 +747,91 @@
   line-height: 1;
 }
 
-.home-action--income .home-action__arrow,
-.home-action--income .home-action__label {
-  color: var(--color-white);
-}
-
-.home-action--expense .home-action__arrow,
-.home-action--expense .home-action__label {
-  color: var(--color-dark);
-}
-
 .home-action__label {
-  font-size: 14px;
+  font-size: 17px;
   font-weight: 700;
 }
 
-.home-action__sub {
-  font-size: 11px;
-  font-weight: 500;
-  padding-left: 26px;
-}
-
-.home-action--income .home-action__sub {
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.home-action--expense .home-action__sub {
-  color: var(--color-muted);
-}
-
-/* ── Блок «Здоровье парка» ── */
+/* ── Блок 3 — «Здоровье парка» ── */
 .home-fleet {
-  margin: var(--space-md) var(--space-lg);
+  margin: 16px;
+  padding: 16px;
+  background: ***REMOVED***FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0 2px 16px rgba(26, 26, 26, 0.08);
 }
 
 .home-fleet__header {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  margin-bottom: var(--space-md);
+  margin-bottom: 14px;
 }
 
 .home-fleet__title {
   font-size: 15px;
-  font-weight: 700;
-  color: var(--color-dark);
+  font-weight: 500;
+  color: ***REMOVED***1A1A1A;
 }
 
 .home-fleet__total {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
-  color: var(--color-muted);
+  color: ***REMOVED***888888;
 }
 
 .home-fleet__legend {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px 16px;
-  margin-bottom: 10px;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
-.home-fleet__legend-item {
-  display: inline-flex;
-  align-items: center;
+.home-fleet__legend-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 6px;
   padding: 0;
   margin: 0;
   border: none;
   background: none;
   font: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-dark);
   cursor: pointer;
+  text-align: left;
   -webkit-user-select: none;
   user-select: none;
   transition: opacity var(--transition-fast);
 }
 
-.home-fleet__legend-item:active {
+.home-fleet__legend-col:active {
   opacity: 0.65;
 }
+
+.home-fleet__legend-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.home-fleet__legend-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: ***REMOVED***888888;
+}
+
+.home-fleet__legend-num {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.home-fleet__legend-num--rent { color: ***REMOVED***4CAF50; }
+.home-fleet__legend-num--idle { color: ***REMOVED***FFC107; }
+.home-fleet__legend-num--repair { color: ***REMOVED***F44336; }
 
 .home-fleet__legend-dot {
   width: 8px;
@@ -818,7 +847,7 @@
   height: 28px;
   border-radius: 6px;
   overflow: hidden;
-  background: var(--color-border);
+  background: ***REMOVED***E8E8E8;
 }
 
 .home-fleet__bar-seg {
@@ -837,9 +866,9 @@
   transform: scaleY(0.96);
 }
 
-/* ── Секция операций ── */
+/* ── Блок 4 — операции ── */
 .home-ops {
-  padding: 0 var(--space-lg) var(--space-lg);
+  padding: 0 16px 16px;
 }
 
 .home-ops__header {
@@ -850,16 +879,33 @@
 }
 
 .home-ops__title {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
-  color: var(--color-dark);
+  color: ***REMOVED***1A1A1A;
 }
 
-.home-ops__all {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--color-blue);
+.home-ops__expense {
+  font-size: 14px;
+  font-weight: 500;
+  color: ***REMOVED***1A1A1A;
+  background: ***REMOVED***F0F1F3;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
   cursor: pointer;
+  transition: opacity var(--transition-fast);
+}
+
+.home-ops__expense:active {
+  opacity: 0.75;
+}
+
+.home-ops .op-row__amount--pos { color: ***REMOVED***4CAF50; }
+.home-ops .op-row__amount--neg { color: ***REMOVED***FF5252; }
+
+.home-ops .op-row__meta {
+  color: ***REMOVED***888888;
+  font-size: 12px;
 }
 
 /* ── День-заголовок ── */
@@ -870,6 +916,10 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: var(--space-sm) 0 4px;
+}
+
+.home-ops .ops-day-label {
+  color: ***REMOVED***888888;
 }
 
 /* ── Строка операции ── */

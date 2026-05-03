@@ -9,7 +9,7 @@
 
 import { getOperations, getFleet } from '../api.js';
 import { getCurrentUser }          from '../auth.js';
-import { parseRuDate, formatGroupLabel } from './history.js';
+import { parseRuDate } from './history.js';
 import { showScreen }              from '../router.js?v=6';
 import { showToast }               from '../ui.js';
 import { KASSA_ID, CAR_STATUSES }  from '../config.js';
@@ -59,80 +59,77 @@ export async function renderHome() {
     return;
   }
 
-  // ── Вычисления (только касса Азамата; защита от чужих строк в таблице) ───
-  const azamatOps = ops.filter(op => op.kassaId === KASSA_ID.AZAMAT);
+  // ── Только K_AZAMAT до рендера ───────────────────────────────────────────
+  const azamatOps = ops.filter(
+    op => String(op.kassaId ?? '').trim() === String(KASSA_ID.AZAMAT),
+  );
   _allOps = [...azamatOps].sort((a, b) => _tsOp(b) - _tsOp(a));
 
   const balance = _calcBalance(azamatOps);
   const delta   = _calcDelta(azamatOps);
   const fleetStats = _calcFleet(fleet);
 
-  // ── Рендер ───────────────────────────────────────────────────────────────
-  const user    = getCurrentUser();
-  const first   = user?.name?.split(' ')[0] ?? 'Азамат';
-  const greeting = _greeting();
+  const user = getCurrentUser();
+  const firstName = user?.name?.split(' ')[0] ?? 'Азамат';
+  const avatarLetter = firstName.charAt(0).toUpperCase() || 'А';
+
+  const deltaClass =
+    delta > 0 ? 'home-hdr__delta--pos' : delta < 0 ? 'home-hdr__delta--neg' : 'home-hdr__delta--zero';
+  const deltaText =
+    delta === 0
+      ? '0 ₽ сегодня'
+      : `${delta > 0 ? '+' : '−'}${_fmt(Math.abs(delta))} сегодня`;
 
   body.innerHTML = `
-    <!-- ХЕДЕР: баланс -->
+    <!-- Блок 1 — хедер -->
     <div class="home-hdr">
-      <div class="home-hdr__top">
-        <span class="home-hdr__greeting">${greeting}, ${first}</span>
-        <button class="home-hdr__refresh" id="home-refresh" aria-label="Обновить">
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <path d="M1.5 9C1.5 4.858 4.858 1.5 9 1.5c2.8 0 5.25 1.6 6.5 4"
-              stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-            <path d="M16.5 9C16.5 13.142 13.142 16.5 9 16.5c-2.8 0-5.25-1.6-6.5-4"
-              stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-            <path d="M13 4H15.5V1.5" stroke="currentColor" stroke-width="1.7"
-              stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M5 14H2.5V16.5" stroke="currentColor" stroke-width="1.7"
-              stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
+      <div class="home-hdr__brand-row">
+        <span class="home-hdr__logo">Матизы</span>
+        <div class="home-hdr__avatar" aria-hidden="true">${avatarLetter}</div>
       </div>
-      <div class="home-hdr__balance">${_fmt(Math.abs(balance))}</div>
-      <div class="home-hdr__kassa">Касса Азамата</div>
-      <div class="home-hdr__delta ${delta >= 0 ? 'home-hdr__delta--pos' : 'home-hdr__delta--neg'}">
-        ${delta >= 0 ? '+' : '−'}${_fmt(Math.abs(delta))} сегодня
+      <div class="home-hdr__subtitle">КАССА АЗАМАТА</div>
+      <div class="home-hdr__balance-row">
+        <div class="home-hdr__balance">${_fmt(Math.abs(balance))}</div>
+        <button type="button" class="home-hdr__refresh" id="home-refresh" aria-label="Обновить">↻</button>
       </div>
+      <div class="home-hdr__delta ${deltaClass}">${deltaText}</div>
     </div>
 
-    <!-- КНОПКИ ДЕЙСТВИЙ -->
-    <div class="home-actions">
-      <button class="home-action home-action--income" id="home-btn-income">
-        <div class="home-action__row">
-          <span class="home-action__arrow">↓</span>
-          <span class="home-action__label">Принять платёж</span>
-        </div>
-        <span class="home-action__sub">Аренда, залог</span>
-      </button>
-      <button class="home-action home-action--expense" id="home-btn-expense">
-        <div class="home-action__row">
-          <span class="home-action__arrow">↑</span>
-          <span class="home-action__label">Расход</span>
-        </div>
-        <span class="home-action__sub">Ремонт, страховка</span>
+    <!-- Блок 2 — одна кнопка -->
+    <div class="home-action-wrap">
+      <button type="button" class="home-action home-action--income" id="home-btn-income">
+        <span class="home-action__arrow">↓</span>
+        <span class="home-action__label">Принять платёж</span>
       </button>
     </div>
 
-    <!-- ЗДОРОВЬЕ ПАРКА -->
-    <div class="home-fleet card">
+    <!-- Блок 3 — парк -->
+    <div class="home-fleet">
       <div class="home-fleet__header">
         <span class="home-fleet__title">Здоровье парка</span>
         <span class="home-fleet__total">Всего — ${fleet.length}</span>
       </div>
       <div class="home-fleet__legend">
-        <button type="button" class="home-fleet__legend-item" data-filter="${CAR_STATUSES.RENT}" aria-label="Аренда, ${fleetStats.rent}">
-          <span class="home-fleet__legend-dot" style="background:***REMOVED***4CAF50"></span>
-          <span>Аренда ${fleetStats.rent}</span>
+        <button type="button" class="home-fleet__legend-col" data-filter="${CAR_STATUSES.RENT}" aria-label="Аренда, ${fleetStats.rent}">
+          <div class="home-fleet__legend-line">
+            <span class="home-fleet__legend-dot" style="background:***REMOVED***4CAF50"></span>
+            <span class="home-fleet__legend-label">Аренда</span>
+          </div>
+          <span class="home-fleet__legend-num home-fleet__legend-num--rent">${fleetStats.rent}</span>
         </button>
-        <button type="button" class="home-fleet__legend-item" data-filter="${CAR_STATUSES.IDLE}" aria-label="Простой, ${fleetStats.idle}">
-          <span class="home-fleet__legend-dot" style="background:***REMOVED***FFC107"></span>
-          <span>Простой ${fleetStats.idle}</span>
+        <button type="button" class="home-fleet__legend-col" data-filter="${CAR_STATUSES.IDLE}" aria-label="Простой, ${fleetStats.idle}">
+          <div class="home-fleet__legend-line">
+            <span class="home-fleet__legend-dot" style="background:***REMOVED***FFC107"></span>
+            <span class="home-fleet__legend-label">Простой</span>
+          </div>
+          <span class="home-fleet__legend-num home-fleet__legend-num--idle">${fleetStats.idle}</span>
         </button>
-        <button type="button" class="home-fleet__legend-item" data-filter="${CAR_STATUSES.REPAIR}" aria-label="Ремонт, ${fleetStats.repair}">
-          <span class="home-fleet__legend-dot" style="background:***REMOVED***F44336"></span>
-          <span>Ремонт ${fleetStats.repair}</span>
+        <button type="button" class="home-fleet__legend-col" data-filter="${CAR_STATUSES.REPAIR}" aria-label="Ремонт, ${fleetStats.repair}">
+          <div class="home-fleet__legend-line">
+            <span class="home-fleet__legend-dot" style="background:***REMOVED***F44336"></span>
+            <span class="home-fleet__legend-label">Ремонт</span>
+          </div>
+          <span class="home-fleet__legend-num home-fleet__legend-num--repair">${fleetStats.repair}</span>
         </button>
       </div>
       <div class="home-fleet__bar" role="group" aria-label="Распределение парка по статусам">
@@ -140,11 +137,11 @@ export async function renderHome() {
       </div>
     </div>
 
-    <!-- СПИСОК ОПЕРАЦИЙ -->
+    <!-- Блок 4 — операции -->
     <div class="home-ops">
       <div class="home-ops__header">
         <span class="home-ops__title">Операции</span>
-        <button class="home-ops__all" id="home-ops-all">Все</button>
+        <button type="button" class="home-ops__expense" id="home-ops-expense">+ Расход</button>
       </div>
       <div id="home-ops-list"></div>
       <div id="home-ops-sentinel" style="height:1px"></div>
@@ -161,13 +158,8 @@ export async function renderHome() {
     showScreen('screen-income');
   });
 
-  document.getElementById('home-btn-expense')?.addEventListener('click', () => {
+  document.getElementById('home-ops-expense')?.addEventListener('click', () => {
     showScreen('screen-add', { addType: 'РАСХОД' });
-  });
-
-  document.getElementById('home-ops-all')?.addEventListener('click', () => {
-    showScreen('screen-history');
-    document.dispatchEvent(new CustomEvent('screen:activated', { detail: { screenId: 'screen-history' } }));
   });
 
   const _goFleetFilter = (status) => {
@@ -175,7 +167,7 @@ export async function renderHome() {
     showScreen('screen-fleet');
   };
 
-  body.querySelectorAll('.home-fleet__legend-item, .home-fleet__bar-seg').forEach(el => {
+  body.querySelectorAll('.home-fleet__legend-col, .home-fleet__bar-seg').forEach(el => {
     el.addEventListener('click', () => {
       const st = el.dataset.filter;
       if (st) _goFleetFilter(st);
@@ -243,22 +235,21 @@ function _destroyObserver() {
 
 function _renderOpRow(op) {
   const isIncome = op.direction === 'приход';
-  const dotColor = isIncome ? 'var(--color-green)' : 'var(--color-red)';
+  const dotColor = isIncome ? '***REMOVED***4CAF50' : '***REMOVED***FF5252';
   const sign     = isIncome ? '+' : '−';
   const amtClass = isIncome ? 'op-row__amount--pos' : 'op-row__amount--neg';
   const meta     = [op.carId, op.provel].filter(Boolean).join(' · ');
-  const time     = op.date ? _timeFromDate(op.date) : '';
+  const cat      = _capitalizeCategory(op.category || op.type || op.direction);
 
   return `
     <div class="op-row">
       <span class="op-row__dot" style="background:${dotColor}"></span>
       <div class="op-row__body">
-        <div class="op-row__cat">${op.category || op.type || op.direction}</div>
+        <div class="op-row__cat">${cat}</div>
         ${meta ? `<div class="op-row__meta">${meta}</div>` : ''}
       </div>
       <div class="op-row__right">
         <span class="op-row__amount ${amtClass}">${sign}${_fmt(op.amount)}</span>
-        ${time ? `<span class="op-row__time">${time}</span>` : ''}
       </div>
     </div>
   `;
@@ -268,15 +259,18 @@ function _skeletonHTML() {
   const skel = (w) => `<div class="skeleton skeleton-line" style="width:${w}%;margin-bottom:8px"></div>`;
   return `
     <div class="home-hdr home-hdr--skeleton">
-      ${skel(40)}
-      <div class="skeleton skeleton-line skeleton-line--xl" style="width:60%"></div>
-      ${skel(30)}
+      <div style="display:flex;justify-content:space-between;margin-bottom:12px">
+        ${skel(28)}
+        <div class="skeleton" style="width:40px;height:40px;border-radius:50%"></div>
+      </div>
+      ${skel(35)}
+      <div class="skeleton skeleton-line skeleton-line--xl" style="width:55%;margin-bottom:8px"></div>
+      ${skel(45)}
     </div>
-    <div class="home-actions" style="pointer-events:none">
-      <div class="skeleton" style="height:80px;border-radius:16px"></div>
-      <div class="skeleton" style="height:80px;border-radius:16px"></div>
+    <div class="home-action-wrap" style="pointer-events:none">
+      <div class="skeleton" style="height:56px;border-radius:14px"></div>
     </div>
-    <div class="skeleton" style="height:120px;border-radius:16px;margin-bottom:16px"></div>
+    <div class="skeleton" style="height:140px;border-radius:12px;margin:16px"></div>
     ${[1,2,3,4,5].map(() => `
       <div class="op-row">
         <span class="skeleton" style="width:10px;height:10px;border-radius:50%;flex-shrink:0"></span>
@@ -402,6 +396,17 @@ function _opDate(op) {
   return parseRuDate(op.dateRaw);
 }
 
+/** Группировка дней: СЕГОДНЯ / ВЧЕРА / дата */
+function _homeDayLabel(d) {
+  if (!d || isNaN(d.getTime())) return 'Без даты';
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+  if (d.toDateString() === today.toDateString()) return 'СЕГОДНЯ';
+  if (d.toDateString() === yesterday.toDateString()) return 'ВЧЕРА';
+  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+}
+
 /** Группирует ops (уже отсортированных desc) по дням, возвращает массив { label, ops } */
 function _groupByDay(ops) {
   const map = new Map();
@@ -409,7 +414,7 @@ function _groupByDay(ops) {
   ops.forEach(op => {
     const d = _opDate(op);
     const key = d && !isNaN(d.getTime()) ? _dayKey(d) : '__nodate';
-    const lbl = key === '__nodate' ? 'Без даты' : formatGroupLabel(d);
+    const lbl = key === '__nodate' ? 'Без даты' : _homeDayLabel(d);
     if (!map.has(key)) {
       map.set(key, { label: lbl, ops: [] });
       order.push(key);
@@ -419,24 +424,17 @@ function _groupByDay(ops) {
   return order.map(key => map.get(key));
 }
 
+function _capitalizeCategory(raw) {
+  const s = String(raw || '').replace(/_/g, ' ').trim();
+  if (!s) return '';
+  return s
+    .split(/\s+/)
+    .map(w => (w ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : ''))
+    .join(' ');
+}
+
 function _tsOp(op) {
   const d = _opDate(op);
   return d && !isNaN(d.getTime()) ? d.getTime() : 0;
 }
 
-/** «14:32» из объекта Date (если есть время) */
-function _timeFromDate(date) {
-  if (!(date instanceof Date) || isNaN(date)) return '';
-  const h = date.getHours(), m = date.getMinutes();
-  if (h === 0 && m === 0) return '';
-  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
-}
-
-/** «Доброе утро» / «Добрый день» / «Добрый вечер» */
-function _greeting() {
-  const h = new Date().getHours();
-  if (h < 6)  return 'Доброй ночи';
-  if (h < 12) return 'Доброе утро';
-  if (h < 18) return 'Добрый день';
-  return 'Добрый вечер';
-}
