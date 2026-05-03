@@ -234,7 +234,7 @@ function _normalizeFleetRow(r) {
 /**
  * Водители + активная аренда (currentCar) через GET_DRIVERS; fallback — лист «Водители».
  *
- * @returns {Promise<Array<{driverId,fio,phone,vu,status,deposit,note,carId,currentCar}>>}
+ * @returns {Promise<Array<{driverId,name,phone,license,status,deposit,note,carId,currentCar}>>}
  */
 export async function getDrivers() {
   try {
@@ -264,12 +264,11 @@ function _normalizeDriverRow(r) {
     r.currentCar != null && String(r.currentCar).trim() !== ''
       ? String(r.currentCar).trim()
       : '';
-  const name = String(r.name ?? r.fio ?? '');
   return {
     driverId: String(r.driverId ?? '').trim(),
-    fio: name,
+    name: String(r.name ?? r.fio ?? ''),
     phone: String(r.phone ?? ''),
-    vu: String(r.license ?? r.vu ?? ''),
+    license: String(r.license ?? r.vu ?? ''),
     status: String(r.status ?? '').trim(),
     deposit: Number(r.deposit) || 0,
     note: String(r.note ?? ''),
