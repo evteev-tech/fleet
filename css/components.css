@@ -390,27 +390,27 @@ select.field-input {
 .nav-icon svg circle:not([fill='none']):not([fill="none"]),
 .nav-icon svg polyline:not([fill='none']):not([fill="none"]),
 .nav-icon svg polygon:not([fill='none']):not([fill="none"]) {
-  fill: ***REMOVED***9E9E9E;
+  fill: ***REMOVED***888;
   stroke: none;
   transition: fill 0.15s ease;
 }
 
 .nav-icon svg line {
-  stroke: ***REMOVED***9E9E9E;
+  stroke: ***REMOVED***888;
   fill: none;
   transition: stroke 0.15s ease;
 }
 
 /* Если явно задан stroke */
 .nav-icon svg [stroke] {
-  stroke: ***REMOVED***9E9E9E;
+  stroke: ***REMOVED***888;
   fill: none !important;
   transition: stroke 0.15s ease;
 }
 
 .nav-label {
   font-size: 10px;
-  color: ***REMOVED***9E9E9E;
+  color: ***REMOVED***888;
   transition: color 0.15s ease;
 }
 
