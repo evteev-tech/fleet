@@ -310,35 +310,45 @@ function _pnlHtml(pnl, generalOpex) {
   const body = rows
     .map(r => {
       const profitCls = Number(r.profit) >= 0 ? 'analytics-pnl-profit--pos' : 'analytics-pnl-profit--neg';
+      const carName = String(r.car || '');
+      const carClass = carName.length > 6 ? ' pnl-car--full' : '';
       return `
-    <div class="analytics-pnl-row">
-      <div class="analytics-pnl-cell analytics-pnl-car">${r.car}</div>
-      <div class="analytics-pnl-cell analytics-pnl-rev">↑ ${fmtRub(r.revenue)}</div>
-      <div class="analytics-pnl-cell analytics-pnl-exp">↓ ${fmtRub(r.expense)}</div>
-      <div class="analytics-pnl-cell analytics-pnl-result ${profitCls}">${fmtRub(r.profit)}</div>
+    <div class="pnl-row">
+      <div class="pnl-car${carClass}">${carName}</div>
+      <div class="pnl-metrics">
+        <div class="pnl-rev">↑ ${fmtRub(r.revenue)}</div>
+        <div class="pnl-exp">↓ ${fmtRub(r.expense)}</div>
+        <div class="pnl-result ${profitCls}">${fmtRub(r.profit)}</div>
+      </div>
     </div>`;
     })
     .join('');
   return `
     <div class="analytics-pnl-list">
-      <div class="analytics-pnl-row analytics-pnl-row--head">
-        <div class="analytics-pnl-cell analytics-pnl-car">МАШИНА</div>
-        <div class="analytics-pnl-cell analytics-pnl-rev">ВЫРУЧКА</div>
-        <div class="analytics-pnl-cell analytics-pnl-exp">OPEX</div>
-        <div class="analytics-pnl-cell analytics-pnl-result">ИТОГ</div>
+      <div class="pnl-row pnl-row--head">
+        <div class="pnl-car">МАШИНА</div>
+        <div class="pnl-metrics">
+          <div class="pnl-rev">ВЫРУЧКА</div>
+          <div class="pnl-exp">OPEX</div>
+          <div class="pnl-result">ИТОГ</div>
+        </div>
       </div>
       ${body}
-      <div class="analytics-pnl-row analytics-pnl-row--general">
-        <div class="analytics-pnl-cell analytics-pnl-car">Общие</div>
-        <div class="analytics-pnl-cell analytics-pnl-rev">↑ ${fmtRub(0)}</div>
-        <div class="analytics-pnl-cell analytics-pnl-exp">↓ ${fmtRub(gen)}</div>
-        <div class="analytics-pnl-cell analytics-pnl-result analytics-pnl-profit--neg">${fmtRub(-gen)}</div>
+      <div class="pnl-row pnl-row--general">
+        <div class="pnl-car">Общие</div>
+        <div class="pnl-metrics">
+          <div class="pnl-rev">↑ ${fmtRub(0)}</div>
+          <div class="pnl-exp">↓ ${fmtRub(gen)}</div>
+          <div class="pnl-result analytics-pnl-profit--neg">${fmtRub(-gen)}</div>
+        </div>
       </div>
-      <div class="analytics-pnl-row analytics-pnl-row--total">
-        <div class="analytics-pnl-cell analytics-pnl-car">Итого</div>
-        <div class="analytics-pnl-cell analytics-pnl-rev">↑ ${fmtRub(totRev)}</div>
-        <div class="analytics-pnl-cell analytics-pnl-exp">↓ ${fmtRub(totExp)}</div>
-        <div class="analytics-pnl-cell analytics-pnl-result ${totPr >= 0 ? 'analytics-pnl-profit--pos' : 'analytics-pnl-profit--neg'}">${fmtRub(totPr)}</div>
+      <div class="pnl-row pnl-row--total">
+        <div class="pnl-car">Итого</div>
+        <div class="pnl-metrics">
+          <div class="pnl-rev">↑ ${fmtRub(totRev)}</div>
+          <div class="pnl-exp">↓ ${fmtRub(totExp)}</div>
+          <div class="pnl-result ${totPr >= 0 ? 'analytics-pnl-profit--pos' : 'analytics-pnl-profit--neg'}">${fmtRub(totPr)}</div>
+        </div>
       </div>
     </div>`;
 }
