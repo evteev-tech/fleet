@@ -2906,6 +2906,95 @@
   padding: 0 4px;
 }
 
+.analytics-seg {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.analytics-seg__btn {
+  border: none;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: ***REMOVED***555;
+  background: ***REMOVED***f0f1f3;
+}
+
+.analytics-seg__btn--active {
+  background: ***REMOVED***ffdd2d;
+  color: ***REMOVED***111;
+}
+
+.analytics-capex-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 0.5px solid var(--color-border);
+}
+
+.analytics-capex-row:last-child {
+  border-bottom: none;
+}
+
+.analytics-capex-row__name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-dark);
+}
+
+.analytics-capex-row__sum {
+  font-size: 14px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.analytics-capex-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.analytics-capex-table th {
+  text-align: left;
+  font-size: 12px;
+  color: var(--color-muted);
+  font-weight: 700;
+  padding: 8px 0;
+  border-bottom: 0.5px solid var(--color-border);
+}
+
+.analytics-capex-table th:last-child {
+  text-align: right;
+}
+
+.analytics-capex-table td {
+  padding: 10px 0;
+  border-bottom: 0.5px solid var(--color-border);
+  font-size: 13px;
+}
+
+.analytics-capex-table tr:last-child td {
+  border-bottom: none;
+}
+
+.analytics-capex-car {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 8px;
+}
+
+.analytics-capex-sum {
+  text-align: right;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
 .analytics-kassa-row {
   display: flex;
   justify-content: space-between;
@@ -2920,9 +3009,31 @@
 }
 
 .analytics-kassa-row__name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 14px;
   font-weight: 600;
   color: var(--color-dark);
+}
+
+.analytics-kassa-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.analytics-kassa-row--azamat {
+  background: ***REMOVED***ffdd2d;
+}
+
+.analytics-kassa-row--vladimir {
+  background: ***REMOVED***4b74ff;
+}
+
+.analytics-kassa-row--yulia {
+  background: ***REMOVED***f59e0b;
 }
 
 .analytics-kassa-row__nums {
@@ -2941,6 +3052,17 @@
 
 .analytics-kassa-row__exp {
   color: var(--color-red);
+}
+
+.analytics-kassa-row--deposits {
+  border-top: 1px solid var(--color-border);
+  margin-top: 6px;
+  padding-top: 12px;
+}
+
+.analytics-kassa-row__cov {
+  font-size: 11px;
+  color: var(--color-muted);
 }
 
 .analytics-tiles {
@@ -3054,46 +3176,48 @@
   background: ***REMOVED***8a8a8e;
 }
 
-.analytics-table-scroll {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  margin: 0 -4px;
-}
-
-.analytics-pnl-table {
-  border-collapse: collapse;
-  font-size: 13px;
-  min-width: 420px;
+.analytics-pnl-list {
   width: 100%;
 }
 
-.analytics-pnl-table th {
-  text-align: right;
-  font-weight: 700;
-  color: var(--color-muted);
-  padding: 8px 10px;
+.analytics-pnl-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
   border-bottom: 0.5px solid var(--color-border);
-}
-
-.analytics-pnl-table th:first-child {
-  text-align: left;
-}
-
-.analytics-pnl-table td {
-  padding: 10px;
-  border-bottom: 0.5px solid var(--color-border);
-  font-variant-numeric: tabular-nums;
 }
 
 .analytics-pnl-car {
+  width: 52px;
+  flex: 0 0 52px;
   font-weight: 600;
   color: var(--color-dark);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.analytics-pnl-num {
-  text-align: right;
+.analytics-pnl-rev {
+  flex: 1;
+  color: ***REMOVED***16a34a;
+  font-size: 12px;
   font-weight: 700;
+}
+
+.analytics-pnl-exp {
+  flex: 1;
+  color: ***REMOVED***8a8a8e;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.analytics-pnl-result {
+  min-width: 64px;
+  text-align: right;
+  font-size: 15px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
 }
 
 .analytics-pnl-profit--pos {
@@ -3104,10 +3228,24 @@
   color: var(--color-red);
 }
 
-.analytics-pnl-total td {
-  font-weight: 900;
+.analytics-pnl-row--head {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-muted);
+  letter-spacing: 0.04em;
+}
+
+.analytics-pnl-row--head .analytics-pnl-rev,
+.analytics-pnl-row--head .analytics-pnl-exp,
+.analytics-pnl-row--head .analytics-pnl-result {
+  color: var(--color-muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.analytics-pnl-row--total {
+  font-weight: 800;
   border-bottom: none;
-  padding-top: 12px;
 }
 
 .analytics-util-row {

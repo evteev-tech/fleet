@@ -16,6 +16,10 @@ import { mountNavbarInContainer } from '../router.js?v=7';
 import { KASSA_NAMES } from '../config.js';
 
 const PAGE_LABELS = ['Обзор', 'Расходы', 'CAPEX', 'По машинам', 'Кассы'];
+const CAPEX_MODE = {
+  ALL: 'all',
+  PERIOD: 'period',
+};
 
 const fmtRub = n =>
   `${new Intl.NumberFormat('ru-RU').format(Math.round(Number(n) || 0))} ₽`;
@@ -75,7 +79,7 @@ function _toOpDate(op) {
   return null;
 }
 
-function _calcDash({ ops, cars, kassas, allTime, year, month }) {
+function _calcDash({ ops, cars, kassas, deposits, allTime, year, month }) {
   const inPeriod = op => {
     const d = _toOpDate(op);
     if (!d) return false;
@@ -121,21 +125,28 @@ function _calcDash({ ops, cars, kassas, allTime, year, month }) {
     const k = String(op.category || 'Прочее').trim() || 'Прочее';
     opexMap.set(k, (opexMap.get(k) || 0) + (Number(op.amount) || 0));
   });
-  [...opexMap.entries()].forEach(([name, amount]) => {
-    if (!amount) return;
-    opexRows.push({
-      name,
-      amount,
-      share: opex > 0 ? amount / opex : 0,
+  [...opexMap.entries()]
+    .filter(([, sum]) => Number(sum) > 0)
+    .sort((a, b) => (Number(b[1]) || 0) - (Number(a[1]) || 0))
+    .forEach(([name, amount]) => {
+      opexRows.push({
+        name,
+        amount,
+        share: opex > 0 ? amount / opex : 0,
+      });
     });
-  });
 
   const pnlMap = new Map();
+  let pnlGeneralOpex = 0;
   ops.forEach(op => {
     if (!inPeriod(op)) return;
     const cls = _opClass(op);
     if (cls !== 'revenue' && cls !== 'opex') return;
-    const car = String(op.carId || '').trim() || 'Без машины';
+    const car = String(op.carId || '').trim();
+    if (!car) {
+      if (cls === 'opex') pnlGeneralOpex += Number(op.amount) || 0;
+      return;
+    }
     if (!pnlMap.has(car)) {
       pnlMap.set(car, { car, revenue: 0, expense: 0, profit: 0 });
     }
@@ -143,6 +154,24 @@ function _calcDash({ ops, cars, kassas, allTime, year, month }) {
     if (cls === 'revenue') row.revenue += Number(op.amount) || 0;
     if (cls === 'opex') row.expense += Number(op.amount) || 0;
     row.profit = row.revenue - row.expense;
+  });
+
+  const capexCatsPeriod = new Map();
+  const capexCatsAll = new Map();
+  const capexCarsPeriod = new Map();
+  const capexCarsAll = new Map();
+  ops.forEach(op => {
+    const cls = _opClass(op);
+    if (cls !== 'capex') return;
+    const amt = Number(op.amount) || 0;
+    const cat = String(op.category || 'Прочее').trim() || 'Прочее';
+    const car = String(op.carId || '').trim() || 'Без машины';
+    capexCatsAll.set(cat, (capexCatsAll.get(cat) || 0) + amt);
+    capexCarsAll.set(car, (capexCarsAll.get(car) || 0) + amt);
+    if (inPeriod(op)) {
+      capexCatsPeriod.set(cat, (capexCatsPeriod.get(cat) || 0) + amt);
+      capexCarsPeriod.set(car, (capexCarsPeriod.get(car) || 0) + amt);
+    }
   });
 
   const inactive = new Set(['в ремонте', 'продана', 'списана']);
@@ -182,6 +211,7 @@ function _calcDash({ ops, cars, kassas, allTime, year, month }) {
     ],
     opex: opexRows,
     pnl: [...pnlMap.values()].sort((a, b) => b.profit - a.profit),
+    pnlGeneralOpex,
     utilization: [
       {
         car: `В аренде ${rented} из ${totalActive}`,
@@ -189,6 +219,23 @@ function _calcDash({ ops, cars, kassas, allTime, year, month }) {
       },
     ],
     kassas: kassas,
+    deposits: deposits || [],
+    capexByCategoryPeriod: [...capexCatsPeriod.entries()]
+      .filter(([, sum]) => Number(sum) > 0)
+      .sort((a, b) => (Number(b[1]) || 0) - (Number(a[1]) || 0))
+      .map(([name, amount]) => ({ name, amount })),
+    capexByCategoryAll: [...capexCatsAll.entries()]
+      .filter(([, sum]) => Number(sum) > 0)
+      .sort((a, b) => (Number(b[1]) || 0) - (Number(a[1]) || 0))
+      .map(([name, amount]) => ({ name, amount })),
+    capexByCarsPeriod: [...capexCarsPeriod.entries()]
+      .filter(([, sum]) => Number(sum) > 0)
+      .sort((a, b) => (Number(b[1]) || 0) - (Number(a[1]) || 0))
+      .map(([car, amount]) => ({ car, amount })),
+    capexByCarsAll: [...capexCarsAll.entries()]
+      .filter(([, sum]) => Number(sum) > 0)
+      .sort((a, b) => (Number(b[1]) || 0) - (Number(a[1]) || 0))
+      .map(([car, amount]) => ({ car, amount })),
     capexAll,
     capexPeriod,
   };
@@ -253,34 +300,46 @@ function _opexHtml(opex) {
     .join('');
 }
 
-function _pnlHtml(pnl) {
-  const tr = pnl
-    .map(
-      r => `
-    <tr>
-      <td class="analytics-pnl-car">${r.car}</td>
-      <td class="analytics-pnl-num">${fmtRub(r.revenue)}</td>
-      <td class="analytics-pnl-num">${fmtRub(r.expense)}</td>
-      <td class="analytics-pnl-num analytics-pnl-profit ${Number(r.profit) >= 0 ? 'analytics-pnl-profit--pos' : 'analytics-pnl-profit--neg'}">${fmtRub(r.profit)}</td>
-    </tr>`,
-    )
+function _pnlHtml(pnl, generalOpex) {
+  const rows = [...(pnl || [])];
+  const totRev = rows.reduce((a, r) => a + (Number(r.revenue) || 0), 0);
+  const totExpCars = rows.reduce((a, r) => a + (Number(r.expense) || 0), 0);
+  const gen = Number(generalOpex) || 0;
+  const totExp = totExpCars + gen;
+  const totPr = totRev - totExp;
+  const body = rows
+    .map(r => {
+      const profitCls = Number(r.profit) >= 0 ? 'analytics-pnl-profit--pos' : 'analytics-pnl-profit--neg';
+      return `
+    <div class="analytics-pnl-row">
+      <div class="analytics-pnl-cell analytics-pnl-car">${r.car}</div>
+      <div class="analytics-pnl-cell analytics-pnl-rev">↑ ${fmtRub(r.revenue)}</div>
+      <div class="analytics-pnl-cell analytics-pnl-exp">↓ ${fmtRub(r.expense)}</div>
+      <div class="analytics-pnl-cell analytics-pnl-result ${profitCls}">${fmtRub(r.profit)}</div>
+    </div>`;
+    })
     .join('');
-  const totRev = pnl.reduce((a, r) => a + (Number(r.revenue) || 0), 0);
-  const totExp = pnl.reduce((a, r) => a + (Number(r.expense) || 0), 0);
-  const totPr = pnl.reduce((a, r) => a + (Number(r.profit) || 0), 0);
-  const foot = `
-    <tr class="analytics-pnl-total">
-      <td>Итого</td>
-      <td class="analytics-pnl-num">${fmtRub(totRev)}</td>
-      <td class="analytics-pnl-num">${fmtRub(totExp)}</td>
-      <td class="analytics-pnl-num analytics-pnl-profit ${totPr >= 0 ? 'analytics-pnl-profit--pos' : 'analytics-pnl-profit--neg'}">${fmtRub(totPr)}</td>
-    </tr>`;
   return `
-    <div class="analytics-table-scroll">
-      <table class="analytics-pnl-table">
-        <thead><tr><th>Машина</th><th>Выручка</th><th>Расходы</th><th>Прибыль</th></tr></thead>
-        <tbody>${tr}${foot}</tbody>
-      </table>
+    <div class="analytics-pnl-list">
+      <div class="analytics-pnl-row analytics-pnl-row--head">
+        <div class="analytics-pnl-cell analytics-pnl-car">МАШИНА</div>
+        <div class="analytics-pnl-cell analytics-pnl-rev">ВЫРУЧКА</div>
+        <div class="analytics-pnl-cell analytics-pnl-exp">OPEX</div>
+        <div class="analytics-pnl-cell analytics-pnl-result">ИТОГ</div>
+      </div>
+      ${body}
+      <div class="analytics-pnl-row analytics-pnl-row--general">
+        <div class="analytics-pnl-cell analytics-pnl-car">Общие</div>
+        <div class="analytics-pnl-cell analytics-pnl-rev">↑ ${fmtRub(0)}</div>
+        <div class="analytics-pnl-cell analytics-pnl-exp">↓ ${fmtRub(gen)}</div>
+        <div class="analytics-pnl-cell analytics-pnl-result analytics-pnl-profit--neg">${fmtRub(-gen)}</div>
+      </div>
+      <div class="analytics-pnl-row analytics-pnl-row--total">
+        <div class="analytics-pnl-cell analytics-pnl-car">Итого</div>
+        <div class="analytics-pnl-cell analytics-pnl-rev">↑ ${fmtRub(totRev)}</div>
+        <div class="analytics-pnl-cell analytics-pnl-exp">↓ ${fmtRub(totExp)}</div>
+        <div class="analytics-pnl-cell analytics-pnl-result ${totPr >= 0 ? 'analytics-pnl-profit--pos' : 'analytics-pnl-profit--neg'}">${fmtRub(totPr)}</div>
+      </div>
     </div>`;
 }
 
@@ -304,41 +363,82 @@ function _utilHtml(utilization) {
     .join('');
 }
 
-function _capexPageHtml(dash) {
+function _capexPageHtml(dash, capexMode) {
   const s = dash.summary?.find(x => x.key === 'capex');
   if (!s) {
     return `<div class="white-card analytics-card-pad"><div class="analytics-muted">Нет данных</div></div>`;
   }
+  const isAll = capexMode === CAPEX_MODE.ALL;
+  const cats = isAll ? dash.capexByCategoryAll : dash.capexByCategoryPeriod;
+  const cars = isAll ? dash.capexByCarsAll : dash.capexByCarsPeriod;
+  const capRows = (cats || [])
+    .map(row => `
+      <div class="analytics-capex-row">
+        <span class="analytics-capex-row__name">${row.name}</span>
+        <span class="analytics-capex-row__sum">${fmtRub(row.amount)}</span>
+      </div>`)
+    .join('');
+  const carRows = (cars || [])
+    .map(row => `
+      <tr>
+        <td class="analytics-capex-car">${row.car}</td>
+        <td class="analytics-capex-sum">${fmtRub(row.amount)}</td>
+      </tr>`)
+    .join('');
   return `
     <div class="white-card analytics-card-pad analytics-capex-hero">
       <div class="analytics-capex-hero__label">${s.label}</div>
       <div class="analytics-capex-hero__amount">${s.current !== null && s.current !== undefined ? fmtRub(s.current) : '—'}</div>
       ${_deltaBlock(s.key, s.current, s.previous)}
+      <div class="analytics-seg" id="analytics-capex-seg">
+        <button type="button" class="analytics-seg__btn${isAll ? ' analytics-seg__btn--active' : ''}" data-capex-mode="${CAPEX_MODE.ALL}">За всё время</button>
+        <button type="button" class="analytics-seg__btn${!isAll ? ' analytics-seg__btn--active' : ''}" data-capex-mode="${CAPEX_MODE.PERIOD}">За период</button>
+      </div>
+    </div>
+    <div class="white-card analytics-card-pad">
+      <div class="section-label">CAPEX по категориям</div>
+      ${capRows || '<div class="analytics-muted">Нет данных</div>'}
+    </div>
+    <div class="white-card analytics-card-pad">
+      <div class="section-label">CAPEX по машинам</div>
+      <table class="analytics-capex-table">
+        <thead><tr><th>Машина</th><th>Сумма CAPEX</th></tr></thead>
+        <tbody>${carRows || '<tr><td colspan="2" class="analytics-muted">Нет данных</td></tr>'}</tbody>
+      </table>
     </div>
     <p class="analytics-muted analytics-capex-hint">За период: ${fmtRub(dash.capexPeriod || 0)} · Всё время: ${fmtRub(dash.capexAll || 0)}</p>`;
 }
 
-function _kassasRowsHtml(kassas) {
-  const rows = [...(kassas || [])]
-    .map(k => ({
-      label: k.name || KASSA_NAMES[k.kassaId] || k.kassaId || '—',
-      bal: Number(k.balanceCurrent) || 0,
-    }))
-    .sort((a, b) => b.bal - a.bal);
-  if (!rows.length) {
-    return '<div class="analytics-muted">Нет касс</div>';
-  }
-  return rows
-    .map(
-      r => `
+function _kassasRowsHtml(dash) {
+  const map = new Map((dash.kassas || []).map(k => [String(k.kassaId || '').trim(), Number(k.balanceCurrent) || 0]));
+  const rows = [
+    { id: 'K_AZAMAT', label: 'Azamat', cls: 'analytics-kassa-row--azamat' },
+    { id: 'K_VLADIMIR', label: 'Vladimir', cls: 'analytics-kassa-row--vladimir' },
+    { id: 'K_YULIA', label: 'Yulia', cls: 'analytics-kassa-row--yulia' },
+  ];
+  const body = rows
+    .map(r => `
     <div class="analytics-kassa-row">
-      <div class="analytics-kassa-row__name">${r.label}</div>
+      <div class="analytics-kassa-row__name"><span class="analytics-kassa-dot ${r.cls}"></span>${r.label}</div>
       <div class="analytics-kassa-row__nums">
-        <span class="analytics-kassa-row__inc">${fmtRub(r.bal)}</span>
+        <span class="analytics-kassa-row__inc">${fmtRub(map.get(r.id) || 0)}</span>
       </div>
-    </div>`,
-    )
+    </div>`)
     .join('');
+  const activeDeposits = (dash.deposits || [])
+    .filter(d => String(d.status || '').toLowerCase().includes('актив'))
+    .reduce((acc, d) => acc + (Number(d.amount) || 0), 0);
+  const coverageBase = Number(dash.summary?.find(s => s.key === 'opex')?.current) || 0;
+  const coveragePct = coverageBase > 0 ? (activeDeposits / coverageBase) * 100 : 0;
+  const depositRow = `
+    <div class="analytics-kassa-row analytics-kassa-row--deposits">
+      <div class="analytics-kassa-row__name">Залоги (DP* АКТИВЕН)</div>
+      <div class="analytics-kassa-row__nums">
+        <span class="analytics-kassa-row__inc">${fmtRub(activeDeposits)}</span>
+        <span class="analytics-kassa-row__cov">Покрытие: ${Math.round(coveragePct)}%</span>
+      </div>
+    </div>`;
+  return `${body}${depositRow}`;
 }
 
 function _headerPillsHtml(dash) {
@@ -359,7 +459,7 @@ function _headerPillsHtml(dash) {
     </div>`;
 }
 
-function _pagesHtml(dash, emptyMsg) {
+function _pagesHtml(dash, emptyMsg, capexMode) {
   const banner =
     emptyMsg && `<div class="analytics-empty-banner">${emptyMsg}</div>`;
   return `
@@ -384,20 +484,20 @@ function _pagesHtml(dash, emptyMsg) {
     <div class="analytics-page" data-page="2">
       <div class="analytics-page-inner">
         <div class="section-label">CAPEX</div>
-        ${_capexPageHtml(dash)}
+        ${_capexPageHtml(dash, capexMode)}
       </div>
     </div>
     <div class="analytics-page" data-page="3">
       <div class="analytics-page-inner">
         <div class="section-label">P&amp;L по машинам</div>
         <div class="white-card analytics-card-pad">
-          ${dash.pnl?.length ? _pnlHtml(dash.pnl) : '<div class="analytics-muted">Нет данных</div>'}
+          ${dash.pnl?.length || (Number(dash.pnlGeneralOpex) || 0) > 0 ? _pnlHtml(dash.pnl, dash.pnlGeneralOpex) : '<div class="analytics-muted">Нет данных</div>'}
         </div>
       </div>
     </div>
     <div class="analytics-page" data-page="4">
       <div class="analytics-page-inner">
-        <div class="section-label">Оборот по кассам</div>
+        <div class="section-label">Балансы касс</div>
         <div class="white-card analytics-card-pad" id="analytics-kassas-mount">Загрузка…</div>
       </div>
     </div>`;
@@ -463,10 +563,10 @@ function _errorShellHTML(noConn) {
   });
 }
 
-function _successShellHTML(dash, emptyMsg) {
+function _successShellHTML(dash, emptyMsg, capexMode) {
   return _shellFromParts({
     headerPills: _headerPillsHtml(dash),
-    carouselInner: _pagesHtml(dash, emptyMsg),
+    carouselInner: _pagesHtml(dash, emptyMsg, capexMode),
     bottomBar: true,
   });
 }
@@ -511,7 +611,7 @@ async function _mountInlineNavbar(root) {
 function _hydrateKassas(root, dash) {
   const mount = root.querySelector('***REMOVED***analytics-kassas-mount');
   if (!mount) return;
-  mount.innerHTML = _kassasRowsHtml(dash.kassas);
+  mount.innerHTML = _kassasRowsHtml(dash);
 }
 
 function _afterShellMounted(root, dash) {
@@ -533,6 +633,7 @@ let _ops = [];
 let _cars = [];
 let _kassas = [];
 let _deposits = [];
+let _capexMode = CAPEX_MODE.PERIOD;
 
 function _applyDashToState(dash) {
   _pendingYear = dash.year;
@@ -563,6 +664,7 @@ function _refreshViewOnly() {
       ops: _ops,
       cars: _cars,
       kassas: _kassas,
+      deposits: _deposits,
       allTime: _pendingAllTime,
       year: y,
       month: m,
@@ -573,6 +675,7 @@ function _refreshViewOnly() {
     root.innerHTML = _successShellHTML(
       dash,
       empty ? 'Нет данных за выбранный период' : '',
+      _capexMode,
     );
     _afterShellMounted(root, dash);
   };
@@ -663,6 +766,7 @@ async function _applyPeriod(year, month) {
       ops: _ops,
       cars: _cars,
       kassas: _kassas,
+      deposits: _deposits,
       allTime: false,
       year,
       month,
@@ -672,6 +776,7 @@ async function _applyPeriod(year, month) {
     root.innerHTML = _successShellHTML(
       dash,
       empty ? 'Нет данных за выбранный период' : '',
+      _capexMode,
     );
     _afterShellMounted(root, dash);
   } catch (err) {
@@ -693,6 +798,7 @@ async function _applyAllTime() {
       ops: _ops,
       cars: _cars,
       kassas: _kassas,
+      deposits: _deposits,
       allTime: true,
       year: _pendingYear || now.getFullYear(),
       month: _pendingMonth || now.getMonth() + 1,
@@ -702,6 +808,7 @@ async function _applyAllTime() {
     root.innerHTML = _successShellHTML(
       dash,
       empty ? 'Нет данных за выбранный период' : '',
+      _capexMode,
     );
     _afterShellMounted(root, dash);
   } catch (err) {
@@ -753,6 +860,29 @@ function _onRootClick(e) {
     _applyPeriod(y, m).finally(() => {
       _loading = false;
     });
+    return;
+  }
+
+  const capexModeBtn = e.target.closest('[data-capex-mode]');
+  if (capexModeBtn) {
+    const nextMode = String(capexModeBtn.dataset.capexMode || '');
+    if (nextMode !== CAPEX_MODE.ALL && nextMode !== CAPEX_MODE.PERIOD) return;
+    if (_capexMode === nextMode) return;
+    _capexMode = nextMode;
+    const root = document.getElementById('analytics-root');
+    if (!root) return;
+    const now = new Date();
+    const dash = _calcDash({
+      ops: _ops,
+      cars: _cars,
+      kassas: _kassas,
+      deposits: _deposits,
+      allTime: _pendingAllTime,
+      year: _pendingYear || now.getFullYear(),
+      month: _pendingMonth || now.getMonth() + 1,
+    });
+    root.innerHTML = _successShellHTML(dash, '', _capexMode);
+    _afterShellMounted(root, dash);
   }
 }
 
