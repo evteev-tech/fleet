@@ -1,8 +1,8 @@
 /**
- * home.js — главный экран механика (Азамат).
+ * home.js — главный экран кассы (Азамат / Владимир).
  *
- * Данные: getOperations({ kassaId: KASSA_ID.AZAMAT }) + getFleet();
- *   список и баланс — только строки с kassaId === K_AZAMAT.
+ * Данные: getOperations() + getFleet(); по роли отбираются операции одной кассы:
+ *   mechanic → K_AZAMAT, operations → K_VLADIMIR.
  * Расчёты: остаток, дельта сегодня, статистика парка.
  * Бесконечный скролл: клиентская пагинация по 20 записей через IntersectionObserver.
  */
@@ -12,7 +12,7 @@ import { getWithSWR, CACHE_KEYS } from '../cache.js';
 import { getCurrentUser }          from '../auth.js';
 import { parseRuDate } from './history.js';
 import { showScreen }              from '../router.js?v=7';
-import { KASSA_ID, CAR_STATUSES } from '../config.js';
+import { KASSA_ID, CAR_STATUSES, ROLES } from '../config.js';
 
 // ─── Константы ────────────────────────────────────────────────────────────────
 const PAGE_SIZE = 20;
@@ -94,17 +94,27 @@ export async function renderHome() {
 }
 
 function _renderHomeWithData(body, ops, fleet) {
-  // ── Только K_AZAMAT до рендера ───────────────────────────────────────────
-  const azamatOps = ops.filter(
-    op => String(op.kassaId ?? '').trim() === String(KASSA_ID.AZAMAT),
-  );
-  _allOps = [...azamatOps].sort((a, b) => _tsOp(b) - _tsOp(a));
+  const user = getCurrentUser();
+  const role = user?.role ?? '';
+  const isOperations = role === ROLES.OPERATIONS;
 
-  const balance = _calcBalance(azamatOps);
-  const delta   = _calcDelta(azamatOps);
+  const kassaFilterId = isOperations ? KASSA_ID.VLADIMIR : KASSA_ID.AZAMAT;
+  const kassaLabel = isOperations ? 'КАССА ВЛАДИМИРА' : 'КАССА АЗАМАТА';
+  const primaryBtnLabel = isOperations ? 'Приход' : 'Принять платёж';
+  const avatarStyle = isOperations
+    ? ' style="background:***REMOVED***4b74ff;color:***REMOVED***ffffff"'
+    : ' style="background:***REMOVED***FFDD2D;color:***REMOVED***1A1A1A"';
+
+  // ── Только операции выбранной кассы до рендера ───────────────────────────
+  const kassaOps = ops.filter(
+    op => String(op.kassaId ?? '').trim() === String(kassaFilterId),
+  );
+  _allOps = [...kassaOps].sort((a, b) => _tsOp(b) - _tsOp(a));
+
+  const balance = _calcBalance(kassaOps);
+  const delta   = _calcDelta(kassaOps);
   const fleetStats = _calcFleet(fleet);
 
-  const user = getCurrentUser();
   const firstName = user?.name?.split(' ')[0] ?? 'Азамат';
   const avatarLetter = firstName.charAt(0).toUpperCase() || 'А';
 
@@ -119,13 +129,13 @@ function _renderHomeWithData(body, ops, fleet) {
     <div class="home-header">
       <div class="home-hdr__brand-row">
         <span class="home-hdr__logo">Матизы</span>
-        <div class="home-hdr__avatar" aria-hidden="true">${avatarLetter}</div>
+        <div class="home-hdr__avatar" aria-hidden="true"${avatarStyle}>${avatarLetter}</div>
       </div>
-      <div class="kassa-label">КАССА АЗАМАТА</div>
+      <div class="kassa-label">${kassaLabel}</div>
       <div class="kassa-amount">${_fmtAmount(Math.abs(balance))}<sup class="kassa-currency">₽</sup></div>
       <div class="home-hdr__delta ${deltaClass}">${deltaText}</div>
       <div class="home-action-wrap">
-        <button type="button" class="btn-primary" id="home-btn-income">Принять платёж</button>
+        <button type="button" class="btn-primary" id="home-btn-income">${primaryBtnLabel}</button>
         <button type="button" class="btn-secondary" id="home-btn-expense-main">Расход</button>
       </div>
     </div>

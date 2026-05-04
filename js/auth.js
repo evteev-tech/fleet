@@ -205,7 +205,7 @@ function _setKeyboardDisabled(keyboard, disabled) {
 
 // ─── Роутинг после логина ───────────────────────────────────────────────────
 function _goHome(role) {
-  if (role === ROLES.MECHANIC) {
+  if (role === ROLES.MECHANIC || role === ROLES.OPERATIONS) {
     showScreen('screen-home');
   } else {
     showScreen('screen-dashboard');

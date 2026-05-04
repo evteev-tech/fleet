@@ -57,7 +57,7 @@ const NAVBAR_CONFIG = {
   ],
 
   [ROLES.OPERATIONS]: [
-    { id: 'screen-dashboard', label: 'Главная',   iconSvg: NAV_ICONS.home },
+    { id: 'screen-home',      label: 'Главная',   iconSvg: NAV_ICONS.home },
     { id: 'screen-add',       label: 'Операция',  iconSvg: NAV_ICONS.add },
     { id: 'screen-analytics', label: 'Аналитика', iconSvg: NAV_ICONS.analytics },
     { id: 'screen-fleet',     label: 'Парк',      iconSvg: NAV_ICONS.fleet },
@@ -195,7 +195,10 @@ export function initRouter({ onNeedLogin, onLoggedIn }) {
   }
 
   void renderNavbar(session.role).then(() => {
-    const startScreen = session.role === ROLES.MECHANIC ? 'screen-home' : 'screen-dashboard';
+    const startScreen =
+      session.role === ROLES.MECHANIC || session.role === ROLES.OPERATIONS
+        ? 'screen-home'
+        : 'screen-dashboard';
     showScreen(startScreen);
     onLoggedIn?.(session);
   });
