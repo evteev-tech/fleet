@@ -215,6 +215,10 @@ function _renderExpenseShell(root) {
     </header>
 
     <div class="expense-scroll">
+      <button type="button" class="expense-sum-wrap" id="expense-sum-btn" aria-label="Сумма">
+        <span class="expense-sum" id="expense-sum-display">0 ₽</span>
+      </button>
+
       <div class="expense-cats" id="expense-cats">${catsHtml}</div>
 ${opsKassaCapexHtml}
       <div class="expense-cars-wrap">
@@ -225,10 +229,6 @@ ${opsKassaCapexHtml}
         </button>
         <div class="expense-cars-list ${_state.carsExpanded ? '' : 'hidden'}" id="expense-cars-list">${carsRows}</div>
       </div>
-
-      <button type="button" class="expense-sum-wrap" id="expense-sum-btn" aria-label="Сумма">
-        <span class="expense-sum" id="expense-sum-display">0 ₽</span>
-      </button>
 
       <label class="expense-comment-label">
         <input type="text" class="expense-comment" id="expense-comment" placeholder="Комментарий (необязательно)" maxlength="500" />
