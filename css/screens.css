@@ -1019,40 +1019,6 @@
   color: ***REMOVED***FFDD2D;
 }
 
-***REMOVED***navbar .nav-item .nav-icon svg path:not([fill='none']):not([fill="none"]),
-***REMOVED***navbar .nav-item .nav-icon svg rect:not([fill='none']):not([fill="none"]),
-***REMOVED***navbar .nav-item .nav-icon svg circle:not([fill='none']):not([fill="none"]),
-***REMOVED***navbar .nav-item .nav-icon svg polyline:not([fill='none']):not([fill="none"]) {
-  fill: ***REMOVED***444;
-  stroke: none;
-}
-
-***REMOVED***navbar .nav-item.active .nav-icon svg path:not([fill='none']):not([fill="none"]),
-***REMOVED***navbar .nav-item.active .nav-icon svg rect:not([fill='none']):not([fill="none"]),
-***REMOVED***navbar .nav-item.active .nav-icon svg circle:not([fill='none']):not([fill="none"]),
-***REMOVED***navbar .nav-item.active .nav-icon svg polyline:not([fill='none']):not([fill="none"]) {
-  fill: ***REMOVED***FFDD2D;
-  stroke: none;
-}
-
-***REMOVED***navbar .nav-item .nav-icon svg [stroke] {
-  stroke: ***REMOVED***444;
-  fill: none !important;
-}
-
-***REMOVED***navbar .nav-item.active .nav-icon svg [stroke] {
-  stroke: ***REMOVED***FFDD2D;
-  fill: none !important;
-}
-
-***REMOVED***navbar .nav-item .nav-icon svg line {
-  stroke: ***REMOVED***444;
-}
-
-***REMOVED***navbar .nav-item.active .nav-icon svg line {
-  stroke: ***REMOVED***FFDD2D;
-}
-
 /* ─────────────────────────────────────────────
    ЭКРАН: ДАШБОРД (новый макет)
 ───────────────────────────────────────────── */
@@ -2867,20 +2833,15 @@
   color: rgba(255, 255, 255, 0.42);
 }
 
-.analytics-navbar .nav-icon svg path:not([fill='none']):not([fill="none"]),
-.analytics-navbar .nav-icon svg rect:not([fill='none']):not([fill="none"]),
-.analytics-navbar .nav-icon svg circle:not([fill='none']):not([fill="none"]),
-.analytics-navbar .nav-icon svg polyline:not([fill='none']):not([fill="none"]),
-.analytics-navbar .nav-icon svg polygon:not([fill='none']):not([fill="none"]) {
-  fill: rgba(255, 255, 255, 0.38);
-}
-
-.analytics-navbar .nav-icon svg line,
-.analytics-navbar .nav-icon svg [stroke] {
-  stroke: rgba(255, 255, 255, 0.38);
+.analytics-navbar .nav-icon {
+  color: rgba(255, 255, 255, 0.38);
 }
 
 .analytics-navbar .nav-item.active .nav-label {
+  color: ***REMOVED***ffdd2d;
+}
+
+.analytics-navbar .nav-item.active .nav-icon {
   color: ***REMOVED***ffdd2d;
 }
 

@@ -10,66 +10,70 @@
 import { getCurrentUser } from './auth.js';
 import { ROLES }         from './config.js';
 
-// ─── SVG navbar (локальные файлы, GitHub Pages — относительные пути) ─────────
-
-/** Все иконки navbar — только файлы из assets/icons/ (единый стиль) */
-const ICON_ASSETS = {
-  home:      'assets/icons/home.svg',
-  history:   'assets/icons/history.svg',
-  analytics: 'assets/icons/analytics.svg',
-  settings:  'assets/icons/settings.svg',
-  fleet:     'assets/icons/fleet.svg',
-  driver:    'assets/icons/driver.svg',
-  add:       'assets/icons/add.svg',
+// ─── SVG navbar (inline outline, currentColor) ────────────────────────────────
+const NAV_ICONS = {
+  home: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+  <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+  <path d="M9 21V12h6v9" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+</svg>`,
+  fleet: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+  <rect x="2" y="8" width="20" height="10" rx="2" stroke="currentColor" stroke-width="1.6"/>
+  <path d="M5 8V6a2 2 0 012-2h10a2 2 0 012 2v2" stroke="currentColor" stroke-width="1.6"/>
+  <circle cx="7" cy="18" r="1.5" stroke="currentColor" stroke-width="1.6"/>
+  <circle cx="17" cy="18" r="1.5" stroke="currentColor" stroke-width="1.6"/>
+</svg>`,
+  drivers: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+  <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.6"/>
+  <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+</svg>`,
+  history: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+  <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/>
+  <path d="M12 7v5l3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+</svg>`,
+  analytics: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+  <path d="M4 20V14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M9 20V8"  stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M14 20V11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M19 20V4"  stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+</svg>`,
+  settings: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+  <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/>
+  <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09 A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06 a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15 a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09 A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06 a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68 a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09 a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06 a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9 a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09 a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="1.6"/>
+</svg>`,
+  add: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+  <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/>
+  <path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+</svg>`,
 };
 
-// ─── Конфиг navbar по ролям (только iconPath) ────────────────────────────────
+// ─── Конфиг navbar по ролям ───────────────────────────────────────────────────
 
 const NAVBAR_CONFIG = {
   [ROLES.MECHANIC]: [
-    { id: 'screen-home',    label: 'Главная',  iconPath: ICON_ASSETS.home },
-    { id: 'screen-history', label: 'Касса',    iconPath: ICON_ASSETS.history },
-    { id: 'screen-fleet',   label: 'Парк',     iconPath: ICON_ASSETS.fleet },
-    { id: 'screen-drivers', label: 'Водители', iconPath: ICON_ASSETS.driver },
+    { id: 'screen-home',    label: 'Главная',  iconSvg: NAV_ICONS.home },
+    { id: 'screen-history', label: 'Касса',    iconSvg: NAV_ICONS.history },
+    { id: 'screen-fleet',   label: 'Парк',     iconSvg: NAV_ICONS.fleet },
+    { id: 'screen-drivers', label: 'Водители', iconSvg: NAV_ICONS.drivers },
   ],
 
   [ROLES.OPERATIONS]: [
-    { id: 'screen-dashboard', label: 'Главная',   iconPath: ICON_ASSETS.home },
-    { id: 'screen-add',       label: 'Операция',  iconPath: ICON_ASSETS.add },
-    { id: 'screen-analytics', label: 'Аналитика', iconPath: ICON_ASSETS.analytics },
-    { id: 'screen-fleet',     label: 'Парк',      iconPath: ICON_ASSETS.fleet },
-    { id: 'screen-drivers',   label: 'Водители',  iconPath: ICON_ASSETS.driver },
+    { id: 'screen-dashboard', label: 'Главная',   iconSvg: NAV_ICONS.home },
+    { id: 'screen-add',       label: 'Операция',  iconSvg: NAV_ICONS.add },
+    { id: 'screen-analytics', label: 'Аналитика', iconSvg: NAV_ICONS.analytics },
+    { id: 'screen-fleet',     label: 'Парк',      iconSvg: NAV_ICONS.fleet },
+    { id: 'screen-drivers',   label: 'Водители',  iconSvg: NAV_ICONS.drivers },
   ],
 
   [ROLES.INVESTOR]: [
-    { id: 'screen-dashboard', label: 'Главная',   iconPath: ICON_ASSETS.home },
-    { id: 'screen-history',   label: 'История',   iconPath: ICON_ASSETS.history },
-    { id: 'screen-analytics', label: 'Аналитика', iconPath: ICON_ASSETS.analytics },
-    { id: 'screen-settings',  label: 'Настройки', iconPath: ICON_ASSETS.settings },
+    { id: 'screen-dashboard', label: 'Главная',   iconSvg: NAV_ICONS.home },
+    { id: 'screen-history',   label: 'История',   iconSvg: NAV_ICONS.history },
+    { id: 'screen-analytics', label: 'Аналитика', iconSvg: NAV_ICONS.analytics },
+    { id: 'screen-settings',  label: 'Настройки', iconSvg: NAV_ICONS.settings },
   ],
 };
 
 // ─── Текущий активный экран ───────────────────────────────────────────────────
 let _currentScreen = null;
-
-/**
- * Подгружает SVG из assets и вставляет в контейнер navbar.
- * @param {string} path
- * @param {HTMLElement} container
- */
-async function loadNavIcon(path, container) {
-  try {
-    const res = await fetch(path);
-    if (!res.ok) return;
-    const svg = await res.text();
-    container.innerHTML = svg;
-    const svgEl = container.querySelector('svg');
-    if (svgEl) {
-      svgEl.removeAttribute('width');
-      svgEl.removeAttribute('height');
-    }
-  } catch (_) {}
-}
 
 /**
  * Показывает экран с указанным id, скрывает остальные.
@@ -136,13 +140,11 @@ export async function mountNavbarInContainer(container, role, activeScreenId = n
 
   const buttons = [...container.querySelectorAll('.nav-item')];
 
-  await Promise.all(
-    items.map(async (item, i) => {
-      const iconEl = buttons[i].querySelector('.nav-icon');
-      if (!iconEl || !item.iconPath) return;
-      await loadNavIcon(item.iconPath, iconEl);
-    }),
-  );
+  items.forEach((item, i) => {
+    const iconEl = buttons[i].querySelector('.nav-icon');
+    if (!iconEl) return;
+    iconEl.innerHTML = item.iconSvg || '';
+  });
 
   buttons.forEach(btn => {
     btn.addEventListener('click', () => {
