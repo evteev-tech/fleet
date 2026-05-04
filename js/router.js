@@ -32,13 +32,13 @@ const NAV_ICONS = {
 </svg>`,
   analytics: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
   <path d="M4 20V14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-  <path d="M9 20V8"  stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M9 20V8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
   <path d="M14 20V11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-  <path d="M19 20V4"  stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M19 20V4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
 </svg>`,
   settings: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
   <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/>
-  <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09 A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06 a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15 a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09 A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06 a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68 a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09 a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06 a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9 a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09 a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="1.6"/>
+  <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
 </svg>`,
   add: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
   <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/>
