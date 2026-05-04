@@ -93,6 +93,65 @@
   background: ***REMOVED***fafce8;
 }
 
+.expense-kassa-wrap {
+  margin-bottom: 16px;
+}
+
+.expense-kassa-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+
+.expense-kassa-btns {
+  display: flex;
+  gap: 8px;
+}
+
+.expense-kassa-btn {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid ***REMOVED***e5e5ea;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  background: ***REMOVED***fff;
+  color: var(--color-dark);
+  cursor: pointer;
+}
+
+.expense-kassa-btn--active {
+  border: 2px solid var(--color-accent);
+  background: ***REMOVED***fafce8;
+}
+
+.expense-capex-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  background: ***REMOVED***fff;
+  border: 1px solid ***REMOVED***e5e5ea;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.expense-capex-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-dark);
+}
+
+.expense-capex-hint {
+  font-size: 12px;
+  color: var(--color-muted);
+  flex: 1;
+}
+
 .expense-cars-wrap {
   margin-bottom: 16px;
   background: ***REMOVED***fff;

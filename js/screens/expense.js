@@ -1,5 +1,5 @@
 /**
- * expense.js — экран «Расход» для механика (касса K_AZAMAT).
+ * expense.js — экран «Расход» для mechanic (K_AZAMAT) и operations (выбор кассы / CAPEX).
  */
 
 import { getFleet, postAction, invalidateCache } from '../api.js';
@@ -49,6 +49,8 @@ const EXPENSE_AUTO_EXPAND_CARS = new Set([
  *   numpadOpen: boolean,
  *   numpadBuf: string,
  *   carsExpanded: boolean,
+ *   kassaId: string|null,
+ *   isCapex: boolean,
  * }} */
 let _state = {
   cars: [],
@@ -59,6 +61,8 @@ let _state = {
   numpadOpen: false,
   numpadBuf: '',
   carsExpanded: false,
+  kassaId: null,
+  isCapex: false,
 };
 
 export function initExpense() {
@@ -72,7 +76,9 @@ export async function renderExpense() {
   if (!root) return;
 
   const user = getCurrentUser();
-  if (user?.role !== ROLES.MECHANIC) {
+  const isOperations = user?.role === ROLES.OPERATIONS;
+  const isMechanic = user?.role === ROLES.MECHANIC;
+  if (!isMechanic && !isOperations) {
     showScreen('screen-home');
     return;
   }
@@ -86,6 +92,8 @@ export async function renderExpense() {
     numpadOpen: false,
     numpadBuf: '',
     carsExpanded: false,
+    kassaId: isOperations ? KASSA_ID.VLADIMIR : KASSA_ID.AZAMAT,
+    isCapex: false,
   };
 
   root.innerHTML = `
@@ -155,11 +163,33 @@ function _calcClass(category, amount) {
 }
 
 function _renderExpenseShell(root) {
+  const user = getCurrentUser();
+  const isOperations = user?.role === ROLES.OPERATIONS;
+
   const catsHtml = EXPENSE_CATEGORIES.map(
     c => `
       <button type="button" class="expense-cat ${EXPENSE_CAT_FREQUENT.has(c.key) ? 'expense-cat--frequent' : ''}"
         data-cat="${escapeAttr(c.key)}">${escapeHtml(c.label)}</button>`,
   ).join('');
+
+  const opsKassaCapexHtml = isOperations
+    ? `
+      <div class="expense-kassa-wrap" id="expense-kassa-wrap">
+        <div class="expense-kassa-label">Касса</div>
+        <div class="expense-kassa-btns" id="expense-kassa-btns">
+          <button type="button" class="expense-kassa-btn expense-kassa-btn--active"
+            data-kassa="${escapeAttr(KASSA_ID.VLADIMIR)}">Владимир</button>
+          <button type="button" class="expense-kassa-btn"
+            data-kassa="${escapeAttr(KASSA_ID.YULIA)}">Юлия</button>
+        </div>
+      </div>
+
+      <label class="expense-capex-wrap" id="expense-capex-wrap">
+        <input type="checkbox" id="expense-capex-check" />
+        <span class="expense-capex-label">Капекс</span>
+        <span class="expense-capex-hint">отметить если крупное вложение</span>
+      </label>`
+    : '';
 
   const carsRows = [
     `<button type="button" class="expense-car-item expense-car-item--selected" data-car-id="">Без машины</button>`,
@@ -186,7 +216,7 @@ function _renderExpenseShell(root) {
 
     <div class="expense-scroll">
       <div class="expense-cats" id="expense-cats">${catsHtml}</div>
-
+${opsKassaCapexHtml}
       <div class="expense-cars-wrap">
         <button type="button" class="expense-cars-toggle" id="expense-cars-toggle" aria-expanded="${_state.carsExpanded}">
           <span class="expense-cars-toggle__label">Машина</span>
@@ -219,6 +249,23 @@ function _renderExpenseShell(root) {
     _closeNumpad(root);
     showScreen('screen-home');
   });
+
+  if (isOperations) {
+    root.querySelectorAll('***REMOVED***expense-kassa-btns .expense-kassa-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const kid = btn.dataset.kassa;
+        if (!kid) return;
+        _state.kassaId = kid;
+        root.querySelectorAll('***REMOVED***expense-kassa-btns .expense-kassa-btn').forEach(b => {
+          b.classList.toggle('expense-kassa-btn--active', b.dataset.kassa === kid);
+        });
+      });
+    });
+
+    document.getElementById('expense-capex-check')?.addEventListener('change', e => {
+      _state.isCapex = e.target.checked;
+    });
+  }
 
   root.querySelectorAll('.expense-cat').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -375,12 +422,17 @@ async function _submit(root) {
   if (btn) btn.disabled = true;
 
   const amt = Math.round(_state.amount);
-  const cls = _calcClass(_state.category, amt);
+  const submitUser = getCurrentUser();
+  const isOperations = submitUser?.role === ROLES.OPERATIONS;
+  const cls =
+    isOperations && _state.isCapex
+      ? 'capex'
+      : _calcClass(_state.category, amt);
 
   try {
     await postAction('ADD_OPERATION', {
       date: formatDate(new Date()),
-      kassa_id: KASSA_ID.AZAMAT,
+      kassa_id: _state.kassaId,
       direction: 'расход',
       amount: amt,
       type: _state.category,
@@ -388,7 +440,7 @@ async function _submit(root) {
       car_id: _state.carId ?? '',
       driver_id: '',
       comment: _state.comment.trim(),
-      provel: 'Азамат',
+      provel: isOperations ? 'Владимир' : 'Азамат',
       класс_итог: cls,
     });
 
