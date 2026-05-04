@@ -279,78 +279,125 @@ function _tilesHtml(summary) {
 }
 
 function _opexHtml(opex) {
-  const total = opex.reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
-  const sorted = [...opex].sort((a, b) => (Number(b.amount) || 0) - (Number(a.amount) || 0));
-  return sorted
-    .map(row => {
-      let pct = row.share;
-      if (pct === null || pct === undefined || Number.isNaN(Number(pct))) {
-        pct = total > 0 ? (Number(row.amount) || 0) / total : 0;
-      }
-      const w = Math.min(100, Math.max(0, pct * 100));
+  const total = opex.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+  const sorted = [...opex]
+    .filter(r => (Number(r.amount) || 0) > 0)
+    .sort((a, b) => (Number(b.amount) || 0) - (Number(a.amount) || 0));
+
+  const COLORS = ['***REMOVED***1A1A1A', '***REMOVED***FFDD2D', '***REMOVED***8A8A8E', '***REMOVED***E34234', '***REMOVED***0066FF', '***REMOVED***E08000'];
+
+  const CIRC = 87.96;
+  let offset = 0;
+  const segments = sorted.map((r, i) => {
+    const pct = total > 0 ? (Number(r.amount) || 0) / total : 0;
+    const dash = pct * CIRC;
+    const seg = `<circle cx="18" cy="18" r="14" fill="none"
+      stroke="${COLORS[i] || '***REMOVED***ccc'}" stroke-width="5"
+      stroke-dasharray="${dash.toFixed(1)} ${(CIRC - dash).toFixed(1)}"
+      stroke-dashoffset="-${offset.toFixed(1)}"
+      stroke-linecap="butt"/>`;
+    offset += dash + 1.5;
+    return seg;
+  });
+
+  const legend = sorted
+    .map((r, i) => {
+      const pct = total > 0 ? ((Number(r.amount) || 0) / total * 100).toFixed(1) : '0.0';
       return `
-      <div class="analytics-opex-row">
-        <div class="analytics-opex-row__top">
-          <span class="analytics-opex-row__name">${row.name}</span>
-          <span class="analytics-opex-row__sum">${fmtRub(row.amount)}</span>
-        </div>
-        <div class="analytics-bar analytics-bar--accent"><span style="width:${w}%"></span></div>
+      <div class="analytics-leg-row">
+        <span class="analytics-leg-dot" style="background:${COLORS[i] || '***REMOVED***ccc'}"></span>
+        <span class="analytics-leg-name">${r.name}</span>
+        <span class="analytics-leg-pct">${pct}%</span>
+        <span class="analytics-leg-amt">${fmtRub(r.amount)}</span>
       </div>`;
     })
     .join('');
+
+  return `
+    <div class="analytics-donut-wrap">
+      <div class="analytics-donut">
+        <svg viewBox="0 0 36 36" style="transform:rotate(-90deg)">
+          ${segments.join('')}
+        </svg>
+        <div class="analytics-donut-center">
+          <div class="analytics-donut-val">${fmtRub(total)}</div>
+          <div class="analytics-donut-lbl">OPEX</div>
+        </div>
+      </div>
+      <div class="analytics-legend">${legend}</div>
+    </div>`;
 }
 
-function _pnlHtml(pnl, generalOpex) {
-  const rows = [...(pnl || [])];
-  const totRev = rows.reduce((a, r) => a + (Number(r.revenue) || 0), 0);
-  const totExpCars = rows.reduce((a, r) => a + (Number(r.expense) || 0), 0);
-  const gen = Number(generalOpex) || 0;
-  const totExp = totExpCars + gen;
-  const totPr = totRev - totExp;
-  const body = rows
-    .map(r => {
-      const profitCls = Number(r.profit) >= 0 ? 'analytics-pnl-profit--pos' : 'analytics-pnl-profit--neg';
-      const carName = String(r.car || '');
-      const carClass = carName.length > 6 ? ' pnl-car--full' : '';
-      return `
-    <div class="pnl-row">
-      <div class="pnl-car${carClass}">${carName}</div>
-      <div class="pnl-metrics">
-        <div class="pnl-rev">↑ ${fmtRub(r.revenue)}</div>
-        <div class="pnl-exp">↓ ${fmtRub(r.expense)}</div>
-        <div class="pnl-result ${profitCls}">${fmtRub(r.profit)}</div>
+function _pnlHtml(pnl) {
+  const rows = pnl.filter(r => r.car !== 'Общие' && r.car !== 'Итого');
+  const general = pnl.find(r => r.car === 'Общие');
+  const total = pnl.find(r => r.car === 'Итого');
+
+  function cellStyle(profit) {
+    const p = Number(profit) || 0;
+    if (p > 20000) return 'background:***REMOVED***1B6B47;color:***REMOVED***fff';
+    if (p > 5000) return 'background:***REMOVED***2A8A5A;color:***REMOVED***fff';
+    if (p > 0) return 'background:***REMOVED***3DAD72;color:***REMOVED***fff';
+    if (p > -5000) return 'background:***REMOVED***8B3030;color:***REMOVED***fff';
+    if (p > -20000) return 'background:***REMOVED***7A2020;color:***REMOVED***fff';
+    return 'background:***REMOVED***5C1010;color:***REMOVED***fff';
+  }
+
+  function resultColor(profit) {
+    return Number(profit) >= 0 ? '***REMOVED***7EFFC4' : '***REMOVED***FFB3B3';
+  }
+
+  const cells = rows
+    .map(
+      r => `
+    <div class="analytics-heat-cell" style="${cellStyle(r.profit)}">
+      <div class="analytics-heat-id">${r.car}</div>
+      <div class="analytics-heat-rev">↑ ${fmtRub(r.revenue)}</div>
+      <div class="analytics-heat-result" style="color:${resultColor(r.profit)}">
+        ${Number(r.profit) >= 0 ? '+' : ''}${fmtRub(r.profit)}
       </div>
-    </div>`;
-    })
+    </div>`,
+    )
     .join('');
+
+  const generalRow = general
+    ? `
+    <div class="analytics-heat-general">
+      <span class="analytics-heat-gen-name">Общие расходы</span>
+      <span class="analytics-heat-gen-val">${fmtRub(general.expense)}</span>
+    </div>`
+    : '';
+
+  const totalRow = total
+    ? `
+    <div class="analytics-heat-total">
+      <span>Итого</span>
+      <span>↑ ${fmtRub(total.revenue)}</span>
+      <span>↓ ${fmtRub(total.expense)}</span>
+      <span style="color:${Number(total.profit) >= 0 ? '***REMOVED***00A86B' : '***REMOVED***E34234'}">
+        ${Number(total.profit) >= 0 ? '+' : ''}${fmtRub(total.profit)}
+      </span>
+    </div>`
+    : '';
+
   return `
-    <div class="analytics-pnl-list">
-      <div class="pnl-row pnl-row--head">
-        <div class="pnl-car">МАШИНА</div>
-        <div class="pnl-metrics">
-          <div class="pnl-rev">ВЫРУЧКА</div>
-          <div class="pnl-exp">OPEX</div>
-          <div class="pnl-result">ИТОГ</div>
-        </div>
-      </div>
-      ${body}
-      <div class="pnl-row pnl-row--general">
-        <div class="pnl-car">Общие</div>
-        <div class="pnl-metrics">
-          <div class="pnl-rev">↑ ${fmtRub(0)}</div>
-          <div class="pnl-exp">↓ ${fmtRub(gen)}</div>
-          <div class="pnl-result analytics-pnl-profit--neg">${fmtRub(-gen)}</div>
-        </div>
-      </div>
-      <div class="pnl-row pnl-row--total">
-        <div class="pnl-car">Итого</div>
-        <div class="pnl-metrics">
-          <div class="pnl-rev">↑ ${fmtRub(totRev)}</div>
-          <div class="pnl-exp">↓ ${fmtRub(totExp)}</div>
-          <div class="pnl-result ${totPr >= 0 ? 'analytics-pnl-profit--pos' : 'analytics-pnl-profit--neg'}">${fmtRub(totPr)}</div>
-        </div>
-      </div>
-    </div>`;
+    <div class="analytics-heat-grid">${cells}</div>
+    ${generalRow}
+    ${totalRow}`;
+}
+
+function _pnlRowsWithTotals(pnl, generalOpex) {
+  const base = [...(pnl || [])];
+  const totalRevenue = base.reduce((a, r) => a + (Number(r.revenue) || 0), 0);
+  const totalExpenseCars = base.reduce((a, r) => a + (Number(r.expense) || 0), 0);
+  const gen = Number(generalOpex) || 0;
+  const totalExpense = totalExpenseCars + gen;
+  const totalProfit = totalRevenue - totalExpense;
+  return [
+    ...base,
+    { car: 'Общие', revenue: 0, expense: gen, profit: -gen },
+    { car: 'Итого', revenue: totalRevenue, expense: totalExpense, profit: totalProfit },
+  ];
 }
 
 function _utilHtml(utilization) {
@@ -501,7 +548,7 @@ function _pagesHtml(dash, emptyMsg, capexMode) {
       <div class="analytics-page-inner">
         <div class="section-label">P&amp;L по машинам</div>
         <div class="white-card analytics-card-pad">
-          ${dash.pnl?.length || (Number(dash.pnlGeneralOpex) || 0) > 0 ? _pnlHtml(dash.pnl, dash.pnlGeneralOpex) : '<div class="analytics-muted">Нет данных</div>'}
+          ${dash.pnl?.length || (Number(dash.pnlGeneralOpex) || 0) > 0 ? _pnlHtml(_pnlRowsWithTotals(dash.pnl, dash.pnlGeneralOpex)) : '<div class="analytics-muted">Нет данных</div>'}
         </div>
       </div>
     </div>
