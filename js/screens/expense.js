@@ -241,6 +241,7 @@ ${opsKassaCapexHtml}
 
     <div class="expense-numpad-overlay hidden" id="expense-numpad-overlay"></div>
     <div class="expense-numpad hidden" id="expense-numpad" aria-hidden="true">
+      <div class="expense-numpad__display" id="expense-numpad-display">0 ₽</div>
       <div class="expense-numpad__keys" id="expense-numpad-keys"></div>
     </div>
   `;
@@ -342,6 +343,15 @@ function _updateSubmit(root) {
   if (btn) btn.disabled = !ok;
 }
 
+function _syncExpenseNumpadDisplay(root) {
+  const scope = root ?? document.getElementById('expense-root');
+  const disp = scope?.querySelector('***REMOVED***expense-numpad-display');
+  if (disp) {
+    const n = _state.numpadBuf || '0';
+    disp.textContent = Number(n).toLocaleString('ru-RU') + ' ₽';
+  }
+}
+
 function _openNumpad(root) {
   _state.numpadOpen = true;
   _state.numpadBuf = _state.amount > 0 ? String(Math.round(_state.amount)) : '';
@@ -373,6 +383,8 @@ function _openNumpad(root) {
     b.addEventListener('click', () => _numpadKey(root, b.dataset.k));
   });
 
+  _syncExpenseNumpadDisplay(root);
+
   pad.onclick = e => e.stopPropagation();
   overlay.onclick = () => _closeNumpad(root);
   requestAnimationFrame(() => pad?.classList.add('expense-numpad--visible'));
@@ -381,6 +393,7 @@ function _openNumpad(root) {
 function _numpadKey(root, k) {
   if (k === 'C') {
     _state.numpadBuf = '';
+    _syncExpenseNumpadDisplay(root);
   } else if (k === 'OK') {
     const n = parseInt(_state.numpadBuf, 10);
     _state.amount = isNaN(n) ? 0 : n;
@@ -390,6 +403,7 @@ function _numpadKey(root, k) {
     return;
   } else if (_state.numpadBuf.length < 9) {
     _state.numpadBuf += k;
+    _syncExpenseNumpadDisplay(root);
   }
 }
 

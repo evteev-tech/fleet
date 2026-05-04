@@ -347,6 +347,15 @@
   transform: translateY(0);
 }
 
+.expense-numpad__display {
+  font-size: 28px;
+  font-weight: 900;
+  color: ***REMOVED***1a1a1a;
+  letter-spacing: -0.04em;
+  text-align: center;
+  padding: 4px 0 12px;
+}
+
 .expense-numpad__row {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;

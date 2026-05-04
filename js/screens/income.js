@@ -187,15 +187,13 @@ function _renderIncomeShell(root) {
         <button type="button" class="income-sum-wrap" id="income-sum-btn" aria-label="Сумма">
           <span class="income-sum" id="income-sum-display">0 ₽</span>
         </button>
+        <div class="income-numpad-inline hidden" id="income-numpad-inline">
+          <div class="income-numpad__keys" id="income-numpad-keys"></div>
+        </div>
         <div class="income-dates hidden" id="income-dates-row"></div>
         <div class="income-warn hidden" id="income-warn"></div>
         <button type="button" class="income-submit btn-income-submit" id="income-submit" disabled>Записать</button>
       </div>
-    </div>
-
-    <div class="income-numpad-overlay hidden" id="income-numpad-overlay"></div>
-    <div class="income-numpad hidden" id="income-numpad" aria-hidden="true">
-      <div class="income-numpad__keys" id="income-numpad-keys"></div>
     </div>
   `;
 
@@ -405,13 +403,13 @@ function _openNumpad(root) {
   _state.period = null;
   _updatePeriodButtons(root);
 
-  const overlay = root.querySelector('***REMOVED***income-numpad-overlay');
-  const pad = root.querySelector('***REMOVED***income-numpad');
+  const inlinePad = root.querySelector('***REMOVED***income-numpad-inline');
+  const bottom = root.querySelector('***REMOVED***income-bottom');
   const keys = root.querySelector('***REMOVED***income-numpad-keys');
-  if (!overlay || !pad || !keys) return;
+  if (!inlinePad || !bottom || !keys) return;
 
-  overlay?.classList.remove('hidden');
-  pad?.classList.remove('hidden');
+  inlinePad.classList.remove('hidden');
+  bottom.classList.add('income-numpad-inline--open');
 
   const layout = [
     ['1', '2', '3'],
@@ -431,10 +429,6 @@ function _openNumpad(root) {
   keys.querySelectorAll('[data-k]').forEach(b => {
     b.addEventListener('click', () => _numpadKey(root, b.dataset.k));
   });
-
-  pad.onclick = e => e.stopPropagation();
-  overlay.onclick = () => _closeNumpad(root);
-  requestAnimationFrame(() => pad?.classList.add('income-numpad--visible'));
 }
 
 function _numpadKey(root, k) {
@@ -459,12 +453,10 @@ function _closeNumpad(root) {
   _state.numpadOpen = false;
   const scope = root ?? document.getElementById('income-root');
   if (!scope) return;
-  const overlay = scope.querySelector('***REMOVED***income-numpad-overlay');
-  const pad = scope.querySelector('***REMOVED***income-numpad');
-  if (!overlay && !pad) return;
-  pad?.classList.remove('income-numpad--visible');
-  overlay?.classList.add('hidden');
-  setTimeout(() => pad?.classList.add('hidden'), 280);
+  const inlinePad = scope.querySelector('***REMOVED***income-numpad-inline');
+  const bottom = scope.querySelector('***REMOVED***income-bottom');
+  inlinePad?.classList.add('hidden');
+  bottom?.classList.remove('income-numpad-inline--open');
 }
 
 async function _submit(root) {
