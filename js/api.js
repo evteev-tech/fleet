@@ -195,6 +195,23 @@ export async function getOperations({ kassaId = null, month = null, year = null 
     });
 }
 
+/**
+ * Лист «Кассы».
+ * Колонки: A=kassa_id, B=название, C=баланс_текущий
+ *
+ * @returns {Promise<Array<{kassaId:string,name:string,balanceCurrent:number}>>}
+ */
+export async function getKassas() {
+  const rows = await readSheet(SHEETS.KASSAS);
+  return rows
+    .map(row => ({
+      kassaId: cell(row, 0),
+      name: cell(row, 1),
+      balanceCurrent: parseFloat(cell(row, 2)) || 0,
+    }))
+    .filter(k => k.kassaId);
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // МАШИНЫ
 // ═══════════════════════════════════════════════════════════════════════════

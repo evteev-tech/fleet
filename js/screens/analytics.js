@@ -5,9 +5,10 @@
  */
 
 import {
-  fetchDashboardAnalytics,
-  updateAnalyticsPeriod,
+  getFleet,
   getOperations,
+  getKassas,
+  getDeposits,
 } from '../api.js';
 import { getWithSWR, CACHE_KEYS } from '../cache.js';
 import { getCurrentUser } from '../auth.js';
@@ -45,6 +46,152 @@ function _dashboardHasContent(d) {
   const n =
     (d.opex?.length ?? 0) + (d.pnl?.length ?? 0) + (d.utilization?.length ?? 0);
   return sumOk || n > 0;
+}
+
+function _opClass(op) {
+  const raw =
+    op?.класс_final ??
+    op?.classFinal ??
+    op?.classItog ??
+    op?.класс_итог ??
+    op?.class_override ??
+    '';
+  return String(raw).trim().toLowerCase();
+}
+
+function _toOpDate(op) {
+  const d = new Date(op?.date);
+  if (!Number.isNaN(d.getTime())) return d;
+  const raw = String(op?.dateRaw ?? '').trim();
+  if (!raw) return null;
+  const parts = raw.split('.');
+  if (parts.length === 3) {
+    const dd = Number(parts[0]);
+    const mm = Number(parts[1]) - 1;
+    const yyyy = Number(parts[2]);
+    const fromRu = new Date(yyyy, mm, dd);
+    if (!Number.isNaN(fromRu.getTime())) return fromRu;
+  }
+  return null;
+}
+
+function _calcDash({ ops, cars, kassas, allTime, year, month }) {
+  const inPeriod = op => {
+    const d = _toOpDate(op);
+    if (!d) return false;
+    if (allTime) return true;
+    return d.getFullYear() === year && d.getMonth() + 1 === month;
+  };
+
+  const sumBy = pred =>
+    ops
+      .filter(pred)
+      .reduce((acc, op) => acc + (Number(op.amount) || 0), 0);
+
+  const revenue = sumBy(op => _opClass(op) === 'revenue' && inPeriod(op));
+  const opex = sumBy(op => _opClass(op) === 'opex' && inPeriod(op));
+  const capexPeriod = sumBy(op => _opClass(op) === 'capex' && inPeriod(op));
+  const capexAll = sumBy(op => _opClass(op) === 'capex');
+  const profit = revenue - opex;
+
+  let prev = null;
+  if (!allTime) {
+    const pmDate = new Date(year, month - 2, 1);
+    const py = pmDate.getFullYear();
+    const pm = pmDate.getMonth() + 1;
+    const inPrev = op => {
+      const d = _toOpDate(op);
+      return !!d && d.getFullYear() === py && d.getMonth() + 1 === pm;
+    };
+    const prevRevenue = sumBy(op => _opClass(op) === 'revenue' && inPrev(op));
+    const prevOpex = sumBy(op => _opClass(op) === 'opex' && inPrev(op));
+    const prevCapex = sumBy(op => _opClass(op) === 'capex' && inPrev(op));
+    prev = {
+      revenue: prevRevenue,
+      opex: prevOpex,
+      capex: prevCapex,
+      profit: prevRevenue - prevOpex,
+    };
+  }
+
+  const opexRows = [];
+  const opexMap = new Map();
+  ops.forEach(op => {
+    if (_opClass(op) !== 'opex' || !inPeriod(op)) return;
+    const k = String(op.category || 'Прочее').trim() || 'Прочее';
+    opexMap.set(k, (opexMap.get(k) || 0) + (Number(op.amount) || 0));
+  });
+  [...opexMap.entries()].forEach(([name, amount]) => {
+    if (!amount) return;
+    opexRows.push({
+      name,
+      amount,
+      share: opex > 0 ? amount / opex : 0,
+    });
+  });
+
+  const pnlMap = new Map();
+  ops.forEach(op => {
+    if (!inPeriod(op)) return;
+    const cls = _opClass(op);
+    if (cls !== 'revenue' && cls !== 'opex') return;
+    const car = String(op.carId || '').trim() || 'Без машины';
+    if (!pnlMap.has(car)) {
+      pnlMap.set(car, { car, revenue: 0, expense: 0, profit: 0 });
+    }
+    const row = pnlMap.get(car);
+    if (cls === 'revenue') row.revenue += Number(op.amount) || 0;
+    if (cls === 'opex') row.expense += Number(op.amount) || 0;
+    row.profit = row.revenue - row.expense;
+  });
+
+  const inactive = new Set(['в ремонте', 'продана', 'списана']);
+  const totalActive = cars.filter(c => !inactive.has(String(c.status || '').toLowerCase().trim())).length;
+  const rented = cars.filter(c => String(c.status || '').toLowerCase().trim() === 'в аренде').length;
+  const utilizationPct = totalActive > 0 ? (rented / totalActive) * 100 : 0;
+
+  return {
+    allTime,
+    year,
+    month,
+    summary: [
+      {
+        key: 'revenue',
+        label: 'Выручка',
+        current: revenue,
+        previous: prev?.revenue ?? null,
+      },
+      {
+        key: 'opex',
+        label: 'Операционные расходы',
+        current: opex,
+        previous: prev?.opex ?? null,
+      },
+      {
+        key: 'capex',
+        label: allTime ? 'CAPEX (всё время)' : 'CAPEX',
+        current: allTime ? capexAll : capexPeriod,
+        previous: allTime ? null : prev?.capex ?? null,
+      },
+      {
+        key: 'profit',
+        label: 'Прибыль',
+        current: profit,
+        previous: prev?.profit ?? null,
+      },
+    ],
+    opex: opexRows,
+    pnl: [...pnlMap.values()].sort((a, b) => b.profit - a.profit),
+    utilization: [
+      {
+        car: `В аренде ${rented} из ${totalActive}`,
+        pct: utilizationPct,
+      },
+    ],
+    kassas: kassas,
+    capexAll,
+    capexPeriod,
+  };
 }
 
 /** Лучше = ↑ зел.: выручка/прибыль растут; OPEX/CAPEX падают */
@@ -168,28 +315,18 @@ function _capexPageHtml(dash) {
       <div class="analytics-capex-hero__amount">${s.current !== null && s.current !== undefined ? fmtRub(s.current) : '—'}</div>
       ${_deltaBlock(s.key, s.current, s.previous)}
     </div>
-    <p class="analytics-muted analytics-capex-hint">Детализация CAPEX в сводке листа «Дашборд».</p>`;
+    <p class="analytics-muted analytics-capex-hint">За период: ${fmtRub(dash.capexPeriod || 0)} · Всё время: ${fmtRub(dash.capexAll || 0)}</p>`;
 }
 
-function _kassasRowsHtml(ops) {
-  const by = new Map();
-  ops.forEach(op => {
-    const kid = op.kassaId || '—';
-    if (!by.has(kid)) {
-      by.set(kid, {
-        label: KASSA_NAMES[kid] || kid,
-        inc: 0,
-        exp: 0,
-      });
-    }
-    const row = by.get(kid);
-    const dir = String(op.direction || '').toLowerCase();
-    if (dir === 'приход') row.inc += Number(op.amount) || 0;
-    if (dir === 'расход') row.exp += Number(op.amount) || 0;
-  });
-  const rows = [...by.values()].sort((a, b) => b.inc + b.exp - (a.inc + a.exp));
+function _kassasRowsHtml(kassas) {
+  const rows = [...(kassas || [])]
+    .map(k => ({
+      label: k.name || KASSA_NAMES[k.kassaId] || k.kassaId || '—',
+      bal: Number(k.balanceCurrent) || 0,
+    }))
+    .sort((a, b) => b.bal - a.bal);
   if (!rows.length) {
-    return '<div class="analytics-muted">Нет операций за период</div>';
+    return '<div class="analytics-muted">Нет касс</div>';
   }
   return rows
     .map(
@@ -197,8 +334,7 @@ function _kassasRowsHtml(ops) {
     <div class="analytics-kassa-row">
       <div class="analytics-kassa-row__name">${r.label}</div>
       <div class="analytics-kassa-row__nums">
-        <span class="analytics-kassa-row__inc">+${fmtRub(r.inc)}</span>
-        <span class="analytics-kassa-row__exp">−${fmtRub(r.exp)}</span>
+        <span class="analytics-kassa-row__inc">${fmtRub(r.bal)}</span>
       </div>
     </div>`,
     )
@@ -372,25 +508,16 @@ async function _mountInlineNavbar(root) {
   await mountNavbarInContainer(slot, u.role, 'screen-analytics');
 }
 
-async function _hydrateKassas(root, dash) {
+function _hydrateKassas(root, dash) {
   const mount = root.querySelector('***REMOVED***analytics-kassas-mount');
   if (!mount) return;
-  try {
-    const allTime = !!dash.allTime;
-    const ops = await getOperations(
-      allTime ? {} : { year: dash.year, month: dash.month },
-    );
-    mount.innerHTML = _kassasRowsHtml(ops);
-  } catch (e) {
-    console.error('analytics kassas:', e);
-    mount.innerHTML = '<div class="analytics-muted">Не удалось загрузить операции</div>';
-  }
+  mount.innerHTML = _kassasRowsHtml(dash.kassas);
 }
 
 function _afterShellMounted(root, dash) {
   _bindCarouselScroll(root);
   void _mountInlineNavbar(root);
-  void _hydrateKassas(root, dash);
+  _hydrateKassas(root, dash);
   const car = root.querySelector('***REMOVED***analytics-carousel');
   if (car) {
     car.scrollLeft = 0;
@@ -402,6 +529,10 @@ let _loading = false;
 let _pendingYear = null;
 let _pendingMonth = null;
 let _pendingAllTime = false;
+let _ops = [];
+let _cars = [];
+let _kassas = [];
+let _deposits = [];
 
 function _applyDashToState(dash) {
   _pendingYear = dash.year;
@@ -414,14 +545,29 @@ function _refreshViewOnly() {
   if (!root) return;
   let cacheHit = false;
   let filled = false;
+  let ops;
+  let cars;
+  let kassas;
+  let deposits;
 
-  const apply = dash => {
+  const paintIfReady = () => {
+    if (ops === undefined || cars === undefined || kassas === undefined || deposits === undefined) return;
+    _ops = ops;
+    _cars = cars;
+    _kassas = kassas;
+    _deposits = deposits;
+    const now = new Date();
+    const y = _pendingYear || now.getFullYear();
+    const m = _pendingMonth || now.getMonth() + 1;
+    const dash = _calcDash({
+      ops: _ops,
+      cars: _cars,
+      kassas: _kassas,
+      allTime: _pendingAllTime,
+      year: y,
+      month: m,
+    });
     filled = true;
-    if (!dash) {
-      root.innerHTML = _errorShellHTML(false);
-      void _mountInlineNavbar(root);
-      return;
-    }
     _applyDashToState(dash);
     const empty = !_dashboardHasContent(dash);
     root.innerHTML = _successShellHTML(
@@ -431,20 +577,67 @@ function _refreshViewOnly() {
     _afterShellMounted(root, dash);
   };
 
-  getWithSWR(CACHE_KEYS.DASHBOARD, () => fetchDashboardAnalytics(), {
+  getWithSWR(CACHE_KEYS.CASH_OPS, () => getOperations(), {
     onCached: d => {
       cacheHit = true;
-      apply(d);
+      ops = d || [];
+      paintIfReady();
     },
     onFresh: d => {
-      apply(d);
+      ops = d || [];
+      paintIfReady();
     },
     onFetchError: (err, meta) => {
       if (!meta?.hadCache) {
-        console.error('Analytics _refreshViewOnly:', err);
-        root.innerHTML = _errorShellHTML(err?.message === 'NO_CONNECTION');
-        void _mountInlineNavbar(root);
+        ops = [];
+        console.error('Analytics ops _refreshViewOnly:', err);
+        paintIfReady();
       }
+    },
+  });
+  getWithSWR(CACHE_KEYS.CARS, () => getFleet(), {
+    onCached: d => {
+      cacheHit = true;
+      cars = d || [];
+      paintIfReady();
+    },
+    onFresh: d => {
+      cars = d || [];
+      paintIfReady();
+    },
+    onFetchError: (_err, meta) => {
+      if (!meta?.hadCache) cars = [];
+      paintIfReady();
+    },
+  });
+  getWithSWR(CACHE_KEYS.KASSAS, () => getKassas(), {
+    onCached: d => {
+      cacheHit = true;
+      kassas = d || [];
+      paintIfReady();
+    },
+    onFresh: d => {
+      kassas = d || [];
+      paintIfReady();
+    },
+    onFetchError: (_err, meta) => {
+      if (!meta?.hadCache) kassas = [];
+      paintIfReady();
+    },
+  });
+  getWithSWR(CACHE_KEYS.DEPOSITS, () => getDeposits(), {
+    onCached: d => {
+      cacheHit = true;
+      deposits = d || [];
+      paintIfReady();
+    },
+    onFresh: d => {
+      deposits = d || [];
+      paintIfReady();
+    },
+    onFetchError: (_err, meta) => {
+      if (!meta?.hadCache) deposits = [];
+      paintIfReady();
     },
   });
 
@@ -466,9 +659,14 @@ async function _applyPeriod(year, month) {
   _bindCarouselScroll(root);
   void _mountInlineNavbar(root);
   try {
-    await updateAnalyticsPeriod(year, month);
-    const dash = await fetchDashboardAnalytics();
-    if (!dash) throw new Error('EMPTY');
+    const dash = _calcDash({
+      ops: _ops,
+      cars: _cars,
+      kassas: _kassas,
+      allTime: false,
+      year,
+      month,
+    });
     _applyDashToState(dash);
     const empty = !_dashboardHasContent(dash);
     root.innerHTML = _successShellHTML(
@@ -490,9 +688,15 @@ async function _applyAllTime() {
   _bindCarouselScroll(root);
   void _mountInlineNavbar(root);
   try {
-    await updateAnalyticsPeriod(null, null, { allTime: true });
-    const dash = await fetchDashboardAnalytics();
-    if (!dash) throw new Error('EMPTY');
+    const now = new Date();
+    const dash = _calcDash({
+      ops: _ops,
+      cars: _cars,
+      kassas: _kassas,
+      allTime: true,
+      year: _pendingYear || now.getFullYear(),
+      month: _pendingMonth || now.getMonth() + 1,
+    });
     _applyDashToState(dash);
     const empty = !_dashboardHasContent(dash);
     root.innerHTML = _successShellHTML(

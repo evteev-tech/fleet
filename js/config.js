@@ -34,6 +34,7 @@ export const CAR_STATUSES = {
 export const SHEETS = {
   USERS:      'Пользователи',
   OPERATIONS: 'Касса_операции',
+  KASSAS:     'Кассы',
   CARS:       'Машины',
   DRIVERS:    'Водители',
   RENTALS:    'Аренда',
