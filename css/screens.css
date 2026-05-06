@@ -3469,7 +3469,7 @@
 
 .ovw-hero {
   background: ***REMOVED***1a1a1a;
-  padding: 0 16px 16px;
+  padding: 16px 16px 16px;
   display: flex;
   gap: 10px;
   align-items: flex-start;
@@ -3479,8 +3479,9 @@
   width: 3px;
   border-radius: 2px;
   height: 56px;
+  min-height: 52px;
   flex-shrink: 0;
-  margin-top: 2px;
+  margin-top: 0;
 }
 .ovw-hero__label {
   font-size: 9px;
@@ -3510,10 +3511,11 @@
 .ovw-sheet {
   background: ***REMOVED***f0f1f3;
   border-radius: 18px 18px 0 0;
-  margin-top: -8px;
-  padding: 12px;
+  margin-top: -10px;
+  padding: 14px 12px 12px;
   position: relative;
   z-index: 1;
+  overflow: visible;
 }
 
 .ovw-tiles {
@@ -3540,15 +3542,16 @@
   min-width: 0;
 }
 .ovw-tile__lbl {
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 700;
   color: ***REMOVED***8a8a8e;
   text-transform: uppercase;
   letter-spacing: .06em;
+  line-height: 1.3;
   margin-bottom: 3px;
 }
 .ovw-tile__val {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 900;
   color: ***REMOVED***1a1a1a;
   letter-spacing: -.02em;
@@ -3583,7 +3586,7 @@
 
 .ovw-fleet__cell {
   border-radius: 10px;
-  padding: 9px 10px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -3594,7 +3597,7 @@
 .ovw-fleet__cell--repair { background: ***REMOVED***fee2e2; }
 
 .ovw-fleet__num {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 900;
   line-height: 1;
 }
@@ -3604,10 +3607,10 @@
 .ovw-fleet__cell--repair .ovw-fleet__num { color: ***REMOVED***ef4444; }
 
 .ovw-fleet__lbl {
-  font-size: 9px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: .05em;
+  letter-spacing: .04em;
 }
 
 .ovw-fleet__cell--rent .ovw-fleet__lbl { color: ***REMOVED***16a34a; }
