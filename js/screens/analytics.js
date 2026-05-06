@@ -279,46 +279,101 @@ function _tilesHtml(summary) {
 }
 
 function _overviewHtml(dash) {
-  const byKey = key => dash.summary?.find(s => s.key === key);
-  const revenue = Number(byKey('revenue')?.current) || 0;
-  const opex = Number(byKey('opex')?.current) || 0;
-  const profit = Number(byKey('profit')?.current) || 0;
-  const periodLabel = dash.allTime ? 'Всё время' : _monthLabelFull(dash.year, dash.month);
-  const amountCls = profit >= 0 ? 'ovw-hero__amount--pos' : 'ovw-hero__amount--neg';
-  const tileOrder = [
-    { key: 'revenue', label: 'ВЫРУЧКА' },
-    { key: 'opex', label: 'ОПЕРАЦИОННЫЕ РАСХОДЫ' },
-    { key: 'capex', label: 'CAPEX (ВCЁ ВРЕМЯ)' },
-    { key: 'profit', label: 'ПРИБЫЛЬ' },
-  ];
-  const tiles = tileOrder
-    .map(item => {
-      const s = byKey(item.key);
-      const cur = item.key === 'capex' ? Number(dash.capexAll) || 0 : Number(s?.current) || 0;
-      const prev = item.key === 'capex' ? null : s?.previous;
-      let deltaText = '—';
-      let deltaCls = 'ovw-tile__delta--zero';
-      if (prev !== null && prev !== undefined && !Number.isNaN(Number(prev))) {
-        const diff = cur - (Number(prev) || 0);
-        if (Math.abs(diff) > 1e-6) {
-          deltaCls = diff > 0 ? 'ovw-tile__delta--pos' : 'ovw-tile__delta--neg';
-          deltaText = `${diff > 0 ? '+' : '−'}${fmtRub(Math.abs(diff))}`;
-        }
-      }
-      return `<div class="ovw-tile">
-        <div class="ovw-tile__label">${item.label}</div>
-        <div class="ovw-tile__value">${fmtRub(cur)}</div>
-        <div class="ovw-tile__delta ${deltaCls}">${deltaText}</div>
-      </div>`;
-    })
-    .join('');
+  const byKey = key => dash.summary?.find(s => s.key === key) || {};
+  const revenue = Number(byKey('revenue').current) || 0;
+  const opex = Number(byKey('opex').current) || 0;
+  const profit = Number(byKey('profit').current) || 0;
+  const capex = Number(dash.capexAll) || 0;
+  const periodLabel = dash.allTime ? 'ВСЁ ВРЕМЯ' : _monthLabelFull(dash.year, dash.month).toUpperCase();
+
+  const withSign = n => `${n >= 0 ? '+' : '−'}${fmtRub(Math.abs(n))}`;
+  const prevMonthDelta = key => {
+    const prev = byKey(key).previous;
+    if (prev === null || prev === undefined || Number.isNaN(Number(prev))) return null;
+    return (Number(byKey(key).current) || 0) - (Number(prev) || 0);
+  };
+  const yearTotals = y => {
+    let rev = 0;
+    let exp = 0;
+    (_ops || []).forEach(op => {
+      const d = _toOpDate(op);
+      if (!d || d.getFullYear() !== y) return;
+      const cls = _opClass(op);
+      const amt = Number(op.amount) || 0;
+      if (cls === 'revenue') rev += amt;
+      if (cls === 'opex') exp += amt;
+    });
+    return { revenue: rev, opex: exp, profit: rev - exp };
+  };
+
+  let incomeDelta = prevMonthDelta('revenue');
+  let opexDelta = prevMonthDelta('opex');
+  let profitDelta = prevMonthDelta('profit');
+  if (dash.allTime) {
+    const curY = Number(dash.year) || new Date().getFullYear();
+    const cur = yearTotals(curY);
+    const prev = yearTotals(curY - 1);
+    const hasPrev = prev.revenue !== 0 || prev.opex !== 0 || prev.profit !== 0;
+    incomeDelta = hasPrev ? cur.revenue - prev.revenue : null;
+    opexDelta = hasPrev ? cur.opex - prev.opex : null;
+    profitDelta = hasPrev ? cur.profit - prev.profit : null;
+  }
+
+  const incomeDeltaHtml = incomeDelta === null
+    ? ''
+    : `<div class="ovw-tile__delta ${incomeDelta >= 0 ? 'ovw-delta--pos' : 'ovw-delta--neg'}">${withSign(incomeDelta)}</div>`;
+  const opexDeltaHtml = opexDelta === null
+    ? ''
+    : `<div class="ovw-tile__delta ${opexDelta <= 0 ? 'ovw-delta--pos' : 'ovw-delta--neg'}">${withSign(opexDelta)}</div>`;
+  const profitDeltaHtml = profitDelta === null
+    ? ''
+    : `<div class="ovw-tile__delta ${profitDelta >= 0 ? 'ovw-delta--pos' : 'ovw-delta--neg'}">${withSign(profitDelta)}</div>`;
+
   return `
     <div class="ovw-hero">
+      <div class="ovw-hero__stripe" style="background:${profit >= 0 ? '***REMOVED***00C97A' : '***REMOVED***FF5252'}"></div>
+      <div class="ovw-hero__body">
       <div class="ovw-hero__label">ЧИСТАЯ ПРИБЫЛЬ · ${periodLabel}</div>
-      <div class="ovw-hero__amount ${amountCls}">${profit > 0 ? '+' : ''}${fmtRub(profit)}</div>
+      <div class="ovw-hero__amount ovw-hero__amount--${profit >= 0 ? 'pos' : 'neg'}">${withSign(profit)}</div>
       <div class="ovw-hero__sub">Выручка ${fmtRub(revenue)} &nbsp;·&nbsp; Расходы ${fmtRub(opex)}</div>
+      </div>
     </div>
-    <div class="ovw-tiles">${tiles}</div>`;
+    <div class="ovw-sheet">
+      <div class="ovw-tiles">
+        <div class="ovw-tile">
+          <div class="ovw-tile__stripe" style="background:***REMOVED***00A86B"></div>
+          <div class="ovw-tile__content">
+            <div class="ovw-tile__lbl">Выручка</div>
+            <div class="ovw-tile__val">${fmtRub(revenue)}</div>
+            ${incomeDeltaHtml}
+          </div>
+        </div>
+        <div class="ovw-tile">
+          <div class="ovw-tile__stripe" style="background:***REMOVED***E34234"></div>
+          <div class="ovw-tile__content">
+            <div class="ovw-tile__lbl">Опер. расходы</div>
+            <div class="ovw-tile__val">${fmtRub(opex)}</div>
+            ${opexDeltaHtml}
+          </div>
+        </div>
+        <div class="ovw-tile">
+          <div class="ovw-tile__stripe" style="background:***REMOVED***E08000"></div>
+          <div class="ovw-tile__content">
+            <div class="ovw-tile__lbl">CAPEX</div>
+            <div class="ovw-tile__val">${fmtRub(capex)}</div>
+            <div class="ovw-tile__delta ovw-delta--muted">Всё время</div>
+          </div>
+        </div>
+        <div class="ovw-tile">
+          <div class="ovw-tile__stripe" style="background:${profit >= 0 ? '***REMOVED***00A86B' : '***REMOVED***E34234'}"></div>
+          <div class="ovw-tile__content">
+            <div class="ovw-tile__lbl">Прибыль</div>
+            <div class="ovw-tile__val ${profit >= 0 ? 'ovw-val--pos' : 'ovw-val--neg'}">${withSign(profit)}</div>
+            ${profitDeltaHtml}
+          </div>
+        </div>
+      </div>
+    </div>`;
 }
 
 function _opexHtml(opex) {
@@ -702,7 +757,7 @@ function _pagesHtml(dash, emptyMsg, capexMode) {
         ${banner || ''}
         ${_overviewHtml(dash)}
         <div class="section-label">Загрузка парка</div>
-        <div class="white-card analytics-card-pad">
+        <div class="ovw-fleet">
           ${dash.utilization?.length ? _utilHtml(dash.utilization) : '<div class="analytics-muted">Нет данных</div>'}
         </div>
       </div>
