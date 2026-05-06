@@ -332,28 +332,48 @@ function _pnlHtml(pnl) {
   const rows = pnl.filter(r => r.car !== 'Общие' && r.car !== 'Итого');
   const general = pnl.find(r => r.car === 'Общие');
   const total = pnl.find(r => r.car === 'Итого');
+  const maxRevenue = Math.max(1, ...rows.map(r => Number(r.revenue) || 0));
 
-  function cellStyle(profit) {
-    const p = Number(profit) || 0;
-    if (p > 20000) return 'background:***REMOVED***1B6B47;color:***REMOVED***fff';
-    if (p > 5000) return 'background:***REMOVED***2A8A5A;color:***REMOVED***fff';
-    if (p > 0) return 'background:***REMOVED***3DAD72;color:***REMOVED***fff';
-    if (p > -5000) return 'background:***REMOVED***8B3030;color:***REMOVED***fff';
-    if (p > -20000) return 'background:***REMOVED***7A2020;color:***REMOVED***fff';
-    return 'background:***REMOVED***5C1010;color:***REMOVED***fff';
+  function cardBg(revenue, expense, result) {
+    const rev = Number(revenue) || 0;
+    const exp = Number(expense) || 0;
+    const res = Number(result) || 0;
+    if (res > 0) {
+      const margin = rev > 0 ? (res / rev) * 100 : 0;
+      if (margin > 60) return '***REMOVED***1B6B47';
+      if (margin >= 30) return '***REMOVED***1A5C3A';
+      return '***REMOVED***2A7A50';
+    }
+    if (res < 0) {
+      const lossPct = exp > 0 ? Math.abs(res) / exp : 0;
+      if (lossPct > 0.5) return '***REMOVED***5C1010';
+      return '***REMOVED***7A2020';
+    }
+    return '***REMOVED***2A2A2A';
   }
 
-  function resultColor(profit) {
-    return Number(profit) >= 0 ? '***REMOVED***7EFFC4' : '***REMOVED***FFB3B3';
+  function resultColor(result) {
+    const n = Number(result) || 0;
+    if (n > 0) return '***REMOVED***7EFFC4';
+    if (n < 0) return '***REMOVED***FFB3B3';
+    return '***REMOVED***C6C6C8';
   }
 
-  const cells = rows
+  const cards = rows
     .map(
-      r => `
-    <div class="analytics-heat-cell" style="${cellStyle(r.profit)}">
-      <div class="analytics-heat-id">${r.car}</div>
-      <div class="analytics-heat-rev">↑ ${fmtRub(r.revenue)}</div>
-      <div class="analytics-heat-result" style="color:${resultColor(r.profit)}">
+      (r, i) => `
+    <div class="pnl-card" style="background:${cardBg(r.revenue, r.expense, r.profit)};animation-delay:${(0.05 + i * 0.07).toFixed(2)}s">
+      <div class="pnl-card-name">${r.car}</div>
+      <div class="pnl-card-metrics">
+        <div class="pnl-card-bar-track">
+          <div class="pnl-card-bar-fill" style="width:${(((Number(r.revenue) || 0) / maxRevenue) * 100).toFixed(2)}%;animation-delay:${(0.35 + i * 0.07).toFixed(2)}s"></div>
+        </div>
+        <div class="pnl-card-subs">
+          <span class="pnl-card-sub">↑ ${fmtRub(r.revenue)}</span>
+          <span class="pnl-card-sub">↓ ${fmtRub(r.expense)}</span>
+        </div>
+      </div>
+      <div class="pnl-card-result" style="color:${resultColor(r.profit)}">
         ${Number(r.profit) >= 0 ? '+' : ''}${fmtRub(r.profit)}
       </div>
     </div>`,
@@ -362,27 +382,31 @@ function _pnlHtml(pnl) {
 
   const generalRow = general
     ? `
-    <div class="analytics-heat-general">
-      <span class="analytics-heat-gen-name">Общие расходы</span>
-      <span class="analytics-heat-gen-val">${fmtRub(general.expense)}</span>
+    <div class="pnl-card" style="background:***REMOVED***2A2A2A;animation-delay:0.40s">
+      <div class="pnl-card-name">Общие</div>
+      <div class="pnl-card-metrics">
+        <div class="pnl-card-subs">
+          <span class="pnl-card-sub">ЗП, связь, реклама</span>
+          <span class="pnl-card-sub">↓ ${fmtRub(general.expense)}</span>
+        </div>
+      </div>
+      <div class="pnl-card-result" style="color:***REMOVED***B0B0B5">-${fmtRub(general.expense)}</div>
     </div>`
     : '';
 
   const totalRow = total
     ? `
-    <div class="analytics-heat-total">
-      <span>Итого</span>
-      <span>↑ ${fmtRub(total.revenue)}</span>
-      <span>↓ ${fmtRub(total.expense)}</span>
-      <span style="color:${Number(total.profit) >= 0 ? '***REMOVED***00A86B' : '***REMOVED***E34234'}">
-        ${Number(total.profit) >= 0 ? '+' : ''}${fmtRub(total.profit)}
-      </span>
+    <div class="wc pnl-total">
+      <div class="pnl-total-left">Итого</div>
+      <div class="pnl-total-right">
+        <div class="pnl-total-sub">↑ ${fmtRub(total.revenue)} &nbsp; ↓ ${fmtRub(total.expense)}</div>
+        <div class="pnl-total-val" style="color:${Number(total.profit) >= 0 ? '***REMOVED***00A86B' : '***REMOVED***E34234'}">${Number(total.profit) >= 0 ? '+' : ''}${fmtRub(total.profit)}</div>
+      </div>
     </div>`
     : '';
 
   return `
-    <div class="analytics-heat-grid">${cells}</div>
-    ${generalRow}
+    <div class="pnl-cards">${cards}${generalRow}</div>
     ${totalRow}`;
 }
 
@@ -420,48 +444,177 @@ function _utilHtml(utilization) {
     .join('');
 }
 
+function _monthLabelShort(year, month) {
+  return new Date(year, month - 1, 1)
+    .toLocaleDateString('ru-RU', { month: 'short' })
+    .replace(/\.$/, '');
+}
+
+function _monthLabelFull(year, month) {
+  return new Date(year, month - 1, 1)
+    .toLocaleDateString('ru-RU', { month: 'long' })
+    .replace(/^./, ch => ch.toUpperCase());
+}
+
+function _capexBucketName(cat) {
+  const v = String(cat || '').toLowerCase().trim();
+  if (!v) return 'Прочее';
+  if (v.includes('покуп') || v.includes('приобрет')) return 'Покупки';
+  if (v.includes('ремонт') || v.includes('сто')) return 'Ремонты';
+  if (
+    v.includes('запчаст') ||
+    v.includes('шина') ||
+    v.includes('масл') ||
+    v.includes('фильтр')
+  )
+    return 'Запчасти';
+  return 'Прочее';
+}
+
+function _capexPageMonthly(ops, year, month) {
+  const rows = [];
+  for (let d = -3; d <= 0; d++) {
+    const t = new Date(year, month - 1 + d, 1);
+    const y = t.getFullYear();
+    const m = t.getMonth() + 1;
+    const sum = (ops || []).reduce((acc, op) => {
+      if (_opClass(op) !== 'capex') return acc;
+      const dt = _toOpDate(op);
+      if (!dt) return acc;
+      if (dt.getFullYear() !== y || dt.getMonth() + 1 !== m) return acc;
+      return acc + (Number(op.amount) || 0);
+    }, 0);
+    rows.push({
+      label: _monthLabelShort(y, m),
+      amount: sum,
+    });
+  }
+  return rows;
+}
+
 function _capexPageHtml(dash, capexMode) {
   const s = dash.summary?.find(x => x.key === 'capex');
   if (!s) {
     return `<div class="white-card analytics-card-pad"><div class="analytics-muted">Нет данных</div></div>`;
   }
   const isAll = capexMode === CAPEX_MODE.ALL;
-  const cats = isAll ? dash.capexByCategoryAll : dash.capexByCategoryPeriod;
-  const cars = isAll ? dash.capexByCarsAll : dash.capexByCarsPeriod;
-  const capRows = (cats || [])
-    .map(row => `
-      <div class="analytics-capex-row">
-        <span class="analytics-capex-row__name">${row.name}</span>
-        <span class="analytics-capex-row__sum">${fmtRub(row.amount)}</span>
-      </div>`)
+  const srcCats = isAll ? dash.capexByCategoryAll : dash.capexByCategoryPeriod;
+  const grouped = new Map([
+    ['Покупки', 0],
+    ['Ремонты', 0],
+    ['Запчасти', 0],
+    ['Прочее', 0],
+  ]);
+  (srcCats || []).forEach(row => {
+    const b = _capexBucketName(row.name);
+    grouped.set(b, (grouped.get(b) || 0) + (Number(row.amount) || 0));
+  });
+  const donutRows = [
+    { key: 'Покупки', color: '***REMOVED***1A1A1A', amount: grouped.get('Покупки') || 0 },
+    { key: 'Ремонты', color: '***REMOVED***6366F1', amount: grouped.get('Ремонты') || 0 },
+    { key: 'Запчасти', color: '***REMOVED***E08000', amount: grouped.get('Запчасти') || 0 },
+    { key: 'Прочее', color: '***REMOVED***CCCCD8', amount: grouped.get('Прочее') || 0 },
+  ];
+  const total = Number(s.current) || 0;
+  const CIRC = 87.96;
+  let offset = 0;
+  const rings = donutRows
+    .map((row, i) => {
+      const pct = total > 0 ? row.amount / total : 0;
+      const dash = pct * CIRC;
+      const seg = `<circle class="donut-ring ring-${i + 1}" cx="18" cy="18" r="14" fill="none"
+        stroke="${row.color}" stroke-width="4.5"
+        stroke-dasharray="${dash.toFixed(2)} ${(CIRC - dash).toFixed(2)}"
+        stroke-dashoffset="-${offset.toFixed(2)}"
+      />`;
+      offset += dash;
+      return seg;
+    })
     .join('');
-  const carRows = (cars || [])
-    .map(row => `
-      <tr>
-        <td class="analytics-capex-car">${row.car}</td>
-        <td class="analytics-capex-sum">${fmtRub(row.amount)}</td>
-      </tr>`)
+  const legend = donutRows
+    .map(
+      row => `
+      <div class="analytics-leg-row">
+        <span class="analytics-leg-dot" style="background:${row.color}"></span>
+        <span class="analytics-leg-name">${row.key}</span>
+        <span class="analytics-leg-amt">${fmtRub(row.amount)}</span>
+      </div>`,
+    )
     .join('');
+
+  const timeline = _capexPageMonthly(_ops, dash.year, dash.month);
+  const maxMonth = Math.max(1, ...timeline.map(x => Number(x.amount) || 0));
+  const timelineHtml = timeline
+    .map(row => {
+      const width = ((Number(row.amount) || 0) / maxMonth) * 100;
+      return `<div class="tl-row">
+        <span class="tl-mo">${row.label}</span>
+        <div class="tl-track"><div class="tl-fill" style="width:${width.toFixed(2)}%"></div></div>
+        <span class="tl-val">${fmtRub(row.amount)}</span>
+      </div>`;
+    })
+    .join('');
+
+  const revenueAcc = (_ops || []).reduce((acc, op) => {
+    if (_opClass(op) !== 'revenue') return acc;
+    return acc + (Number(op.amount) || 0);
+  }, 0);
+  const revMonths = new Set(
+    (_ops || [])
+      .filter(op => _opClass(op) === 'revenue')
+      .map(op => {
+        const d = _toOpDate(op);
+        return d ? `${d.getFullYear()}-${d.getMonth() + 1}` : '';
+      })
+      .filter(Boolean),
+  ).size;
+  const avgMonthRev = revMonths > 0 ? revenueAcc / revMonths : 0;
+  const needX = revenueAcc > 0 ? total / revenueAcc : 0;
+  const paybackMonths = avgMonthRev > 0 ? total / avgMonthRev : 0;
+
   return `
-    <div class="white-card analytics-card-pad analytics-capex-hero">
-      <div class="analytics-capex-hero__label">${s.label}</div>
-      <div class="analytics-capex-hero__amount">${s.current !== null && s.current !== undefined ? fmtRub(s.current) : '—'}</div>
-      ${_deltaBlock(s.key, s.current, s.previous)}
+    <div class="white-card analytics-card-pad">
+      <div class="analytics-capex-hero__label">Структура инвестиций</div>
+      <div class="analytics-donut-wrap">
+        <div class="analytics-donut">
+          <svg class="analytics-donut-svg" viewBox="0 0 36 36" style="transform:rotate(-90deg)">
+            <circle cx="18" cy="18" r="14" fill="none" stroke="***REMOVED***F0F1F3" stroke-width="4.5" />
+            ${rings}
+          </svg>
+          <div class="analytics-donut-center">
+            <div class="analytics-donut-val">${fmtRub(total)}</div>
+            <div class="analytics-donut-lbl">CAPEX</div>
+          </div>
+        </div>
+        <div class="analytics-legend">${legend}</div>
+      </div>
+    </div>
+
+    <div class="white-card analytics-card-pad">
+      <div class="section-label">По месяцам</div>
+      <div class="tl">${timelineHtml}</div>
+    </div>
+
+    <div class="white-card analytics-card-pad">
       <div class="analytics-seg" id="analytics-capex-seg">
         <button type="button" class="analytics-seg__btn${isAll ? ' analytics-seg__btn--active' : ''}" data-capex-mode="${CAPEX_MODE.ALL}">За всё время</button>
         <button type="button" class="analytics-seg__btn${!isAll ? ' analytics-seg__btn--active' : ''}" data-capex-mode="${CAPEX_MODE.PERIOD}">За период</button>
       </div>
-    </div>
-    <div class="white-card analytics-card-pad">
-      <div class="section-label">CAPEX по категориям</div>
-      ${capRows || '<div class="analytics-muted">Нет данных</div>'}
-    </div>
-    <div class="white-card analytics-card-pad">
-      <div class="section-label">CAPEX по машинам</div>
-      <table class="analytics-capex-table">
-        <thead><tr><th>Машина</th><th>Сумма CAPEX</th></tr></thead>
-        <tbody>${carRows || '<tr><td colspan="2" class="analytics-muted">Нет данных</td></tr>'}</tbody>
-      </table>
+      <div class="roi-card">
+        <div class="roi-lbl">CAPEX в контексте P&amp;L</div>
+        <div class="roi-val">${needX.toFixed(1)}x нужно заработать</div>
+        <div class="roi-sub">при выручке ~${Math.round(avgMonthRev / 1000)}К/мес — окупаемость ~${Math.max(0, Math.round(paybackMonths))} мес</div>
+        <div class="roi-grid">
+          <div class="roi-cell">
+            <div class="roi-c-lbl">Вложено</div>
+            <div class="roi-c-val" style="color:***REMOVED***E08000">${fmtRub(total)}</div>
+          </div>
+          <div class="roi-cell">
+            <div class="roi-c-lbl">Заработано</div>
+            <div class="roi-c-val" style="color:***REMOVED***00A86B">${fmtRub(revenueAcc)}</div>
+          </div>
+        </div>
+      </div>
     </div>
     <p class="analytics-muted analytics-capex-hint">За период: ${fmtRub(dash.capexPeriod || 0)} · Всё время: ${fmtRub(dash.capexAll || 0)}</p>`;
 }
@@ -546,7 +699,7 @@ function _pagesHtml(dash, emptyMsg, capexMode) {
     </div>
     <div class="analytics-page" data-page="3">
       <div class="analytics-page-inner">
-        <div class="section-label">P&amp;L по машинам</div>
+        <div class="section-label">P&amp;L по машинам — ${_monthLabelFull(dash.year, dash.month)}</div>
         <div class="white-card analytics-card-pad">
           ${dash.pnl?.length || (Number(dash.pnlGeneralOpex) || 0) > 0 ? _pnlHtml(_pnlRowsWithTotals(dash.pnl, dash.pnlGeneralOpex)) : '<div class="analytics-muted">Нет данных</div>'}
         </div>
@@ -635,6 +788,16 @@ function _updateCarouselChrome(root, idx) {
   const safe = Math.max(0, Math.min(PAGE_LABELS.length - 1, idx));
   if (label) label.textContent = PAGE_LABELS[safe] ?? '';
   dots.forEach((d, i) => d.classList.toggle('is-active', i === safe));
+  _restartSlideAnimations(root, safe);
+}
+
+function _restartSlideAnimations(root, idx) {
+  const page = root.querySelector(`.analytics-page[data-page="${idx}"]`);
+  if (!page) return;
+  page.classList.remove('is-animating');
+  // force reflow for animation restart when revisiting same slide
+  void page.offsetWidth;
+  page.classList.add('is-animating');
 }
 
 function _bindCarouselScroll(root) {
