@@ -3571,7 +3571,78 @@
 .ovw-fleet {
   background: ***REMOVED***fff;
   border-radius: 12px;
-  padding: 10px 12px;
+  padding: 12px 14px;
+}
+
+.ovw-fleet__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.ovw-fleet__cell {
+  border-radius: 10px;
+  padding: 9px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ovw-fleet__cell--rent { background: ***REMOVED***eaf3de; }
+.ovw-fleet__cell--idle { background: ***REMOVED***fef9c3; }
+.ovw-fleet__cell--repair { background: ***REMOVED***fee2e2; }
+
+.ovw-fleet__num {
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.ovw-fleet__cell--rent .ovw-fleet__num { color: ***REMOVED***16a34a; }
+.ovw-fleet__cell--idle .ovw-fleet__num { color: ***REMOVED***d97706; }
+.ovw-fleet__cell--repair .ovw-fleet__num { color: ***REMOVED***ef4444; }
+
+.ovw-fleet__lbl {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.ovw-fleet__cell--rent .ovw-fleet__lbl { color: ***REMOVED***16a34a; }
+.ovw-fleet__cell--idle .ovw-fleet__lbl { color: ***REMOVED***d97706; }
+.ovw-fleet__cell--repair .ovw-fleet__lbl { color: ***REMOVED***ef4444; }
+
+.ovw-fleet__bar {
+  display: flex;
+  height: 5px;
+  border-radius: 3px;
+  overflow: hidden;
+  gap: 1px;
+}
+
+.ovw-fleet__seg { height: 5px; }
+.ovw-fleet__seg--rent { background: ***REMOVED***16a34a; }
+.ovw-fleet__seg--idle { background: ***REMOVED***f59e0b; }
+.ovw-fleet__seg--repair { background: ***REMOVED***ef4444; }
+
+.ovw-fleet__bar-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+}
+
+.ovw-fleet__bar-lbl {
+  font-size: 10px;
+  color: ***REMOVED***8a8a8e;
+  font-weight: 600;
+}
+
+.ovw-fleet__bar-pct {
+  font-size: 11px;
+  font-weight: 900;
+  color: ***REMOVED***1a1a1a;
 }
 
 /* CAPEX timeline */
@@ -3598,6 +3669,69 @@
 .opex-top3__row:nth-child(2) .opex-top3__fill { animation-delay: .45s; }
 .opex-top3__row:nth-child(3) .opex-top3__fill { animation-delay: .6s; }
 .opex-top3__val { font-size: 11px; font-weight: 700; color: ***REMOVED***1a1a1a; min-width: 56px; text-align: right; font-variant-numeric: tabular-nums; }
+
+.opex-dynamics { margin-bottom: 0; }
+
+.opex-dyn-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.opex-dyn-hero__lbl {
+  font-size: 9px;
+  font-weight: 700;
+  color: ***REMOVED***8a8a8e;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: 3px;
+}
+
+.opex-dyn-hero__val {
+  font-size: 16px;
+  font-weight: 900;
+  color: ***REMOVED***1a1a1a;
+  letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.opex-dyn-hero__val--muted { color: ***REMOVED***8a8a8e; }
+
+.opex-dyn-hero__arrow {
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.opex-dyn-hero__arrow--up { color: ***REMOVED***E34234; }
+.opex-dyn-hero__arrow--down { color: ***REMOVED***00A86B; }
+.opex-dyn-hero__arrow--flat { color: ***REMOVED***8a8a8e; }
+
+.opex-dyn-delta {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.opex-dyn-delta--up { color: ***REMOVED***E34234; }
+.opex-dyn-delta--down { color: ***REMOVED***00A86B; }
+.opex-dyn-delta--flat { color: ***REMOVED***8a8a8e; }
+
+.opex-dyn-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background: ***REMOVED***fff5f5;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.opex-dyn-top__lbl { color: ***REMOVED***8a8a8e; font-weight: 500; flex-shrink: 0; }
+.opex-dyn-top__cat { font-weight: 700; color: ***REMOVED***1a1a1a; flex: 1; }
+.opex-dyn-top__val { font-weight: 800; font-variant-numeric: tabular-nums; flex-shrink: 0; }
 
 /* ROI card */
 .roi-card { background:***REMOVED***FFF8F0; border-radius:14px; padding:12px 14px; border-left:3px solid ***REMOVED***E08000; margin-top:10px; opacity:0; transform:translateY(10px); }

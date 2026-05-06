@@ -13,7 +13,7 @@ import {
 import { getWithSWR, CACHE_KEYS } from '../cache.js';
 import { getCurrentUser } from '../auth.js';
 import { mountNavbarInContainer } from '../router.js?v=7';
-import { KASSA_NAMES } from '../config.js';
+import { CAR_STATUSES, KASSA_NAMES } from '../config.js';
 
 const PAGE_LABELS = ['Обзор', 'Расходы', 'CAPEX', 'По машинам', 'Кассы'];
 const CAPEX_MODE = {
@@ -329,6 +329,19 @@ function _overviewHtml(dash) {
     ? ''
     : `<div class="ovw-tile__delta ${profitDelta >= 0 ? 'ovw-delta--pos' : 'ovw-delta--neg'}">${withSign(profitDelta)}</div>`;
 
+  const fleetStatus = (_cars || []).reduce(
+    (acc, car) => {
+      const st = String(car?.status || '').trim();
+      if (st === CAR_STATUSES.RENT) acc.rent += 1;
+      else if (st === CAR_STATUSES.IDLE) acc.idle += 1;
+      else if (st === CAR_STATUSES.REPAIR) acc.repair += 1;
+      return acc;
+    },
+    { rent: 0, idle: 0, repair: 0 },
+  );
+  const totalFleet = fleetStatus.rent + fleetStatus.idle + fleetStatus.repair;
+  const rentPct = totalFleet > 0 ? Math.round((fleetStatus.rent / totalFleet) * 100) : 0;
+
   return `
     <div class="ovw-hero">
       <div class="ovw-hero__stripe" style="background:${profit >= 0 ? '***REMOVED***00C97A' : '***REMOVED***FF5252'}"></div>
@@ -373,6 +386,116 @@ function _overviewHtml(dash) {
           </div>
         </div>
       </div>
+    </div>
+    <div class="ovw-fleet">
+      <div class="sec">Загрузка парка · ${totalFleet} машин</div>
+
+      <div class="ovw-fleet__grid">
+        <div class="ovw-fleet__cell ovw-fleet__cell--rent">
+          <span class="ovw-fleet__num">${fleetStatus.rent}</span>
+          <span class="ovw-fleet__lbl">Аренда</span>
+        </div>
+        <div class="ovw-fleet__cell ovw-fleet__cell--idle">
+          <span class="ovw-fleet__num">${fleetStatus.idle}</span>
+          <span class="ovw-fleet__lbl">Простой</span>
+        </div>
+        <div class="ovw-fleet__cell ovw-fleet__cell--repair">
+          <span class="ovw-fleet__num">${fleetStatus.repair}</span>
+          <span class="ovw-fleet__lbl">Ремонт</span>
+        </div>
+      </div>
+
+      <div class="ovw-fleet__bar">
+        <div class="ovw-fleet__seg ovw-fleet__seg--rent" style="flex:${fleetStatus.rent}"></div>
+        <div class="ovw-fleet__seg ovw-fleet__seg--idle" style="flex:${fleetStatus.idle}"></div>
+        <div class="ovw-fleet__seg ovw-fleet__seg--repair" style="flex:${fleetStatus.repair}"></div>
+      </div>
+      <div class="ovw-fleet__bar-footer">
+        <span class="ovw-fleet__bar-lbl">Загрузка</span>
+        <span class="ovw-fleet__bar-pct">${rentPct}%</span>
+      </div>
+    </div>`;
+}
+
+function _prevPeriodLabel(year, month) {
+  const prev = new Date(year, month - 2, 1);
+  return _monthLabelFull(prev.getFullYear(), prev.getMonth() + 1);
+}
+
+function _opexDynamicsHtml(dash, currentRows, currentTotal) {
+  if (dash.allTime) return '';
+  const prevDate = new Date(dash.year, dash.month - 2, 1);
+  const py = prevDate.getFullYear();
+  const pm = prevDate.getMonth() + 1;
+  const prevMap = new Map();
+
+  (_ops || []).forEach(op => {
+    if (_opClass(op) !== 'opex') return;
+    const d = _toOpDate(op);
+    if (!d) return;
+    if (d.getFullYear() !== py || d.getMonth() + 1 !== pm) return;
+    const cat = String(op.category || 'Прочее').trim() || 'Прочее';
+    prevMap.set(cat, (prevMap.get(cat) || 0) + (Number(op.amount) || 0));
+  });
+
+  const prevTotal = [...prevMap.values()].reduce((acc, val) => acc + (Number(val) || 0), 0);
+  if (prevTotal <= 0) return '';
+
+  const currentMap = new Map(
+    (currentRows || []).map(r => [String(r.name || '').trim() || 'Прочее', Number(r.amount) || 0]),
+  );
+  const delta = (Number(currentTotal) || 0) - prevTotal;
+  const deltaPct = Math.round((Math.abs(delta) / prevTotal) * 100);
+  const trend = delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat';
+  const arrow = trend === 'up' ? '↑' : trend === 'down' ? '↓' : '→';
+  const trendText =
+    trend === 'up'
+      ? 'расходы выросли'
+      : trend === 'down'
+        ? 'расходы снизились'
+        : 'без изменений';
+  const deltaSign = delta >= 0 ? '+' : '−';
+
+  const allCats = new Set([...currentMap.keys(), ...prevMap.keys()]);
+  let topChangedCategory = '';
+  let topDelta = 0;
+  allCats.forEach(cat => {
+    const dlt = (currentMap.get(cat) || 0) - (prevMap.get(cat) || 0);
+    if (dlt > topDelta) {
+      topDelta = dlt;
+      topChangedCategory = cat;
+    }
+  });
+
+  return `
+    <div class="analytics-card-pad opex-dynamics">
+      <div class="sec">Динамика vs ${_prevPeriodLabel(dash.year, dash.month)}</div>
+
+      <div class="opex-dyn-hero">
+        <div class="opex-dyn-hero__left">
+          <div class="opex-dyn-hero__lbl">Этот период</div>
+          <div class="opex-dyn-hero__val">${fmtRub(currentTotal)}</div>
+        </div>
+        <div class="opex-dyn-hero__arrow opex-dyn-hero__arrow--${trend}">${arrow}</div>
+        <div class="opex-dyn-hero__right">
+          <div class="opex-dyn-hero__lbl">Пред. период</div>
+          <div class="opex-dyn-hero__val opex-dyn-hero__val--muted">${fmtRub(prevTotal)}</div>
+        </div>
+      </div>
+
+      <div class="opex-dyn-delta opex-dyn-delta--${trend}">
+        ${delta >= 0 ? '+' : ''}${fmtRub(delta)}
+        (${deltaSign}${deltaPct}%)
+        ${trendText}
+      </div>
+
+      ${topDelta > 0 && topChangedCategory
+    ? `<div class="opex-dyn-top">
+          <span class="opex-dyn-top__lbl">Главный рост:</span>
+          <span class="opex-dyn-top__cat">${topChangedCategory}</span>
+          <span class="opex-dyn-top__val opex-dyn-delta--up">+${fmtRub(topDelta)}</span>
+        </div>`
+    : ''}
     </div>`;
 }
 
@@ -385,16 +508,17 @@ function _opexHtml(opex) {
   const COLORS = ['***REMOVED***1A1A1A', '***REMOVED***FFDD2D', '***REMOVED***8A8A8E', '***REMOVED***E34234', '***REMOVED***0066FF', '***REMOVED***E08000'];
 
   const CIRC = 87.96;
-  let offset = 0;
+  let accShare = 0;
   const segments = sorted.map((r, i) => {
-    const pct = total > 0 ? (Number(r.amount) || 0) / total : 0;
-    const dash = pct * CIRC;
+    const share = total > 0 ? (Number(r.amount) || 0) / total : 0;
+    const dash = share * CIRC;
+    const dashOffset = -(accShare * CIRC);
     const seg = `<circle class="ring-${i + 1}" cx="18" cy="18" r="14" fill="none"
       stroke="${COLORS[i] || '***REMOVED***ccc'}" stroke-width="5"
       stroke-dasharray="${dash.toFixed(1)} ${(CIRC - dash).toFixed(1)}"
-      stroke-dashoffset="-${offset.toFixed(1)}"
+      stroke-dashoffset="${dashOffset.toFixed(1)}"
       stroke-linecap="butt"/>`;
-    offset += dash + 1.5;
+    accShare += share;
     return seg;
   });
 
@@ -426,7 +550,7 @@ function _opexHtml(opex) {
 
   return `
     <div class="analytics-donut-wrap">
-      <div class="analytics-donut">
+      <div class="analytics-donut" id="opex-donut-svg">
         <svg viewBox="0 0 36 36" style="transform:rotate(-90deg)">
           ${segments.join('')}
         </svg>
@@ -435,7 +559,7 @@ function _opexHtml(opex) {
           <div class="analytics-donut-lbl">OPEX</div>
         </div>
       </div>
-      <div class="analytics-legend">${legend}</div>
+      <div class="analytics-legend" id="opex-legend">${legend}</div>
     </div>
     <div class="opex-top3">${top3Html}</div>`;
 }
@@ -756,10 +880,6 @@ function _pagesHtml(dash, emptyMsg, capexMode) {
       <div class="analytics-page-inner">
         ${banner || ''}
         ${_overviewHtml(dash)}
-        <div class="section-label">Загрузка парка</div>
-        <div class="ovw-fleet">
-          ${dash.utilization?.length ? _utilHtml(dash.utilization) : '<div class="analytics-muted">Нет данных</div>'}
-        </div>
       </div>
     </div>
     <div class="analytics-page" data-page="1">
@@ -768,6 +888,7 @@ function _pagesHtml(dash, emptyMsg, capexMode) {
         <div class="white-card analytics-card-pad">
           ${dash.opex?.length ? _opexHtml(dash.opex) : '<div class="analytics-muted">Нет данных</div>'}
         </div>
+        ${dash.opex?.length ? _opexDynamicsHtml(dash, dash.opex, dash.opex.reduce((s, r) => s + (Number(r.amount) || 0), 0)) : ''}
       </div>
     </div>
     <div class="analytics-page" data-page="2">
@@ -875,12 +996,13 @@ function _animatePage(root, idx) {
   const page = root.querySelector(`.analytics-page[data-page="${idx}"]`);
   if (!page) return;
   if (idx === 1) {
-    const rings = page.querySelectorAll('.analytics-donut circle[class]');
-    const delays = [0.1, 0.3, 0.5, 0.7];
+    const rings = page.querySelectorAll('***REMOVED***opex-donut-svg circle[class]');
     rings.forEach((ring, i) => {
       ring.style.animation = 'none';
       ring.getBoundingClientRect();
-      ring.style.animation = `donut-draw 1.2s cubic-bezier(.4,0,.2,1) ${delays[i] || 0.1}s forwards`;
+      ring.style.animation = '';
+      const delay = (0.1 + i * 0.2).toFixed(1);
+      ring.style.animation = `donut-draw 1.2s cubic-bezier(.4,0,.2,1) ${delay}s forwards`;
     });
   } else if (idx === 2) {
     const rings = page.querySelectorAll('.donut-ring');
