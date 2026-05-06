@@ -20,9 +20,23 @@ const CAPEX_MODE = {
   ALL: 'all',
   PERIOD: 'period',
 };
+const OPEX_COLORS = {
+  ремонт: '***REMOVED***E08000',
+  запчасти: '***REMOVED***6366F1',
+  доставка: '***REMOVED***0EA5E9',
+  зп: '***REMOVED***00A86B',
+  страховка: '***REMOVED***E34234',
+  реклама: '***REMOVED***F59E0B',
+  прочее: '***REMOVED***CCCCD8',
+};
 
 const fmtRub = n =>
   `${new Intl.NumberFormat('ru-RU').format(Math.round(Number(n) || 0))} ₽`;
+
+function getOpexColor(category) {
+  const key = String(category || '').toLowerCase().trim();
+  return OPEX_COLORS[key] ?? '***REMOVED***CCCCD8';
+}
 
 /** 4 месяца: три предыдущих + текущий (от «сегодня»). */
 function _pillMonths() {
@@ -493,7 +507,7 @@ function _opexDynamicsHtml(dash, currentRows, currentTotal) {
     ? `<div class="opex-dyn-top">
           <span class="opex-dyn-top__lbl">Главный рост:</span>
           <span class="opex-dyn-top__cat">${topChangedCategory}</span>
-          <span class="opex-dyn-top__val opex-dyn-delta--up">+${fmtRub(topDelta)}</span>
+          <span class="opex-dyn-top__val" style="color:${getOpexColor(topChangedCategory)}">+${fmtRub(topDelta)}</span>
         </div>`
     : ''}
     </div>`;
@@ -505,8 +519,6 @@ function _opexHtml(opex) {
     .filter(r => (Number(r.amount) || 0) > 0)
     .sort((a, b) => (Number(b.amount) || 0) - (Number(a.amount) || 0));
 
-  const COLORS = ['***REMOVED***1A1A1A', '***REMOVED***FFDD2D', '***REMOVED***8A8A8E', '***REMOVED***E34234', '***REMOVED***0066FF', '***REMOVED***E08000'];
-
   const CIRC = 87.96;
   let accShare = 0;
   const segments = sorted.map((r, i) => {
@@ -514,7 +526,7 @@ function _opexHtml(opex) {
     const dash = share * CIRC;
     const dashOffset = -(accShare * CIRC);
     const seg = `<circle class="ring-${i + 1}" cx="18" cy="18" r="14" fill="none"
-      stroke="${COLORS[i] || '***REMOVED***ccc'}" stroke-width="5"
+      stroke="${getOpexColor(r.name)}" stroke-width="5"
       stroke-dasharray="${dash.toFixed(1)} ${(CIRC - dash).toFixed(1)}"
       stroke-dashoffset="${dashOffset.toFixed(1)}"
       stroke-linecap="butt"/>`;
@@ -523,11 +535,11 @@ function _opexHtml(opex) {
   });
 
   const legend = sorted
-    .map((r, i) => {
+    .map(r => {
       const pct = total > 0 ? ((Number(r.amount) || 0) / total * 100).toFixed(1) : '0.0';
       return `
       <div class="analytics-leg-row">
-        <span class="analytics-leg-dot" style="background:${COLORS[i] || '***REMOVED***ccc'}"></span>
+        <span class="analytics-leg-dot" style="background:${getOpexColor(r.name)}"></span>
         <span class="analytics-leg-name">${r.name}</span>
         <span class="analytics-leg-pct">${pct}%</span>
         <span class="analytics-leg-amt">${fmtRub(r.amount)}</span>
@@ -536,13 +548,13 @@ function _opexHtml(opex) {
     .join('');
 
   const top3 = sorted.slice(0, 3);
-  const maxTop = Math.max(1, ...top3.map(r => Number(r.amount) || 0));
+  const maxTop = Math.max(1, ...sorted.map(r => Number(r.amount) || 0));
   const top3Html = top3
     .map(r => {
       const pct = ((Number(r.amount) || 0) / maxTop) * 100;
       return `<div class="opex-top3__row" style="--pct:${pct.toFixed(2)}%">
         <span class="opex-top3__name">${r.name}</span>
-        <div class="opex-top3__bar"><div class="opex-top3__fill"></div></div>
+        <div class="opex-top3__bar"><div class="opex-top3__fill" style="background:${getOpexColor(r.name)}"></div></div>
         <span class="opex-top3__val">${fmtRub(r.amount)}</span>
       </div>`;
     })
