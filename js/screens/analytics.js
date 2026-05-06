@@ -278,6 +278,49 @@ function _tilesHtml(summary) {
     </div>`;
 }
 
+function _overviewHtml(dash) {
+  const byKey = key => dash.summary?.find(s => s.key === key);
+  const revenue = Number(byKey('revenue')?.current) || 0;
+  const opex = Number(byKey('opex')?.current) || 0;
+  const profit = Number(byKey('profit')?.current) || 0;
+  const periodLabel = dash.allTime ? 'Всё время' : _monthLabelFull(dash.year, dash.month);
+  const amountCls = profit >= 0 ? 'ovw-hero__amount--pos' : 'ovw-hero__amount--neg';
+  const tileOrder = [
+    { key: 'revenue', label: 'ВЫРУЧКА' },
+    { key: 'opex', label: 'ОПЕРАЦИОННЫЕ РАСХОДЫ' },
+    { key: 'capex', label: 'CAPEX (ВCЁ ВРЕМЯ)' },
+    { key: 'profit', label: 'ПРИБЫЛЬ' },
+  ];
+  const tiles = tileOrder
+    .map(item => {
+      const s = byKey(item.key);
+      const cur = item.key === 'capex' ? Number(dash.capexAll) || 0 : Number(s?.current) || 0;
+      const prev = item.key === 'capex' ? null : s?.previous;
+      let deltaText = '—';
+      let deltaCls = 'ovw-tile__delta--zero';
+      if (prev !== null && prev !== undefined && !Number.isNaN(Number(prev))) {
+        const diff = cur - (Number(prev) || 0);
+        if (Math.abs(diff) > 1e-6) {
+          deltaCls = diff > 0 ? 'ovw-tile__delta--pos' : 'ovw-tile__delta--neg';
+          deltaText = `${diff > 0 ? '+' : '−'}${fmtRub(Math.abs(diff))}`;
+        }
+      }
+      return `<div class="ovw-tile">
+        <div class="ovw-tile__label">${item.label}</div>
+        <div class="ovw-tile__value">${fmtRub(cur)}</div>
+        <div class="ovw-tile__delta ${deltaCls}">${deltaText}</div>
+      </div>`;
+    })
+    .join('');
+  return `
+    <div class="ovw-hero">
+      <div class="ovw-hero__label">ЧИСТАЯ ПРИБЫЛЬ · ${periodLabel}</div>
+      <div class="ovw-hero__amount ${amountCls}">${profit > 0 ? '+' : ''}${fmtRub(profit)}</div>
+      <div class="ovw-hero__sub">Выручка ${fmtRub(revenue)} &nbsp;·&nbsp; Расходы ${fmtRub(opex)}</div>
+    </div>
+    <div class="ovw-tiles">${tiles}</div>`;
+}
+
 function _opexHtml(opex) {
   const total = opex.reduce((s, r) => s + (Number(r.amount) || 0), 0);
   const sorted = [...opex]
@@ -291,7 +334,7 @@ function _opexHtml(opex) {
   const segments = sorted.map((r, i) => {
     const pct = total > 0 ? (Number(r.amount) || 0) / total : 0;
     const dash = pct * CIRC;
-    const seg = `<circle cx="18" cy="18" r="14" fill="none"
+    const seg = `<circle class="ring-${i + 1}" cx="18" cy="18" r="14" fill="none"
       stroke="${COLORS[i] || '***REMOVED***ccc'}" stroke-width="5"
       stroke-dasharray="${dash.toFixed(1)} ${(CIRC - dash).toFixed(1)}"
       stroke-dashoffset="-${offset.toFixed(1)}"
@@ -313,6 +356,19 @@ function _opexHtml(opex) {
     })
     .join('');
 
+  const top3 = sorted.slice(0, 3);
+  const maxTop = Math.max(1, ...top3.map(r => Number(r.amount) || 0));
+  const top3Html = top3
+    .map(r => {
+      const pct = ((Number(r.amount) || 0) / maxTop) * 100;
+      return `<div class="opex-top3__row" style="--pct:${pct.toFixed(2)}%">
+        <span class="opex-top3__name">${r.name}</span>
+        <div class="opex-top3__bar"><div class="opex-top3__fill"></div></div>
+        <span class="opex-top3__val">${fmtRub(r.amount)}</span>
+      </div>`;
+    })
+    .join('');
+
   return `
     <div class="analytics-donut-wrap">
       <div class="analytics-donut">
@@ -325,88 +381,60 @@ function _opexHtml(opex) {
         </div>
       </div>
       <div class="analytics-legend">${legend}</div>
-    </div>`;
+    </div>
+    <div class="opex-top3">${top3Html}</div>`;
+}
+
+function _pnlShortK(n) {
+  const v = Number(n) || 0;
+  if (Math.abs(v) >= 1000) return `${Math.round(v / 1000)}К`;
+  return `${Math.round(v)}`;
+}
+
+function _pnlHeatBg(revenue, result) {
+  const rev = Number(revenue) || 0;
+  const res = Number(result) || 0;
+  if (res > 0) {
+    const margin = rev > 0 ? (res / rev) * 100 : 0;
+    if (margin > 60) return '***REMOVED***1B6B47';
+    if (margin >= 30) return '***REMOVED***1A5C3A';
+    return '***REMOVED***2A7A50';
+  }
+  if (res < 0) {
+    const abs = Math.abs(res);
+    if (abs > 30000) return '***REMOVED***3D0A0A';
+    if (abs > 10000) return '***REMOVED***5C1010';
+    return '***REMOVED***7A2020';
+  }
+  return '***REMOVED***2A2A2A';
 }
 
 function _pnlHtml(pnl) {
   const rows = pnl.filter(r => r.car !== 'Общие' && r.car !== 'Итого');
-  const general = pnl.find(r => r.car === 'Общие');
   const total = pnl.find(r => r.car === 'Итого');
-  const maxRevenue = Math.max(1, ...rows.map(r => Number(r.revenue) || 0));
-
-  function cardBg(revenue, expense, result) {
-    const rev = Number(revenue) || 0;
-    const exp = Number(expense) || 0;
-    const res = Number(result) || 0;
-    if (res > 0) {
-      const margin = rev > 0 ? (res / rev) * 100 : 0;
-      if (margin > 60) return '***REMOVED***1B6B47';
-      if (margin >= 30) return '***REMOVED***1A5C3A';
-      return '***REMOVED***2A7A50';
-    }
-    if (res < 0) {
-      const lossPct = exp > 0 ? Math.abs(res) / exp : 0;
-      if (lossPct > 0.5) return '***REMOVED***5C1010';
-      return '***REMOVED***7A2020';
-    }
-    return '***REMOVED***2A2A2A';
-  }
-
-  function resultColor(result) {
-    const n = Number(result) || 0;
-    if (n > 0) return '***REMOVED***7EFFC4';
-    if (n < 0) return '***REMOVED***FFB3B3';
-    return '***REMOVED***C6C6C8';
-  }
-
   const cards = rows
-    .map(
-      (r, i) => `
-    <div class="pnl-card" style="background:${cardBg(r.revenue, r.expense, r.profit)};animation-delay:${(0.05 + i * 0.07).toFixed(2)}s">
-      <div class="pnl-card-name">${r.car}</div>
-      <div class="pnl-card-metrics">
-        <div class="pnl-card-bar-track">
-          <div class="pnl-card-bar-fill" style="width:${(((Number(r.revenue) || 0) / maxRevenue) * 100).toFixed(2)}%;animation-delay:${(0.35 + i * 0.07).toFixed(2)}s"></div>
-        </div>
-        <div class="pnl-card-subs">
-          <span class="pnl-card-sub">↑ ${fmtRub(r.revenue)}</span>
-          <span class="pnl-card-sub">↓ ${fmtRub(r.expense)}</span>
-        </div>
-      </div>
-      <div class="pnl-card-result" style="color:${resultColor(r.profit)}">
-        ${Number(r.profit) >= 0 ? '+' : ''}${fmtRub(r.profit)}
-      </div>
-    </div>`,
-    )
+    .map(r => {
+      const profit = Number(r.profit) || 0;
+      const cls = profit > 0 ? 'phc--pos' : profit < 0 ? 'phc--neg' : 'phc--zero';
+      return `<div class="phc ${cls}" style="background:${_pnlHeatBg(r.revenue, r.profit)}">
+        <div class="phc__id">${r.car}</div>
+        <div class="phc__rev">↑${_pnlShortK(r.revenue)} ↓${_pnlShortK(r.expense)}</div>
+        <div class="phc__res">${profit > 0 ? '+' : ''}${_pnlShortK(profit)}</div>
+      </div>`;
+    })
     .join('');
-
-  const generalRow = general
-    ? `
-    <div class="pnl-card" style="background:***REMOVED***2A2A2A;animation-delay:0.40s">
-      <div class="pnl-card-name">Общие</div>
-      <div class="pnl-card-metrics">
-        <div class="pnl-card-subs">
-          <span class="pnl-card-sub">ЗП, связь, реклама</span>
-          <span class="pnl-card-sub">↓ ${fmtRub(general.expense)}</span>
-        </div>
-      </div>
-      <div class="pnl-card-result" style="color:***REMOVED***B0B0B5">-${fmtRub(general.expense)}</div>
-    </div>`
-    : '';
-
   const totalRow = total
     ? `
-    <div class="wc pnl-total">
-      <div class="pnl-total-left">Итого</div>
-      <div class="pnl-total-right">
-        <div class="pnl-total-sub">↑ ${fmtRub(total.revenue)} &nbsp; ↓ ${fmtRub(total.expense)}</div>
-        <div class="pnl-total-val" style="color:${Number(total.profit) >= 0 ? '***REMOVED***00A86B' : '***REMOVED***E34234'}">${Number(total.profit) >= 0 ? '+' : ''}${fmtRub(total.profit)}</div>
+    <div class="pnl-heat3-total">
+      <span>Итого</span>
+      <div>
+        <div style="font-size:9px;color:***REMOVED***8a8a8e">↑${fmtRub(total.revenue)} &nbsp; ↓${fmtRub(total.expense)}</div>
+        <div class="pnl-heat3-total__val" style="color:${Number(total.profit) >= 0 ? '***REMOVED***00A86B' : '***REMOVED***E34234'}">${Number(total.profit) >= 0 ? '+' : ''}${fmtRub(total.profit)}</div>
       </div>
     </div>`
     : '';
-
   return `
-    <div class="pnl-cards">${cards}${generalRow}</div>
+    <div class="pnl-heat3">${cards}</div>
     ${totalRow}`;
 }
 
@@ -588,31 +616,27 @@ function _capexPageHtml(dash, capexMode) {
         </div>
         <div class="analytics-legend">${legend}</div>
       </div>
-    </div>
-
-    <div class="white-card analytics-card-pad">
-      <div class="section-label">По месяцам</div>
+      <div class="capex-divider"></div>
+      <div class="sec">По месяцам</div>
       <div class="tl">${timelineHtml}</div>
     </div>
 
-    <div class="white-card analytics-card-pad">
-      <div class="analytics-seg" id="analytics-capex-seg">
-        <button type="button" class="analytics-seg__btn${isAll ? ' analytics-seg__btn--active' : ''}" data-capex-mode="${CAPEX_MODE.ALL}">За всё время</button>
-        <button type="button" class="analytics-seg__btn${!isAll ? ' analytics-seg__btn--active' : ''}" data-capex-mode="${CAPEX_MODE.PERIOD}">За период</button>
-      </div>
-      <div class="roi-card">
-        <div class="roi-lbl">CAPEX в контексте P&amp;L</div>
-        <div class="roi-val">${needX.toFixed(1)}x нужно заработать</div>
-        <div class="roi-sub">при выручке ~${Math.round(avgMonthRev / 1000)}К/мес — окупаемость ~${Math.max(0, Math.round(paybackMonths))} мес</div>
-        <div class="roi-grid">
-          <div class="roi-cell">
-            <div class="roi-c-lbl">Вложено</div>
-            <div class="roi-c-val" style="color:***REMOVED***E08000">${fmtRub(total)}</div>
-          </div>
-          <div class="roi-cell">
-            <div class="roi-c-lbl">Заработано</div>
-            <div class="roi-c-val" style="color:***REMOVED***00A86B">${fmtRub(revenueAcc)}</div>
-          </div>
+    <div class="analytics-seg" id="analytics-capex-seg">
+      <button type="button" class="analytics-seg__btn${isAll ? ' analytics-seg__btn--active' : ''}" data-capex-mode="${CAPEX_MODE.ALL}">За всё время</button>
+      <button type="button" class="analytics-seg__btn${!isAll ? ' analytics-seg__btn--active' : ''}" data-capex-mode="${CAPEX_MODE.PERIOD}">За период</button>
+    </div>
+    <div class="roi-card">
+      <div class="roi-lbl">CAPEX в контексте P&amp;L</div>
+      <div class="roi-val">${needX.toFixed(1)}x нужно заработать</div>
+      <div class="roi-sub">при выручке ~${Math.round(avgMonthRev / 1000)}К/мес — окупаемость ~${Math.max(0, Math.round(paybackMonths))} мес</div>
+      <div class="roi-grid">
+        <div class="roi-cell">
+          <div class="roi-c-lbl">Вложено</div>
+          <div class="roi-c-val" style="color:***REMOVED***E08000">${fmtRub(total)}</div>
+        </div>
+        <div class="roi-cell">
+          <div class="roi-c-lbl">Заработано</div>
+          <div class="roi-c-val" style="color:***REMOVED***00A86B">${fmtRub(revenueAcc)}</div>
         </div>
       </div>
     </div>
@@ -676,7 +700,7 @@ function _pagesHtml(dash, emptyMsg, capexMode) {
     <div class="analytics-page" data-page="0">
       <div class="analytics-page-inner">
         ${banner || ''}
-        ${_tilesHtml(dash.summary)}
+        ${_overviewHtml(dash)}
         <div class="section-label">Загрузка парка</div>
         <div class="white-card analytics-card-pad">
           ${dash.utilization?.length ? _utilHtml(dash.utilization) : '<div class="analytics-muted">Нет данных</div>'}
@@ -699,7 +723,7 @@ function _pagesHtml(dash, emptyMsg, capexMode) {
     </div>
     <div class="analytics-page" data-page="3">
       <div class="analytics-page-inner">
-        <div class="section-label">P&amp;L по машинам — ${_monthLabelFull(dash.year, dash.month)}</div>
+        <div class="sec">P&amp;L по машинам — ${_monthLabelFull(dash.year, dash.month)}</div>
         <div class="white-card analytics-card-pad">
           ${dash.pnl?.length || (Number(dash.pnlGeneralOpex) || 0) > 0 ? _pnlHtml(_pnlRowsWithTotals(dash.pnl, dash.pnlGeneralOpex)) : '<div class="analytics-muted">Нет данных</div>'}
         </div>
@@ -788,16 +812,72 @@ function _updateCarouselChrome(root, idx) {
   const safe = Math.max(0, Math.min(PAGE_LABELS.length - 1, idx));
   if (label) label.textContent = PAGE_LABELS[safe] ?? '';
   dots.forEach((d, i) => d.classList.toggle('is-active', i === safe));
-  _restartSlideAnimations(root, safe);
+  _currentPage = safe;
+  _animatePage(root, safe);
 }
 
-function _restartSlideAnimations(root, idx) {
+function _animatePage(root, idx) {
   const page = root.querySelector(`.analytics-page[data-page="${idx}"]`);
   if (!page) return;
-  page.classList.remove('is-animating');
-  // force reflow for animation restart when revisiting same slide
-  void page.offsetWidth;
-  page.classList.add('is-animating');
+  if (idx === 1) {
+    const rings = page.querySelectorAll('.analytics-donut circle[class]');
+    const delays = [0.1, 0.3, 0.5, 0.7];
+    rings.forEach((ring, i) => {
+      ring.style.animation = 'none';
+      ring.getBoundingClientRect();
+      ring.style.animation = `donut-draw 1.2s cubic-bezier(.4,0,.2,1) ${delays[i] || 0.1}s forwards`;
+    });
+  } else if (idx === 2) {
+    const rings = page.querySelectorAll('.donut-ring');
+    const delays = [0.1, 0.3, 0.5, 0.7];
+    rings.forEach((ring, i) => {
+      ring.style.animation = 'none';
+      ring.getBoundingClientRect();
+      ring.style.animation = `donut-draw 1.2s cubic-bezier(.4,0,.2,1) ${delays[i] || 0.1}s forwards`;
+    });
+    const center = page.querySelector('.analytics-donut-center');
+    if (center) {
+      center.style.opacity = '0';
+      center.style.animation = 'none';
+      center.getBoundingClientRect();
+      center.style.animation = 'fade-in 0.35s 0.9s ease forwards';
+    }
+    page.querySelectorAll('.analytics-legend .analytics-leg-row').forEach((row, i) => {
+      row.style.opacity = '0';
+      row.style.transform = 'translateX(8px)';
+      row.style.animation = 'none';
+      row.getBoundingClientRect();
+      row.style.animation = `leg-in 0.35s ${(0.4 + i * 0.15).toFixed(2)}s ease forwards`;
+    });
+    page.querySelectorAll('.tl-row').forEach((row, i) => {
+      const fill = row.querySelector('.tl-fill');
+      const val = row.querySelector('.tl-val');
+      if (fill) {
+        fill.style.animation = 'none';
+        fill.getBoundingClientRect();
+        fill.style.animation = `hbar-grow 0.7s ${(0.1 + i * 0.1).toFixed(2)}s cubic-bezier(.4,0,.2,1) forwards`;
+      }
+      if (val) {
+        val.style.opacity = '0';
+        val.style.animation = 'none';
+        val.getBoundingClientRect();
+        val.style.animation = `fade-in 0.3s ${(0.5 + i * 0.1).toFixed(2)}s forwards`;
+      }
+    });
+    const roi = page.querySelector('.roi-card');
+    if (roi) {
+      roi.style.animation = 'none';
+      roi.getBoundingClientRect();
+      roi.style.animation = 'roi-in 0.5s 0.8s cubic-bezier(.4,0,.2,1) forwards';
+    }
+  } else if (idx === 3) {
+    const cards = page.querySelectorAll('.phc');
+    cards.forEach((card, i) => {
+      card.style.animation = 'none';
+      card.getBoundingClientRect();
+      card.style.animation = `heat-in 0.4s cubic-bezier(.34,1.56,.64,1) ${(0.05 + i * 0.07).toFixed(2)}s forwards`;
+    });
+  }
 }
 
 function _bindCarouselScroll(root) {
@@ -840,8 +920,9 @@ function _afterShellMounted(root, dash) {
   _hydrateKassas(root, dash);
   const car = root.querySelector('***REMOVED***analytics-carousel');
   if (car) {
-    car.scrollLeft = 0;
-    _updateCarouselChrome(root, 0);
+    const safe = Math.max(0, Math.min(PAGE_LABELS.length - 1, _currentPage));
+    car.scrollLeft = safe * (car.offsetWidth || 1);
+    _updateCarouselChrome(root, safe);
   }
 }
 
@@ -854,6 +935,7 @@ let _cars = [];
 let _kassas = [];
 let _deposits = [];
 let _capexMode = CAPEX_MODE.PERIOD;
+let _currentPage = 0;
 
 function _applyDashToState(dash) {
   _pendingYear = dash.year;
@@ -1056,6 +1138,7 @@ function _onRootClick(e) {
     const car = root?.querySelector('***REMOVED***analytics-carousel');
     if (!car) return;
     const idx = Number(dot.dataset.analyticsDot) || 0;
+    _currentPage = idx;
     car.scrollTo({ left: idx * car.offsetWidth, behavior: 'smooth' });
     return;
   }
