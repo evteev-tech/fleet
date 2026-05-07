@@ -449,13 +449,13 @@ async function _submit(root) {
       kassa_id: _state.kassaId,
       direction: 'расход',
       amount: amt,
-      type: _state.category,
+      type: 'расход',
       category: _state.category,
       car_id: _state.carId ?? '',
       driver_id: '',
       comment: _state.comment.trim(),
       provel: isOperations ? 'Владимир' : 'Азамат',
-      класс_итог: cls,
+      class_override: cls,
     });
 
     invalidateCache(SHEETS.OPERATIONS);
