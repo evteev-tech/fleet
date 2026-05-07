@@ -135,8 +135,11 @@ function _renderHomeWithData(body, ops, fleet) {
       <div class="kassa-amount">${_fmtAmount(Math.abs(balance))}<sup class="kassa-currency">₽</sup></div>
       <div class="home-hdr__delta ${deltaClass}">${deltaText}</div>
       <div class="home-action-wrap">
-        <button type="button" class="btn-primary" id="home-btn-income">${primaryBtnLabel}</button>
-        <button type="button" class="btn-secondary" id="home-btn-expense-main">Расход</button>
+        <div class="home-action-row">
+          <button type="button" class="btn-primary home-btn-income" id="home-btn-income">${primaryBtnLabel}</button>
+          <button type="button" class="btn-secondary home-btn-expense" id="home-btn-expense">Расход</button>
+        </div>
+        <button type="button" class="home-btn-transfer" id="home-btn-transfer">⇄ &nbsp;Перевод между кассами</button>
       </div>
     </div>
 
@@ -169,7 +172,7 @@ function _renderHomeWithData(body, ops, fleet) {
       </div>
 
       <div class="home-ops">
-        <div class="ops-header">
+        <div class="ops-header home-ops-title">
           <span class="ops-title">Операции</span>
         </div>
         <div id="home-ops-list"></div>
@@ -186,8 +189,12 @@ function _renderHomeWithData(body, ops, fleet) {
     showScreen('screen-income');
   });
 
-  document.getElementById('home-btn-expense-main')?.addEventListener('click', () => {
+  document.getElementById('home-btn-expense')?.addEventListener('click', () => {
     showScreen('screen-expense');
+  });
+
+  document.getElementById('home-btn-transfer')?.addEventListener('click', () => {
+    showScreen('screen-transfer');
   });
 
   const _goFleetFilter = (status) => {

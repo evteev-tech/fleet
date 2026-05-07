@@ -20,6 +20,7 @@ import { initSettings }  from './screens/settings.js';
 import { initAnalytics } from './screens/analytics.js';
 import { initIncome } from './screens/income.js';
 import { initExpense } from './screens/expense.js';
+import { initTransfer } from './screens/transfer.js';
 
 // ─── Старт ────────────────────────────────────────────────────────────────────
 
@@ -29,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initDashboard();
   initIncome();
   initExpense();
+  initTransfer();
   initAdd();
   initHistory();
   initAnalytics();
