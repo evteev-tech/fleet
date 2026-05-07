@@ -373,3 +373,48 @@
   cursor: pointer;
   font-family: var(--font-family);
 }
+
+.mileage-sheet__title {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--color-dark);
+  margin-bottom: 4px;
+}
+
+.mileage-sheet__sub {
+  font-size: 13px;
+  color: var(--color-muted);
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+.mileage-sheet__field {
+  margin-bottom: 12px;
+}
+
+.mileage-sheet__label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+
+.mileage-sheet__input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid ***REMOVED***e5e5ea;
+  border-radius: 12px;
+  font-size: 15px;
+  font-family: var(--font-family);
+  background: ***REMOVED***fff;
+  color: var(--color-dark);
+}
+
+.mileage-sheet__input:focus {
+  border-color: var(--color-accent);
+  outline: none;
+  background: ***REMOVED***fafce8;
+}

@@ -6,7 +6,7 @@ import { getFleet, postAction, invalidateCache } from '../api.js';
 import { getWithSWR, CACHE_KEYS, invalidateCache as invalidateLocalCache } from '../cache.js';
 import { getCurrentUser } from '../auth.js';
 import { showScreen } from '../router.js?v=7';
-import { showToast } from '../ui.js';
+import { showBottomSheet, hideBottomSheet, showToast } from '../ui.js';
 import { KASSA_ID, ROLES, SHEETS } from '../config.js';
 import { formatDate } from '../utils/date.js';
 
@@ -463,12 +463,141 @@ async function _submit(root) {
     invalidateLocalCache(CACHE_KEYS.KASSAS);
     invalidateLocalCache(CACHE_KEYS.DASHBOARD);
     showToast('Расход записан', 'success', 2000);
+    const isTO = String(_state.category || '').toLowerCase() === 'то';
+    const hasCar = !!_state.carId;
+
+    if (isTO && hasCar) {
+      const cars = _getCachedCars();
+      const car = cars?.find(c => c.carId === _state.carId) ?? null;
+      _openMileageSheet(car, _state.comment);
+      return;
+    }
+
     showScreen('screen-home');
   } catch (e) {
     console.error(e);
     showToast(`Ошибка: ${e.message || e}`, 'error', 3000);
     if (btn) btn.disabled = false;
   }
+}
+
+function _getCachedCars() {
+  try {
+    const raw = localStorage.getItem('fleet_cache_' + CACHE_KEYS.CARS);
+    if (!raw) return [];
+    const entry = JSON.parse(raw);
+    return entry?.data ?? [];
+  } catch {
+    return [];
+  }
+}
+
+function _openMileageSheet(car, prefillComment = '') {
+  const carLabel = car
+    ? `${car.carId}${car.name ? ' · ' + car.name : ''}`
+    : 'машина';
+  const currentMileage = car?.mileage ?? '';
+  const commentSafe = escapeAttr(prefillComment ?? '');
+
+  showBottomSheet(`
+    <div class="mileage-sheet">
+      <p class="mileage-sheet__title">Сбросить счётчик ТО?</p>
+      <p class="mileage-sheet__sub">
+        Вы записали ТО на ${escapeHtml(carLabel)} — зафиксируем пробег?
+      </p>
+
+      <div class="mileage-sheet__field">
+        <label class="mileage-sheet__label">Пробег сейчас, км</label>
+        <input
+          id="ms-mileage"
+          type="number"
+          inputmode="numeric"
+          class="mileage-sheet__input"
+          placeholder="${currentMileage || '0'}"
+          value="${currentMileage || ''}"
+        />
+      </div>
+
+      <div class="mileage-sheet__field">
+        <label class="mileage-sheet__label">Что сделали</label>
+        <input
+          id="ms-comment"
+          type="text"
+          class="mileage-sheet__input"
+          placeholder="Замена масла, фильтры..."
+          value="${commentSafe}"
+        />
+      </div>
+
+      <div class="mileage-sheet__field">
+        <label class="mileage-sheet__label">Следующее ТО через, км</label>
+        <input
+          id="ms-interval"
+          type="number"
+          inputmode="numeric"
+          class="mileage-sheet__input"
+          placeholder="5000"
+          value="5000"
+        />
+      </div>
+
+      <button type="button" class="btn-primary" id="ms-submit" style="margin-top:4px">
+        Зафиксировать
+      </button>
+      <button type="button" class="btn-secondary" id="ms-skip" style="margin-top:8px">
+        Пропустить
+      </button>
+    </div>
+  `);
+
+  setTimeout(() => {
+    document.getElementById('ms-skip')?.addEventListener('click', () => {
+      hideBottomSheet(() => showScreen('screen-home'));
+    });
+
+    document.getElementById('ms-submit')?.addEventListener('click', async () => {
+      if (!car?.carId) {
+        showToast('Машина не найдена', 'error');
+        return;
+      }
+
+      const mileage = parseInt(document.getElementById('ms-mileage')?.value, 10);
+      const comment = document.getElementById('ms-comment')?.value?.trim() || '';
+      const interval = parseInt(document.getElementById('ms-interval')?.value, 10) || 5000;
+
+      if (!mileage || mileage <= 0) {
+        showToast('Введите пробег', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('ms-submit');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Сохраняем…';
+      }
+
+      try {
+        await postAction('UPDATE_CAR_MILEAGE', {
+          car_id: car.carId,
+          mileage,
+          next_to_mileage: mileage + interval,
+          comment,
+        });
+
+        invalidateCache(SHEETS.CARS);
+        invalidateLocalCache(CACHE_KEYS.CARS);
+
+        showToast(`ТО зафиксировано · ${car.carId} ✓`, 'success');
+        hideBottomSheet(() => showScreen('screen-home'));
+      } catch (err) {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Зафиксировать';
+        }
+        showToast(err.message === 'NO_CONNECTION' ? 'Нет соединения' : 'Ошибка сохранения', 'error');
+      }
+    });
+  }, 0);
 }
 
 function escapeHtml(s) {

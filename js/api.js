@@ -460,6 +460,7 @@ export async function postAddIncome(payload) {
 // ─── Какие листы сбрасываем после каждого action ─────────────────────────────
 const ACTION_INVALIDATES = {
   ADD_OPERATION:    [SHEETS.OPERATIONS],
+  UPDATE_CAR_MILEAGE:[SHEETS.CARS],
   UPDATE_CAR_STATUS:[SHEETS.CARS, SHEETS.DRIVERS],
   SAVE_DRIVER:      [SHEETS.DRIVERS, SHEETS.CARS],
   ADD_DEPOSIT:      [SHEETS.DEPOSITS, SHEETS.DRIVERS],

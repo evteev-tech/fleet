@@ -205,6 +205,7 @@ function doPost(e) {
 
     switch (action) {
       case 'ADD_OPERATION':     return handleAddOperation(SS, body);
+      case 'UPDATE_CAR_MILEAGE': return handleUpdateCarMileage(SS, body);
       case 'UPDATE_CAR_STATUS': return handleUpdateCarStatus(SS, body);
       case 'SAVE_DRIVER':       return handleSaveDriver(SS, body);
       case 'ADD_DEPOSIT':       return handleAddDeposit(SS, body);
@@ -276,6 +277,47 @@ function handleAddOperation(ss, body) {
   ]);
 
   return ok({ op_id });
+}
+
+// -----------------------------------------------------------------------------
+// UPDATE_CAR_MILEAGE
+// -----------------------------------------------------------------------------
+
+function handleUpdateCarMileage(ss, body) {
+  const { car_id, mileage, next_to_mileage } = body;
+  if (!car_id) return err('MISSING_FIELD: car_id');
+  if (mileage === undefined || mileage === null || mileage === '') return err('MISSING_FIELD: mileage');
+  if (next_to_mileage === undefined || next_to_mileage === null || next_to_mileage === '') {
+    return err('MISSING_FIELD: next_to_mileage');
+  }
+
+  const sheet = ss.getSheetByName(SHEET.CARS);
+  if (!sheet) {
+    logFailure(ss, 'UPDATE_CAR_MILEAGE', 'SHEET_NOT_FOUND', SHEET.CARS);
+    return err('SHEET_NOT_FOUND');
+  }
+
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+
+  const carIdCol = headers.indexOf('car_id');
+  const mileageCol = headers.indexOf('Текущий пробег');
+  const nextToCol = headers.indexOf('ТО на пробеге');
+  if (carIdCol === -1 || mileageCol === -1 || nextToCol === -1) {
+    logFailure(ss, 'UPDATE_CAR_MILEAGE', 'COLUMN_NOT_FOUND', 'car_id|Текущий пробег|ТО на пробеге');
+    return err('COLUMN_NOT_FOUND');
+  }
+
+  const carRow = data.findIndex((row, i) => i > 0 && String(row[carIdCol]) === String(car_id));
+  if (carRow === -1) {
+    logFailure(ss, 'UPDATE_CAR_MILEAGE', 'CAR_NOT_FOUND', String(car_id));
+    return err('CAR_NOT_FOUND');
+  }
+
+  sheet.getRange(carRow + 1, mileageCol + 1).setValue(Number(mileage));
+  sheet.getRange(carRow + 1, nextToCol + 1).setValue(Number(next_to_mileage));
+
+  return ok({ car_id, mileage: Number(mileage), next_to_mileage: Number(next_to_mileage) });
 }
 
 // -----------------------------------------------------------------------------
