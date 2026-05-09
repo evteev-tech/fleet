@@ -1258,20 +1258,32 @@ function _desktopShellHTML(dash) {
       + '</div>';
   }).join('');
 
-  const kassaMap = new Map((_kassas||[]).map(function(k){ return [String(k.kassaId||'').trim(), Number(k.balanceCurrent)||0]; }));
+  // Балансы: сначала из объектов касс (balanceCurrent), фоллбэк — из операций
+  const kassaObjMap = new Map((_kassas||[]).map(function(k){
+    return [String(k.kassaId||k.касса_id||'').trim(), Number(k.balanceCurrent||k.баланс_текущий)||0];
+  }));
+  const _calcKassaBal = function(id) {
+    if (kassaObjMap.has(id) && kassaObjMap.get(id) !== 0) return kassaObjMap.get(id);
+    // fallback: считаем из операций
+    return (_ops||[]).reduce(function(acc, op) {
+      if (String(op.kassaId||'').trim() !== id) return acc;
+      const amt = Number(op.amount)||0;
+      return acc + (op.direction === 'приход' ? amt : -amt);
+    }, 0);
+  };
   const kassaDefs = [
     { id:'K_AZAMAT',   label:'Азамат',   color:'***REMOVED***FFDD2D' },
     { id:'K_VLADIMIR', label:'Владимир', color:'***REMOVED***378ADD' },
     { id:'K_YULIA',    label:'Юлия',     color:'***REMOVED***00A86B' },
   ];
   const kassaRowsHtml = kassaDefs.map(function(k) {
-    const bal = kassaMap.get(k.id) || 0;
+    const bal = _calcKassaBal(k.id);
     return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid rgba(0,0,0,.06)">'
       + '<div style="display:flex;align-items:center;gap:8px">'
       + '<span style="width:8px;height:8px;border-radius:50%;background:' + k.color + ';flex-shrink:0"></span>'
       + '<span style="font-size:13px;color:var(--dt-text)">' + k.label + '</span>'
       + '</div>'
-      + '<span style="font-size:14px;font-weight:600;color:' + (bal>=0?'***REMOVED***00A86B':'***REMOVED***E34234') + '">' + fmtRub(Math.abs(bal)) + '</span>'
+      + '<span style="font-size:14px;font-weight:600;color:' + (bal>=0?'***REMOVED***00A86B':'***REMOVED***E34234') + '">' + (bal<0?'−':'') + fmtRub(Math.abs(bal)) + '</span>'
       + '</div>';
   }).join('');
 
@@ -1283,7 +1295,7 @@ function _desktopShellHTML(dash) {
     + '@keyframes dt-hbar{to{transform:scaleX(1)}}'
     + '@keyframes dt-fade-up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}'
     + '@keyframes dt-kpi-in{from{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:none}}'
-    + '.dt-root{display:flex;flex-direction:column;height:100dvh;overflow:hidden;background:var(--dt-bg)}'
+    + '***REMOVED***analytics-root{height:100dvh!important;overflow:hidden!important;padding:0!important;display:flex;flex-direction:column}'+ '.dt-root{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;background:var(--dt-bg)}'
     + '.dt-hdr{background:***REMOVED***1A1A1A;padding:16px 28px 0;flex-shrink:0}'
     + '.dt-hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}'
     + '.dt-title{font-size:18px;font-weight:700;color:***REMOVED***fff;letter-spacing:-.02em}'
