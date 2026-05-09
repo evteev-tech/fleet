@@ -466,6 +466,41 @@ function _taskRank(t) {
   return 9;
 }
 
+/** Хвост rental_id как число (R0052 → 52) для сортировки «последняя аренда». */
+function _rentalIdTailNum(id) {
+  const m = String(id || '').match(/(\d+)$/);
+  return m ? parseInt(m[1], 10) : 0;
+}
+
+/** Начало календарного дня из dateEnd строки аренды (лист «Аренда», кол. E). */
+function _paidUntilDayFromRentalDateEnd(dateEnd) {
+  if (dateEnd == null || dateEnd === '') return null;
+  if (!(dateEnd instanceof Date) || Number.isNaN(dateEnd.getTime())) return null;
+  return new Date(dateEnd.getFullYear(), dateEnd.getMonth(), dateEnd.getDate());
+}
+
+/**
+ * «Оплачено до» для блока «Ближайшие 3 дня»: дата_окончания последней строки аренды
+ * с непустым dateEnd (источник правды в таблице). Иначе null → fallback на calcPaidUntil.
+ */
+function _paidUntilDayFromLatestRentalEnd(rentalRows, carId) {
+  const cid = String(carId || '').trim();
+  const candidates = (rentalRows || []).filter(r => {
+    if (String(r.carId || '').trim() !== cid) return false;
+    return _paidUntilDayFromRentalDateEnd(r.dateEnd) != null;
+  });
+  if (!candidates.length) return null;
+  candidates.sort((a, b) => {
+    const nb = _rentalIdTailNum(b.rentalId);
+    const na = _rentalIdTailNum(a.rentalId);
+    if (nb !== na) return nb - na;
+    const sa = a.dateStart instanceof Date && !Number.isNaN(a.dateStart.getTime()) ? a.dateStart.getTime() : 0;
+    const sb = b.dateStart instanceof Date && !Number.isNaN(b.dateStart.getTime()) ? b.dateStart.getTime() : 0;
+    return sb - sa;
+  });
+  return _paidUntilDayFromRentalDateEnd(candidates[0].dateEnd);
+}
+
 function _buildDueSoonRows(allOps, rentCars, drivers, rentalRows) {
   const latestRent = latestRentalByCarMap(rentalRows || []);
 
@@ -478,28 +513,34 @@ function _buildDueSoonRows(allOps, rentCars, drivers, rentalRows) {
     .sort((a, b) => _toDate(b)?.getTime() - _toDate(a)?.getTime());
 
   const today = _todayStart();
+  const windowStart = _addDays(today, -1);
+  windowStart.setHours(0, 0, 0, 0);
   const windowEnd = _addDays(today, 3);
+  windowEnd.setHours(0, 0, 0, 0);
   const rows = [];
 
   rentCars.forEach(car => {
     const carId = String(car.carId || '').trim();
-    const op = rentOps.find(x => String(x.carId || '').trim() === carId);
-    if (!op) return;
 
-    const opD = _toDate(op);
-    if (!opD || Number.isNaN(opD.getTime())) return;
+    let pt = _paidUntilDayFromLatestRentalEnd(rentalRows, carId);
 
-    opD.setHours(0, 0, 0, 0);
-    const rate = parseRatePerDay(latestRent.get(carId)?.rateDay ?? car.rateDay);
-    const rawPaidUntil = calcPaidUntil(opD, Number(op.amount) || 0, rate);
-    if (!rawPaidUntil || Number.isNaN(rawPaidUntil.getTime())) return;
+    if (!pt) {
+      const op = rentOps.find(x => String(x.carId || '').trim() === carId);
+      if (!op) return;
+      const opD = _toDate(op);
+      if (!opD || Number.isNaN(opD.getTime())) return;
+      opD.setHours(0, 0, 0, 0);
+      const rate = parseRatePerDay(latestRent.get(carId)?.rateDay ?? car.rateDay);
+      const rawPaidUntil = calcPaidUntil(opD, Number(op.amount) || 0, rate);
+      if (!rawPaidUntil || Number.isNaN(rawPaidUntil.getTime())) return;
+      pt = new Date(
+        rawPaidUntil.getFullYear(),
+        rawPaidUntil.getMonth(),
+        rawPaidUntil.getDate(),
+      );
+    }
 
-    const pt = new Date(
-      rawPaidUntil.getFullYear(),
-      rawPaidUntil.getMonth(),
-      rawPaidUntil.getDate(),
-    );
-    if (pt.getTime() < today.getTime() || pt.getTime() > windowEnd.getTime()) return;
+    if (pt.getTime() < windowStart.getTime() || pt.getTime() > windowEnd.getTime()) return;
 
     const driver = byCarDriver.get(carId);
     const amount = Math.round(Number(car.rateDay || 0) * 7);

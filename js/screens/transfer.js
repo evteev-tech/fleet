@@ -6,6 +6,9 @@ import { showToast } from '../ui.js';
 import { formatDate } from '../utils/date.js';
 import { invalidateCache as invalidateLocalCache, CACHE_KEYS } from '../cache.js';
 
+/** Механик (Азамат) переводит только между операционными кассами, без инвест-счетов. */
+const MECHANIC_TRANSFER_TO = new Set([KASSA_ID.VLADIMIR, KASSA_ID.YULIA]);
+
 const _state = {
   amount: 0,
   numpadBuf: '',
@@ -40,7 +43,10 @@ function _renderTransfer() {
     comment: '',
   });
 
-  const targets = Object.entries(KASSA_NAMES).filter(([id]) => id !== _fromKassaId);
+  let targets = Object.entries(KASSA_NAMES).filter(([id]) => id !== _fromKassaId);
+  if (user?.role === ROLES.MECHANIC) {
+    targets = targets.filter(([id]) => MECHANIC_TRANSFER_TO.has(id));
+  }
   const fromKassaName = KASSA_NAMES[_fromKassaId] || _fromKassaId;
 
   root.innerHTML = `
@@ -205,6 +211,11 @@ function _closeNumpad(root) {
 
 async function _submitTransfer(root) {
   if (!_fromKassaId || !_state.toKassaId || _state.amount <= 0) return;
+  const u = getCurrentUser();
+  if (u?.role === ROLES.MECHANIC && !MECHANIC_TRANSFER_TO.has(_state.toKassaId)) {
+    showToast('Перевод на этот счёт недоступен', 'error');
+    return;
+  }
   const btn = root.querySelector('***REMOVED***transfer-submit');
   if (btn) {
     btn.disabled = true;
