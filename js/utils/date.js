@@ -40,6 +40,12 @@ export function parseSheetDate(raw) {
     return isNaN(d.getTime()) ? null : d;
   }
 
+  // Apps Script иногда сериализует даты как строку вида:
+  // "Sat May 09 2026 00:00:00 GMT+0300 (Moscow Standard Time)".
+  // Пытаемся распарсить через Date() как fallback.
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+
   return null;
 }
 
