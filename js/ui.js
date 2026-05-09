@@ -1,7 +1,20 @@
 /**
  * ui.js — переиспользуемые UI-функции:
- * toast, skeleton, bottomsheet, форматирование.
+ * toast, skeleton, bottomsheet / modal, форматирование.
+ *
+ * ИЗМЕНЕНИЯ (desktop-патч):
+ *  - showToast()      → на десктопе (≥1024px) позиция right/bottom вместо bottom/center
+ *  - showBottomSheet() → на десктопе рендерит как центрированный modal
+ *    CSS уже переопределяет позицию; здесь дополнительно:
+ *    · не блокируем body.overflow на десктопе (sidebar должен оставаться кликабельным)
+ *    · закрытие по Escape остаётся
+ *    · свайп-жест не подключается (на десктопе нет touch)
  */
+
+// ─── helpers ──────────────────────────────────────────────────────────────────
+
+/** @returns {boolean} */
+const _isDesktop = () => typeof window !== 'undefined' && window.innerWidth >= 1024;
 
 // ─── TOAST ────────────────────────────────────────────────────────────────────
 
@@ -18,8 +31,12 @@ const TOAST_ICONS = {
 };
 
 /**
- * Показывает уведомление внизу экрана.
- * Каждый toast создаётся динамически, удаляется из DOM после скрытия.
+ * Показывает уведомление.
+ * Мобайл: снизу по центру (bottom: 88px).
+ * Десктоп: правый нижний угол (bottom: 24px, right: 24px) — CSS перекрывает
+ *          inline-стиль через !important, поэтому логика позиции здесь для
+ *          читаемости, но фактически управляет ей desktop_patch.css.
+ *
  * @param {string} message
  * @param {'default'|'success'|'error'|'warning'|'info'} type
  * @param {number} duration мс
@@ -27,21 +44,36 @@ const TOAST_ICONS = {
 export function showToast(message, type = 'default', duration = 3000) {
   const { bg, text } = TOAST_COLORS[type] ?? TOAST_COLORS.default;
   const icon         = TOAST_ICONS[type] ?? '';
+  const desktop      = _isDesktop();
 
   const el = document.createElement('div');
   el.className = 'toast-dynamic';
+
+  // Базовые стили через inline (CSS-патч перекрывает позицию на десктопе)
   el.style.cssText = `
-    position:fixed; bottom:88px; left:50%; transform:translateX(-50%) translateY(20px);
-    background:${bg}; color:${text};
-    padding:10px 18px; border-radius:24px;
-    font-size:14px; font-weight:600;
-    display:flex; align-items:center; gap:6px;
-    white-space:nowrap; max-width:calc(100vw - 40px);
-    box-shadow:0 4px 16px rgba(0,0,0,.18);
-    z-index:9999; opacity:0;
-    transition:opacity 200ms ease, transform 200ms ease;
-    pointer-events:none;
+    position: fixed;
+    ${desktop
+      ? 'bottom: 24px; right: 24px; left: auto; transform: translateY(12px);'
+      : 'bottom: 88px; left: 50%; transform: translateX(-50%) translateY(20px);'
+    }
+    background: ${bg};
+    color: ${text};
+    padding: 10px 18px;
+    border-radius: ${desktop ? '12px' : '24px'};
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    max-width: ${desktop ? '360px' : 'calc(100vw - 40px)'};
+    box-shadow: 0 4px 16px rgba(0,0,0,.18);
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 200ms ease, transform 200ms ease;
+    pointer-events: none;
   `;
+
   if (icon) {
     const ico = document.createElement('span');
     ico.textContent = icon;
@@ -57,14 +89,16 @@ export function showToast(message, type = 'default', duration = 3000) {
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       el.style.opacity = '1';
-      el.style.transform = 'translateX(-50%) translateY(0)';
+      el.style.transform = desktop ? 'translateY(0)' : 'translateX(-50%) translateY(0)';
     });
   });
 
   // Исчезновение + удаление из DOM
   setTimeout(() => {
     el.style.opacity = '0';
-    el.style.transform = 'translateX(-50%) translateY(20px)';
+    el.style.transform = desktop
+      ? 'translateY(12px)'
+      : 'translateX(-50%) translateY(20px)';
     setTimeout(() => el.remove(), 220);
   }, duration);
 }
@@ -74,7 +108,7 @@ export function showToast(message, type = 'default', duration = 3000) {
 /**
  * Вставляет skeleton-заглушки в контейнер.
  * @param {HTMLElement} container
- * @param {number} count — количество карточек
+ * @param {number} count
  */
 export function showSkeleton(container, count = 3) {
   container.innerHTML = Array.from({ length: count }, () => `
@@ -94,15 +128,26 @@ export function hideSkeleton(container) {
   container.querySelectorAll('.skeleton-card').forEach(el => el.remove());
 }
 
-// ─── BOTTOMSHEET ──────────────────────────────────────────────────────────────
+// ─── BOTTOMSHEET / MODAL ──────────────────────────────────────────────────────
 
-const _bs       = () => document.getElementById('bottomsheet');
+const _bs        = () => document.getElementById('bottomsheet');
 const _bsOverlay = () => document.getElementById('bs-overlay');
 const _bsContent = () => document.getElementById('bs-content');
 
 /**
- * Открывает bottomsheet с произвольным HTML.
- * Поддерживает закрытие: клик на overlay, свайп вниз > 80px, Escape.
+ * Открывает bottomsheet (мобайл) или центрированный modal (десктоп).
+ *
+ * На мобайле:
+ *   - блокирует прокрутку body
+ *   - поддерживает свайп вниз > 80px для закрытия
+ *
+ * На десктопе:
+ *   - НЕ блокирует прокрутку body (sidebar должен быть доступен)
+ *   - закрытие по клику на overlay и Escape
+ *   - свайп не подключается
+ *
+ * CSS-позиция на десктопе управляется desktop_patch.css.
+ *
  * @param {string} html
  * @param {{ onClose?: Function }} opts
  */
@@ -112,8 +157,14 @@ export function showBottomSheet(html, opts = {}) {
   const content = _bsContent();
   if (!bs || !overlay) return;
 
+  const desktop = _isDesktop();
+
   content.innerHTML = html;
-  document.body.style.overflow = 'hidden';
+
+  // Блокируем скролл только на мобайле
+  if (!desktop) {
+    document.body.style.overflow = 'hidden';
+  }
 
   bs.classList.remove('hidden');
   overlay.classList.remove('hidden');
@@ -126,37 +177,47 @@ export function showBottomSheet(html, opts = {}) {
   const close = () => hideBottomSheet(opts.onClose);
 
   overlay.addEventListener('click', close, { once: true });
-  document.addEventListener('keydown', function handler(e) {
-    if (e.key === 'Escape') { close(); document.removeEventListener('keydown', handler); }
-  });
 
-  // ── Свайп вниз для закрытия ──────────────────────────────────────────────
-  let _startY = null;
-  function onTouchStart(e) { _startY = e.touches[0].clientY; }
-  function onTouchMove(e) {
-    if (_startY === null) return;
-    const dy = e.touches[0].clientY - _startY;
-    if (dy > 0) bs.style.transform = `translateY(${dy}px)`;
-  }
-  function onTouchEnd(e) {
-    if (_startY === null) return;
-    const dy = e.changedTouches[0].clientY - _startY;
-    bs.style.transform = '';
-    _startY = null;
-    if (dy > 80) {
-      bs.removeEventListener('touchstart', onTouchStart);
-      bs.removeEventListener('touchmove',  onTouchMove);
-      bs.removeEventListener('touchend',   onTouchEnd);
+  // Escape
+  function _escHandler(e) {
+    if (e.key === 'Escape') {
       close();
+      document.removeEventListener('keydown', _escHandler);
     }
   }
-  bs.addEventListener('touchstart', onTouchStart, { passive: true });
-  bs.addEventListener('touchmove',  onTouchMove,  { passive: true });
-  bs.addEventListener('touchend',   onTouchEnd,   { passive: true });
+  document.addEventListener('keydown', _escHandler);
+
+  // Свайп вниз — только на мобайле
+  if (!desktop) {
+    let _startY = null;
+
+    function onTouchStart(e) { _startY = e.touches[0].clientY; }
+    function onTouchMove(e) {
+      if (_startY === null) return;
+      const dy = e.touches[0].clientY - _startY;
+      if (dy > 0) bs.style.transform = `translateY(${dy}px)`;
+    }
+    function onTouchEnd(e) {
+      if (_startY === null) return;
+      const dy = e.changedTouches[0].clientY - _startY;
+      bs.style.transform = '';
+      _startY = null;
+      if (dy > 80) {
+        bs.removeEventListener('touchstart', onTouchStart);
+        bs.removeEventListener('touchmove',  onTouchMove);
+        bs.removeEventListener('touchend',   onTouchEnd);
+        close();
+      }
+    }
+
+    bs.addEventListener('touchstart', onTouchStart, { passive: true });
+    bs.addEventListener('touchmove',  onTouchMove,  { passive: true });
+    bs.addEventListener('touchend',   onTouchEnd,   { passive: true });
+  }
 }
 
 /**
- * Закрывает bottomsheet.
+ * Закрывает bottomsheet / modal.
  * @param {Function} [callback]
  */
 export function hideBottomSheet(callback) {
@@ -183,7 +244,7 @@ export const closeBottomSheet = hideBottomSheet;
 // ─── ДИАЛОГ ПОДТВЕРЖДЕНИЯ ─────────────────────────────────────────────────────
 
 /**
- * Показывает bottomsheet с подтверждением.
+ * Показывает диалог подтверждения (bottomsheet на мобайле, modal на десктопе).
  * @param {{ title: string, message: string, confirmLabel?: string, danger?: boolean }}
  * @returns {Promise<boolean>}
  */
@@ -223,7 +284,6 @@ export function formatMoney(amount, currency = '₽') {
 
 /**
  * Форматирует дату из строки «DD.MM.YYYY» или timestamp в «15 марта».
- * (Не путать с formatDate в utils/date.js — там DD.MM.yyyy для API.)
  * @param {string|number} raw
  * @returns {string}
  */
@@ -243,7 +303,7 @@ export function _formatDateUi(raw) {
 /**
  * Группирует массив операций по дате.
  * @param {Array} ops
- * @returns {Map<string, Array>}  ключ — дата в исходном формате
+ * @returns {Map<string, Array>}
  */
 export function groupByDate(ops) {
   const map = new Map();

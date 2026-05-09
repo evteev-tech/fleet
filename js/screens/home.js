@@ -191,7 +191,9 @@ function _render(body, allOps, fleet, drivers, rentalRows) {
   const isOpsFinance = _isOpsFinanceHome(user);
   const isReadOnlyPayments = _isPaymentsReadOnly(user);
 
-  const kassaId = KASSA_ID.AZAMAT;
+  const kassaId = _roleNorm(user?.role) === ROLES.OPERATIONS
+    ? KASSA_ID.VLADIMIR
+    : KASSA_ID.AZAMAT;
   const kassaOps = allOps.filter(op => String(op.kassaId || '').trim() === kassaId);
   const balance = _calcBalance(kassaOps);
   const deltaToday = _calcDeltaToday(kassaOps);
@@ -199,7 +201,7 @@ function _render(body, allOps, fleet, drivers, rentalRows) {
   const cashPrimaryHtml = isOpsFinance
     ? _operationsCashSummaryHtml(allOps)
     : `<div class="home-cash-card">
-        <div class="home-cash-card__label">КАССА АЗАМАТА</div>
+        <div class="home-cash-card__label">${_roleNorm(user?.role) === ROLES.OPERATIONS ? 'КАССА ВЛАДИМИРА' : 'КАССА АЗАМАТА'}</div>
         <div class="home-cash-card__amount">${_fmtInt(balance)} ₽</div>
         <div class="home-cash-card__delta ${deltaToday >= 0 ? 'is-pos' : 'is-neg'}">${deltaToday >= 0 ? '+' : '−'}${_fmtInt(Math.abs(deltaToday))} ₽ сегодня</div>
       </div>`;

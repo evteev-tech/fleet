@@ -33,17 +33,16 @@ const SIDEBAR_CONFIG = {
     {
       section: 'Основное',
       items: [
-        /* Совпадает с NAVBAR_CONFIG и _goHome для operations */
-        { screen: 'screen-home', label: 'Главная', icon: 'ti-home' },
-        { screen: 'screen-add', label: 'Операция', icon: 'ti-circle-plus' },
+        { screen: 'screen-home',      label: 'Главная',   icon: 'ti-home' },
+        { screen: 'screen-history',   label: 'Касса',     icon: 'ti-history' },
         { screen: 'screen-analytics', label: 'Аналитика', icon: 'ti-chart-bar' },
       ],
     },
     {
       section: 'Управление',
       items: [
-        { screen: 'screen-fleet', label: 'Парк', icon: 'ti-car' },
-        { screen: 'screen-drivers', label: 'Водители', icon: 'ti-users' },
+        { screen: 'screen-fleet',   label: 'Парк',      icon: 'ti-car' },
+        { screen: 'screen-drivers', label: 'Водители',  icon: 'ti-users' },
       ],
     },
   ],
