@@ -1,490 +1,344 @@
-/**
- * home.js — главный экран кассы (Азамат / Владимир).
- *
- * Данные: getOperations() + getFleet(); по роли отбираются операции одной кассы:
- *   mechanic → K_AZAMAT, operations → K_VLADIMIR.
- * Расчёты: остаток, дельта сегодня, статистика парка.
- * Бесконечный скролл: клиентская пагинация по 20 записей через IntersectionObserver.
- */
-
-import { getOperations, getFleet } from '../api.js';
+import { getOperations, getFleet, getDrivers } from '../api.js';
 import { getWithSWR, CACHE_KEYS } from '../cache.js';
-import { getCurrentUser }          from '../auth.js';
-import { parseRuDate } from './history.js';
-import { showScreen }              from '../router.js?v=7';
-import { KASSA_ID, CAR_STATUSES, ROLES } from '../config.js';
+import { getCurrentUser } from '../auth.js';
+import { showScreen } from '../router.js?v=7';
+import { CAR_STATUSES, KASSA_ID } from '../config.js';
 
-// ─── Константы ────────────────────────────────────────────────────────────────
-const PAGE_SIZE = 20;
+const PROMISE_PRESETS = [
+  { id: 'today_evening', label: 'сегодня вечером', days: 0 },
+  { id: 'tomorrow_morning', label: 'завтра утром', days: 1 },
+  { id: 'in_2_days', label: 'через 2 дня', days: 2 },
+  { id: 'in_3_days', label: 'через 3 дня', days: 3 },
+];
 
-// ─── Состояние ───────────────────────────────────────────────────────────────
-let _allOps     = [];   // все операции кассы, отсортированные desc
-let _offset     = 0;    // сколько уже отрендерено
-let _observer   = null; // IntersectionObserver для бесконечного скролла
-
-// ═══════════════════════════════════════════════════════════════════════════
-// ИНИЦИАЛИЗАЦИЯ (вызывается из app.js один раз)
-// ═══════════════════════════════════════════════════════════════════════════
+const _sessionState = {
+  promisedByCar: new Map(),
+  paidByCar: new Map(),
+  expandedCarId: null,
+};
 
 export function initHome() {
   document.addEventListener('screen:activated', e => {
-    if (e.detail.screenId === 'screen-home') renderHome();
+    if (e.detail.screenId === 'screen-home') void renderHome();
+  });
+
+  document.addEventListener('payment:accepted', e => {
+    const p = e.detail || {};
+    if (!p.carId) return;
+    _sessionState.paidByCar.set(p.carId, { ...p, paidAt: _todayStart() });
+    _sessionState.promisedByCar.delete(p.carId);
+    _sessionState.expandedCarId = null;
   });
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ГЛАВНАЯ ФУНКЦИЯ
-// ═══════════════════════════════════════════════════════════════════════════
-
-export async function renderHome() {
+export function renderHome() {
   const body = document.getElementById('home-body');
   if (!body) return;
+  body.innerHTML = '<div class="income-loading">Загрузка…</div>';
 
-  _offset = 0;
-  _destroyObserver();
-
-  body.innerHTML = '';
-
-  let opsAll;
-  let fleet;
-  let cacheHit = false;
+  let ops = null;
+  let cars = null;
+  let drivers = null;
 
   const paint = () => {
-    if (opsAll === undefined || fleet === undefined) return;
-    _renderHomeWithData(body, opsAll, fleet);
+    if (!ops || !cars || !drivers) return;
+    _render(body, ops, cars, drivers);
   };
 
   getWithSWR(CACHE_KEYS.CASH_OPS, () => getOperations(), {
-    onCached: d => {
-      cacheHit = true;
-      opsAll = d;
-      paint();
-    },
-    onFresh: d => {
-      opsAll = d;
-      paint();
-    },
-    onFetchError: (_err, meta) => {
-      if (!meta?.hadCache) opsAll = [];
-      paint();
-    },
+    onCached: d => { ops = d; paint(); },
+    onFresh: d => { ops = d; paint(); },
+    onFetchError: () => { ops = []; paint(); },
   });
-
   getWithSWR(CACHE_KEYS.CARS, () => getFleet(), {
-    onCached: d => {
-      cacheHit = true;
-      fleet = d;
-      paint();
-    },
-    onFresh: d => {
-      fleet = d;
-      paint();
-    },
-    onFetchError: (_err, meta) => {
-      if (!meta?.hadCache) fleet = [];
-      paint();
-    },
+    onCached: d => { cars = d; paint(); },
+    onFresh: d => { cars = d; paint(); },
+    onFetchError: () => { cars = []; paint(); },
   });
-
-  setTimeout(() => {
-    if (!cacheHit && (opsAll === undefined || fleet === undefined)) {
-      body.innerHTML = _skeletonHTML();
-    }
-  }, 0);
+  getWithSWR(CACHE_KEYS.DRIVERS, () => getDrivers(), {
+    onCached: d => { drivers = d; paint(); },
+    onFresh: d => { drivers = d; paint(); },
+    onFetchError: () => { drivers = []; paint(); },
+  });
 }
 
-function _renderHomeWithData(body, ops, fleet) {
+function _render(body, allOps, fleet, drivers) {
   const user = getCurrentUser();
-  const role = user?.role ?? '';
-  const isOperations = role === ROLES.OPERATIONS;
-
-  const kassaFilterId = isOperations ? KASSA_ID.VLADIMIR : KASSA_ID.AZAMAT;
-  const kassaLabel = isOperations ? 'КАССА ВЛАДИМИРА' : 'КАССА АЗАМАТА';
-  const primaryBtnLabel = isOperations ? 'Приход' : 'Принять платёж';
-  const avatarStyle = isOperations
-    ? ' style="background:***REMOVED***4b74ff;color:***REMOVED***ffffff"'
-    : ' style="background:***REMOVED***FFDD2D;color:***REMOVED***1A1A1A"';
-
-  // ── Только операции выбранной кассы до рендера ───────────────────────────
-  const kassaOps = ops.filter(
-    op => String(op.kassaId ?? '').trim() === String(kassaFilterId),
-  );
-  _allOps = [...kassaOps].sort((a, b) => _tsOp(b) - _tsOp(a));
-
+  const firstName = String(user?.name || 'Азамат').split(' ')[0];
+  const kassaId = KASSA_ID.AZAMAT;
+  const kassaOps = allOps.filter(op => String(op.kassaId || '').trim() === kassaId);
   const balance = _calcBalance(kassaOps);
-  const delta   = _calcDelta(kassaOps);
-  const fleetStats = _calcFleet(fleet);
+  const deltaToday = _calcDeltaToday(kassaOps);
+  const rentCars = fleet.filter(c => _bucketStatus(c.status) === 'rent');
+  const taskView = _buildTasks(allOps, rentCars, drivers);
+  const dueSoon = _buildDueSoon(taskView.tasks);
+  const park = _parkStats(fleet);
 
-  const firstName = user?.name?.split(' ')[0] ?? 'Азамат';
-  const avatarLetter = firstName.charAt(0).toUpperCase() || 'А';
-
-  const deltaClass =
-    delta > 0 ? 'home-hdr__delta--pos' : delta < 0 ? 'home-hdr__delta--neg' : 'home-hdr__delta--zero';
-  const deltaText =
-    delta === 0
-      ? '0 ₽ сегодня'
-      : `${delta > 0 ? '+' : '−'}${_fmt(Math.abs(delta))} сегодня`;
+  const counters = {
+    red: taskView.tasks.filter(t => t.status === 'overdue' || t.status === 'broke_promise').length,
+    purple: taskView.tasks.filter(t => t.status === 'promised').length,
+    orange: taskView.tasks.filter(t => t.status === 'warning').length,
+  };
 
   body.innerHTML = `
     <div class="home-header">
       <div class="home-hdr__brand-row">
         <span class="home-hdr__logo">Матизы</span>
-        <div class="home-hdr__avatar" aria-hidden="true"${avatarStyle}>${avatarLetter}</div>
+        <div class="home-hdr__avatar">${_esc(firstName[0] || 'А')}</div>
       </div>
-      <div class="kassa-label">${kassaLabel}</div>
-      <div class="kassa-amount">${_fmtAmount(Math.abs(balance))}<sup class="kassa-currency">₽</sup></div>
-      <div class="home-hdr__delta ${deltaClass}">${deltaText}</div>
-      <div class="home-action-wrap">
-        <div class="home-action-row">
-          <button type="button" class="btn-primary home-btn-income" id="home-btn-income">${primaryBtnLabel}</button>
-          <button type="button" class="btn-secondary home-btn-expense" id="home-btn-expense">Расход</button>
-        </div>
-        <button type="button" class="home-btn-transfer" id="home-btn-transfer">⇄ &nbsp;Перевод между кассами</button>
+      <div class="home-cash-card">
+        <div class="home-cash-card__label">КАССА АЗАМАТА</div>
+        <div class="home-cash-card__amount">${_fmtInt(balance)} ₽</div>
+        <div class="home-cash-card__delta ${deltaToday >= 0 ? 'is-pos' : 'is-neg'}">${deltaToday >= 0 ? '+' : '−'}${_fmtInt(Math.abs(deltaToday))} ₽ сегодня</div>
+      </div>
+      <div class="home-action-row home-action-row--3">
+        <button id="home-btn-income" class="btn-primary">＋ Платёж</button>
+        <button id="home-btn-expense" class="btn-secondary">− Расход</button>
+        <button id="home-btn-transfer" class="btn-secondary">⇄ Перевод</button>
       </div>
     </div>
-
     <div class="home-content-sheet">
-      <div class="home-fleet">
-        <div class="home-fleet__header">
-          <span class="home-fleet__title">Здоровье парка</span>
-          <span class="home-fleet__total">Всего — ${fleet.length}</span>
-        </div>
-        <div class="home-fleet__legend">
-          <button type="button" class="home-fleet__legend-col" data-filter="${CAR_STATUSES.RENT}" aria-label="Аренда, ${fleetStats.rent}">
-            <span class="home-fleet__legend-dot" style="background:***REMOVED***16a34a"></span>
-            <span class="home-fleet__legend-num home-fleet__legend-num--rent">${fleetStats.rent}</span>
-            <span class="home-fleet__legend-label">Аренда</span>
-          </button>
-          <button type="button" class="home-fleet__legend-col" data-filter="${CAR_STATUSES.IDLE}" aria-label="Простой, ${fleetStats.idle}">
-            <span class="home-fleet__legend-dot" style="background:***REMOVED***f59e0b"></span>
-            <span class="home-fleet__legend-num home-fleet__legend-num--idle">${fleetStats.idle}</span>
-            <span class="home-fleet__legend-label">Простой</span>
-          </button>
-          <button type="button" class="home-fleet__legend-col" data-filter="${CAR_STATUSES.REPAIR}" aria-label="Ремонт, ${fleetStats.repair}">
-            <span class="home-fleet__legend-dot" style="background:***REMOVED***ef4444"></span>
-            <span class="home-fleet__legend-num home-fleet__legend-num--repair">${fleetStats.repair}</span>
-            <span class="home-fleet__legend-label">Ремонт</span>
-          </button>
-        </div>
-        <div class="fleet-bar home-fleet__bar" role="group" aria-label="Распределение парка по статусам">
-          ${_fleetBarSegmentsHTML(fleetStats)}
-        </div>
+      <div class="home-block-title">
+        <span>ОПЛАТЫ</span>
+        <div class="home-pill-counters"><span class="home-pill red">${counters.red}</span><span class="home-pill purple">${counters.purple}</span><span class="home-pill orange">${counters.orange}</span></div>
       </div>
+      <div id="home-task-list">${taskView.tasks.map(_taskCardHtml).join('') || '<div class="empty-state"><div class="empty-state__text">Нет задач по оплатам</div></div>'}</div>
 
-      <div class="home-ops">
-        <div class="ops-header home-ops-title">
-          <span class="ops-title">Операции</span>
+      <div class="home-block-title"><span>БЛИЖАЙШИЕ 3 ДНЯ</span></div>
+      <div class="white-card home-due-list">${dueSoon.map(_dueRowHtml).join('') || '<div class="card-row">Пусто</div>'}</div>
+
+      <div class="home-block-title"><span>ПАРК</span></div>
+      <div class="white-card home-park-card">
+        <div class="home-park-head"><span>Здоровье парка</span><strong>${fleet.length} машин</strong></div>
+        <div class="home-park-bar">
+          <span style="width:${park.rentPct}%;background:***REMOVED***22c55e"></span>
+          <span style="width:${park.idlePct}%;background:***REMOVED***f97316"></span>
+          <span style="width:${park.repairPct}%;background:***REMOVED***ef4444"></span>
         </div>
-        <div id="home-ops-list"></div>
-        <div id="home-ops-sentinel" style="height:1px"></div>
+        <div class="home-park-legend">
+          <div><strong style="color:***REMOVED***22c55e">${park.rent}</strong><span>Аренда</span></div>
+          <div><strong style="color:***REMOVED***f97316">${park.idle}</strong><span>Простой</span></div>
+          <div><strong style="color:***REMOVED***ef4444">${park.repair}</strong><span>Ремонт</span></div>
+        </div>
       </div>
     </div>
   `;
 
-  // Рендерим первую страницу
-  _renderPage();
+  body.querySelector('***REMOVED***home-btn-income')?.addEventListener('click', () => showScreen('screen-income'));
+  body.querySelector('***REMOVED***home-btn-expense')?.addEventListener('click', () => showScreen('screen-expense'));
+  body.querySelector('***REMOVED***home-btn-transfer')?.addEventListener('click', () => showScreen('screen-transfer'));
 
-  // ── Навешиваем слушатели ───────────────────────────────────────────────
-  document.getElementById('home-btn-income')?.addEventListener('click', () => {
-    showScreen('screen-income');
+  body.querySelectorAll('[data-task-id]').forEach(el => {
+    el.addEventListener('click', ev => _onTaskClick(ev, body, taskView.tasks));
   });
-
-  document.getElementById('home-btn-expense')?.addEventListener('click', () => {
-    showScreen('screen-expense');
+  body.querySelectorAll('[data-promise]').forEach(el => {
+    el.addEventListener('click', ev => _applyPromise(ev, body, taskView.tasks));
   });
-
-  document.getElementById('home-btn-transfer')?.addEventListener('click', () => {
-    showScreen('screen-transfer');
-  });
-
-  const _goFleetFilter = (status) => {
-    document.dispatchEvent(new CustomEvent('fleet:filter', { detail: { status } }));
-    showScreen('screen-fleet');
-  };
-
-  body.querySelectorAll('.home-fleet__legend-col, .home-fleet__bar-seg').forEach(el => {
-    el.addEventListener('click', () => {
-      const st = el.dataset.filter;
-      if (st) _goFleetFilter(st);
-    });
-  });
-
-  // ── Бесконечный скролл ────────────────────────────────────────────────
-  _initObserver();
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ПАГИНАЦИЯ
-// ═══════════════════════════════════════════════════════════════════════════
+function _onTaskClick(event, body, tasks) {
+  const card = event.currentTarget;
+  const carId = card?.dataset.taskId;
+  if (!carId) return;
+  const task = tasks.find(t => t.carId === carId);
+  if (!task) return;
 
-function _renderPage() {
-  const list = document.getElementById('home-ops-list');
-  if (!list) return;
-
-  const page = _allOps.slice(_offset, _offset + PAGE_SIZE);
-  if (!page.length) {
-    _destroyObserver();
-    if (_offset === 0) list.innerHTML = _emptyOpsHTML();
+  if (event.target.closest('[data-open-payment]')) {
+    showScreen('screen-income', { paymentContext: task });
     return;
   }
+  if (task.status === 'paid') return;
 
-  // Группируем по дням
-  const groups = _groupByDay(page);
-  let html = '';
+  _sessionState.expandedCarId = _sessionState.expandedCarId === carId ? null : carId;
+  void renderHome();
+}
 
-  groups.forEach(({ label, ops }) => {
-    // Не дублируем заголовок дня если уже добавлен предыдущей страницей
-    const existingLabel = list.querySelector(`[data-day-label="${label}"]`);
-    if (!existingLabel) {
-      html += `<div class="ops-day-label" data-day-label="${label}">${label}</div>`;
-    }
-    html += ops.map(_renderOpRow).join('');
+function _applyPromise(event, _body, _tasks) {
+  event.stopPropagation();
+  const btn = event.currentTarget;
+  const carId = btn?.dataset.carId;
+  const days = Number(btn?.dataset.promise || 0);
+  if (!carId) return;
+  const promisedUntil = _addDays(_todayStart(), days);
+  _sessionState.promisedByCar.set(carId, promisedUntil);
+  _sessionState.expandedCarId = null;
+  void renderHome();
+}
+
+function _buildTasks(ops, rentCars, drivers) {
+  const byCarDriver = new Map();
+  drivers.forEach(d => {
+    if (d.currentCar) byCarDriver.set(String(d.currentCar).trim(), d);
+  });
+  const rentOps = ops
+    .filter(op => op.type === 'аренда' && op.direction === 'приход')
+    .sort((a, b) => _toDate(b)?.getTime() - _toDate(a)?.getTime());
+
+  const tasks = rentCars.map(car => {
+    const carId = String(car.carId || '').trim();
+    const driver = byCarDriver.get(carId);
+    const op = rentOps.find(x => String(x.carId || '').trim() === carId);
+    const paidUntil = _parsePaidUntil(op?.comment || '');
+    const amount = Math.round(Number(car.rateDay || 0) * 7);
+    const overdue = paidUntil ? _daysDiff(_todayStart(), paidUntil) : 0;
+    const paid = _sessionState.paidByCar.get(carId);
+    const promiseDate = _sessionState.promisedByCar.get(carId);
+
+    let status = 'neutral';
+    if (paid) status = 'paid';
+    else if (promiseDate && overdue >= 0 && _daysDiff(_todayStart(), promiseDate) > 0) status = 'broke_promise';
+    else if (promiseDate) status = 'promised';
+    else if (overdue >= 2) status = 'overdue';
+    else if (overdue < 0 && overdue >= -1) status = 'warning';
+
+    return {
+      carId,
+      driverName: driver?.name || 'Без водителя',
+      driverId: driver?.driverId || '',
+      amount,
+      paidUntil,
+      overdue,
+      status,
+      promiseDate,
+      expanded: _sessionState.expandedCarId === carId,
+    };
   });
 
-  list.insertAdjacentHTML('beforeend', html);
-  _offset += page.length;
-
-  // Если загрузили всё — убираем наблюдатель
-  if (_offset >= _allOps.length) _destroyObserver();
+  tasks.sort((a, b) => _taskRank(a) - _taskRank(b) || b.overdue - a.overdue);
+  return { tasks };
 }
 
-function _initObserver() {
-  const sentinel = document.getElementById('home-ops-sentinel');
-  if (!sentinel || _offset >= _allOps.length) return;
-
-  _observer = new IntersectionObserver(entries => {
-    if (entries[0].isIntersecting) _renderPage();
-  }, { rootMargin: '120px' });
-
-  _observer.observe(sentinel);
+function _taskRank(t) {
+  if (t.status === 'broke_promise') return 0;
+  if (t.status === 'overdue') return 1;
+  if (t.status === 'neutral') return 2;
+  if (t.status === 'promised') return 3;
+  if (t.status === 'warning') return 4;
+  if (t.status === 'paid') return 5;
+  return 9;
 }
 
-function _destroyObserver() {
-  _observer?.disconnect();
-  _observer = null;
+function _buildDueSoon(tasks) {
+  const today = _todayStart();
+  const max = _addDays(today, 3);
+  return tasks
+    .filter(t => t.status !== 'paid')
+    .map(t => {
+      const nextDate = t.paidUntil && t.paidUntil >= today ? t.paidUntil : null;
+      return { ...t, nextDate };
+    })
+    .filter(t => t.nextDate && t.nextDate <= max)
+    .sort((a, b) => a.nextDate.getTime() - b.nextDate.getTime());
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ВСПОМОГАТЕЛЬНЫЙ РЕНДЕР
-// ═══════════════════════════════════════════════════════════════════════════
-
-/** Цвет полосы операции: приход (в т.ч. аренда, депозит, перевод входящий) — зелёный; расход — красный */
-function _opBarColor(op) {
-  if (op.direction === 'расход') return '***REMOVED***ef4444';
-  if (op.direction === 'приход') return '***REMOVED***16a34a';
-  return '***REMOVED***888888';
-}
-
-function _renderOpRow(op) {
-  const isIncome = op.direction === 'приход';
-  const barColor = _opBarColor(op);
-  const sign     = isIncome ? '+' : '−';
-  const amtClass = isIncome ? 'op-row__amount--pos' : 'op-row__amount--neg';
-  const meta     = [op.carId, op.provel].filter(Boolean).join(' · ');
-  const cat      = _capitalizeCategory(op.category || op.type || op.direction);
+function _taskCardHtml(task) {
+  const tint = task.status === 'promised' ? 'purple' : task.status === 'warning' ? 'orange' : (task.status === 'overdue' || task.status === 'broke_promise') ? 'red' : task.status === 'paid' ? 'green' : 'white';
+  const left = task.status === 'paid' ? '***REMOVED***22c55e' : task.status === 'promised' ? '***REMOVED***7c3aed' : (task.status === 'warning' ? '***REMOVED***f97316' : (task.status === 'overdue' || task.status === 'broke_promise') ? '***REMOVED***ef4444' : '***REMOVED***d4d4d8');
+  const meta = task.status === 'paid'
+    ? 'оплачено'
+    : task.status === 'broke_promise'
+      ? `не сдержал · обещал ${_fmtDayMonth(task.promiseDate)}`
+      : task.status === 'promised'
+        ? `обещал · до ${_fmtDayMonth(task.promiseDate)}`
+        : task.overdue >= 2
+          ? `просрочка ${task.overdue}д`
+          : task.overdue >= 0
+            ? 'срок сегодня'
+            : `срок ${_fmtDayMonth(task.paidUntil)}`;
 
   return `
-    <div class="op-row">
-      <span class="op-bar" style="background:${barColor}"></span>
-      <div class="op-row__body">
-        <div class="op-row__cat">${cat}</div>
-        ${meta ? `<div class="op-row__meta">${meta}</div>` : ''}
+    <article class="home-task-card home-task-card--${tint}" data-task-id="${_esc(task.carId)}">
+      <div class="home-task-card__stripe" style="background:${left}"></div>
+      <div class="home-task-card__main">
+        <div class="home-task-top"><strong>${_esc(task.carId)}</strong><span>${_esc(task.driverName)}</span><b>${_fmtInt(task.amount)} ₽</b></div>
+        <div class="home-task-meta">${_esc(meta)}</div>
+        ${task.expanded ? `<div class="home-promise-box">${PROMISE_PRESETS.map(p => `<button type="button" data-promise="${p.days}" data-car-id="${_esc(task.carId)}">${p.label}</button>`).join('')}</div>` : ''}
       </div>
-      <div class="op-row__right">
-        <span class="op-row__amount ${amtClass}">${sign}${_fmt(op.amount)}</span>
-      </div>
-    </div>
+      <button class="home-pay-cta" data-open-payment="1">Платёж</button>
+    </article>
   `;
 }
 
-function _skeletonHTML() {
-  const skel = (w) => `<div class="skeleton skeleton-line" style="width:${w}%;margin-bottom:8px"></div>`;
-  return `
-    <div class="home-header home-header--skeleton">
-      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-        ${skel(28)}
-        <div class="skeleton" style="width:40px;height:40px;border-radius:50%"></div>
-      </div>
-      ${skel(35)}
-      <div class="skeleton skeleton-line skeleton-line--xl" style="width:55%;margin-bottom:6px"></div>
-      ${skel(40)}
-      <div class="home-action-wrap" style="pointer-events:none;margin-top:8px">
-        <div class="skeleton" style="height:52px;border-radius:14px"></div>
-        <div class="skeleton" style="height:40px;border-radius:14px"></div>
-      </div>
-    </div>
-    <div class="home-content-sheet">
-      <div class="skeleton" style="height:140px;border-radius:12px;margin-bottom:16px"></div>
-      ${[1,2,3,4,5].map(() => `
-        <div class="op-row">
-          <span class="op-bar skeleton" style="width:3px;border-radius:2px;flex-shrink:0;align-self:stretch;background:***REMOVED***e8e8e8"></span>
-          <div style="flex:1">
-            ${skel(55)}
-            ${skel(35)}
-          </div>
-          <div class="skeleton skeleton-line" style="width:70px"></div>
-        </div>
-      `).join('')}
-    </div>
-  `;
+function _dueRowHtml(t) {
+  const today = _todayStart().getTime();
+  const isToday = t.nextDate.getTime() === today;
+  return `<div class="card-row home-due-row ${isToday ? 'is-today' : ''}">
+    <div class="home-due-date">${t.nextDate.getDate()}<small>${_monthShort(t.nextDate)}</small></div>
+    <div class="home-due-main"><strong>${_esc(t.carId)}</strong><span>${_esc(t.driverName)}</span></div>
+    <div class="home-due-amount">${_fmtInt(t.amount)} ₽</div>
+  </div>`;
 }
 
-function _offlineHTML(isNoConn) {
-  return `
-    <div class="home-offline">
-      <div class="home-offline__icon">${isNoConn ? '📡' : '⚠️'}</div>
-      <div class="home-offline__text">${isNoConn ? 'Нет соединения' : 'Ошибка загрузки'}</div>
-      <div class="home-offline__sub">${isNoConn ? 'Проверьте интернет и попробуйте снова' : 'Что-то пошло не так'}</div>
-      <button class="btn-primary" id="home-retry" style="margin-top:20px">Повторить</button>
-    </div>
-  `;
+function _parkStats(fleet) {
+  const acc = { rent: 0, idle: 0, repair: 0 };
+  fleet.forEach(c => acc[_bucketStatus(c.status)]++);
+  const total = Math.max(1, fleet.length);
+  return {
+    ...acc,
+    rentPct: (acc.rent / total) * 100,
+    idlePct: (acc.idle / total) * 100,
+    repairPct: (acc.repair / total) * 100,
+  };
 }
-
-function _emptyOpsHTML() {
-  return `<div class="empty-state"><div class="empty-state__text">Операций ещё нет</div></div>`;
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// ВЫЧИСЛЕНИЯ
-// ═══════════════════════════════════════════════════════════════════════════
 
 function _calcBalance(ops) {
-  return ops.reduce((acc, op) => {
-    if (op.direction === 'приход')  return acc + op.amount;
-    if (op.direction === 'расход') return acc - op.amount;
-    return acc;
-  }, 0);
+  return ops.reduce((sum, op) => sum + (op.direction === 'приход' ? op.amount : -op.amount), 0);
 }
 
-function _calcDelta(ops) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return ops
-    .filter(op => {
-      const d =
-        op.date instanceof Date && !isNaN(op.date.getTime())
-          ? op.date
-          : parseRuDate(op.dateRaw);
-      if (!d || isNaN(d.getTime())) return false;
-      const dd = new Date(d);
-      dd.setHours(0, 0, 0, 0);
-      return dd.getTime() === today.getTime();
-    })
-    .reduce((acc, op) => {
-      if (op.direction === 'приход')  return acc + op.amount;
-      if (op.direction === 'расход') return acc - op.amount;
-      return acc;
-    }, 0);
+function _calcDeltaToday(ops) {
+  const today = _todayStart().getTime();
+  return ops.filter(op => _toDate(op)?.setHours(0, 0, 0, 0) === today).reduce((sum, op) => sum + (op.direction === 'приход' ? op.amount : -op.amount), 0);
 }
 
-/** Как в fleet.js — для строк статуса с отличиями в регистре/формулировке */
-function _fleetStatusBucket(raw) {
-  const s = String(raw || '').toLowerCase().trim();
-  if (s.includes('аренд')) return 'rent';
+function _parsePaidUntil(comment) {
+  const c = String(comment || '').toLowerCase();
+  const m = c.match(/до\s+(\d{1,2})\.(\d{1,2})(?:\.(\d{2,4}))?/);
+  if (!m) return null;
+  const year = m[3] ? Number(m[3].length === 2 ? `20${m[3]}` : m[3]) : new Date().getFullYear();
+  const d = new Date(year, Number(m[2]) - 1, Number(m[1]));
+  d.setHours(0, 0, 0, 0);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function _toDate(op) {
+  if (op.date instanceof Date && !Number.isNaN(op.date.getTime())) return new Date(op.date);
+  const raw = String(op.dateRaw || '');
+  const m = raw.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (!m) return null;
+  return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+}
+
+function _bucketStatus(raw) {
+  const s = String(raw || '').toLowerCase();
   if (s.includes('ремонт')) return 'repair';
-  if (s.includes('прост')) return 'idle';
+  if (s.includes('арен')) return 'rent';
   return 'idle';
 }
 
-function _calcFleet(fleet) {
-  const r = { rent: 0, idle: 0, repair: 0 };
-  fleet.forEach(c => {
-    const st = String(c.status || '').trim();
-    if (st === CAR_STATUSES.RENT) r.rent++;
-    else if (st === CAR_STATUSES.IDLE) r.idle++;
-    else if (st === CAR_STATUSES.REPAIR) r.repair++;
-    else {
-      const b = _fleetStatusBucket(c.status);
-      if (b === 'rent') r.rent++;
-      else if (b === 'repair') r.repair++;
-      else r.idle++;
-    }
-  });
-  return r;
+function _daysDiff(a, b) {
+  return Math.floor((a.getTime() - b.getTime()) / 86400000);
 }
-
-/** Сегменты прогресс-бара парка (flex-пропорции, min 8% для тапа) */
-function _fleetBarSegmentsHTML(stats) {
-  const rows = [
-    { status: CAR_STATUSES.RENT, color: '***REMOVED***16a34a', n: stats.rent },
-    { status: CAR_STATUSES.IDLE, color: '***REMOVED***f59e0b', n: stats.idle },
-    { status: CAR_STATUSES.REPAIR, color: '***REMOVED***ef4444', n: stats.repair },
-  ];
-  return rows
-    .filter(row => row.n > 0)
-    .map(row => `
-      <button type="button" class="home-fleet__bar-seg"
-        data-filter="${row.status}"
-        style="--fleet-seg:${row.color};flex:${row.n} 1 0;min-width:8%"
-        aria-label="${row.n} маш."></button>
-    `)
-    .join('');
+function _todayStart() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
 }
-
-// ═══════════════════════════════════════════════════════════════════════════
-// УТИЛИТЫ
-// ═══════════════════════════════════════════════════════════════════════════
-
-/** Форматирует число: «12 500 ₽» */
-function _fmt(n) {
-  return `${Math.round(n).toLocaleString('ru-RU')} ₽`;
+function _addDays(d, days) {
+  const x = new Date(d);
+  x.setDate(x.getDate() + days);
+  return x;
 }
-
-/** Только сумма с пробелами (для блока кассы с ₽ в sup) */
-function _fmtAmount(n) {
-  return `${Math.round(n).toLocaleString('ru-RU')}`;
+function _fmtInt(n) {
+  return Math.round(n || 0).toLocaleString('ru-RU');
 }
-
-/** Ключ календарного дня для группировки */
-function _dayKey(d) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+function _fmtDayMonth(d) {
+  if (!d) return '—';
+  return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
-
-/** Единый разбор даты операции */
-function _opDate(op) {
-  if (op.date instanceof Date && !isNaN(op.date.getTime())) return op.date;
-  return parseRuDate(op.dateRaw);
+function _monthShort(d) {
+  return ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'][d.getMonth()];
 }
-
-/** Группировка дней: СЕГОДНЯ / ВЧЕРА / дата */
-function _homeDayLabel(d) {
-  if (!d || isNaN(d.getTime())) return 'Без даты';
-  const today = new Date();
-  const yesterday = new Date();
-  yesterday.setDate(today.getDate() - 1);
-  if (d.toDateString() === today.toDateString()) return 'СЕГОДНЯ';
-  if (d.toDateString() === yesterday.toDateString()) return 'ВЧЕРА';
-  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
-}
-
-/** Группирует ops (уже отсортированных desc) по дням, возвращает массив { label, ops } */
-function _groupByDay(ops) {
-  const map = new Map();
-  const order = [];
-  ops.forEach(op => {
-    const d = _opDate(op);
-    const key = d && !isNaN(d.getTime()) ? _dayKey(d) : '__nodate';
-    const lbl = key === '__nodate' ? 'Без даты' : _homeDayLabel(d);
-    if (!map.has(key)) {
-      map.set(key, { label: lbl, ops: [] });
-      order.push(key);
-    }
-    map.get(key).ops.push(op);
-  });
-  return order.map(key => map.get(key));
-}
-
-function _capitalizeCategory(raw) {
-  const s = String(raw || '').replace(/_/g, ' ').trim();
-  if (!s) return '';
-  return s
-    .split(/\s+/)
-    .map(w => (w ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : ''))
-    .join(' ');
-}
-
-function _tsOp(op) {
-  const d = _opDate(op);
-  return d && !isNaN(d.getTime()) ? d.getTime() : 0;
+function _esc(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
