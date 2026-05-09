@@ -1,18 +1,44 @@
 /**
- * history.js — история операций (две оси фильтров + сводка + поиск).
- *
- * mechanic: только K_AZAMAT, без фильтра/меты кассы.
- * operations / investor: все кассы, фильтр по кассе в bottomsheet.
- * Бесконечный скролл через IntersectionObserver (20 строк).
+ * history.js — вкладка «Касса»: журнал операций (новый визуал).
+ * Данные: getOperations + getFleet + getDrivers, кэш SWR.
  */
 
-import { getOperations, getFleet } from '../api.js';
+import { getOperations, getFleet, getDrivers } from '../api.js';
 import { getWithSWR, CACHE_KEYS } from '../cache.js';
 import { getCurrentUser } from '../auth.js';
 import { showBottomSheet, hideBottomSheet } from '../ui.js';
 import { KASSA_ID, KASSA_NAMES, ROLES } from '../config.js';
 
-/** DD.MM.YYYY или Excel serial из таблицы → Date */
+const LS_SUMMARY = 'kassa.summary.expanded';
+
+const INCOME_TYPES_FOR_SALDO = new Set([
+  'аренда',
+  'депозит_приём',
+  'перевод_входящий',
+  'корректировка',
+]);
+
+const EXPENSE_CATEGORY_PRESET = [
+  'ремонт',
+  'ТО',
+  'запчасти',
+  'страховка',
+  'связь_глонасс',
+  'ЗП',
+  'реклама',
+  'доставка',
+  'покупка_машины',
+  'штраф_ГИБДД',
+  'ДТП',
+  'прочее',
+];
+
+const KASSA_EXTRA = {
+  K_INVEST_YULIA: 'Инвест. счёт Юлии',
+  K_INVEST_VLAD: 'Инвест. счёт Владимира',
+};
+
+/** DD.MM.YYYY или Excel serial → Date */
 export function parseRuDate(str) {
   if (str === undefined || str === null || str === '') return null;
   const s = typeof str === 'number' ? String(str) : String(str).trim();
@@ -38,10 +64,8 @@ export function formatGroupLabel(date) {
   yesterday.setDate(yesterday.getDate() - 1);
   const d0 = new Date(date);
   d0.setHours(0, 0, 0, 0);
-
   if (d0.getTime() === today.getTime()) return 'СЕГОДНЯ';
   if (d0.getTime() === yesterday.getTime()) return 'ВЧЕРА';
-
   return date
     .toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })
     .toUpperCase();
@@ -56,26 +80,28 @@ function _opDate(op) {
   return parseRuDate(op.dateRaw);
 }
 
-const _PAGE = 20;
 const _now = new Date();
 let _selMonth = _now.getMonth() + 1;
 let _selYear = _now.getFullYear();
 
-/** @type {{ type: string, carId: string|null, kassaId: string|null, search: string }} */
+/** @type {{ type: string, cars: string[], kassas: string[], categories: string[], drivers: string[], search: string }} */
 let _filters = {
   type: 'all',
-  carId: null,
-  kassaId: null,
+  cars: [],
+  kassas: [],
+  categories: [],
+  drivers: [],
   search: '',
 };
 
 let _searchMode = false;
 let _filtered = [];
-let _offset = 0;
-let _observer = null;
-let _saldoExpanded = false;
+let _saldoExpanded = localStorage.getItem(LS_SUMMARY) === '1';
 
-let _paintCtx = /** @type {{ rawOps: any[], fleet: any[], role: string, isMechanic: boolean, showKassa: boolean }} */ (null);
+/** @type {{ rawOps: any[], fleet: any[], drivers: any[], role: string, isMechanic: boolean, showKassa: boolean } | null} */
+let _ctx = null;
+
+let _monthPickerYear = _selYear;
 
 const TYPE_AXIS = [
   { id: 'all', label: 'Все' },
@@ -84,20 +110,21 @@ const TYPE_AXIS = [
   { id: 'transfer', label: 'Переводы' },
 ];
 
-const SVG_RECEIPT =
-  '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3h14a1 1 0 011 1v16l-4-2-4 2-4-2-4 2V4a1 1 0 011-1z"/><path stroke-linecap="round" d="M8 10h8M8 14h8"/></svg>';
-const SVG_SEARCH =
-  '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/></svg>';
-const SVG_X =
-  '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/></svg>';
-const SVG_CHEVRON_DOWN =
-  '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const CHEV_L =
-  '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  '<svg class="kassa-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const CHEV_R =
-  '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 18l6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  '<svg class="kassa-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 18l6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const SVG_SEARCH =
+  '<svg class="kassa-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/></svg>';
+const SVG_X =
+  '<svg class="kassa-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/></svg>';
+const SVG_CHEVRON =
+  '<svg class="kassa-ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const SVG_RECEIPT =
+  '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="***REMOVED***888" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3h14a1 1 0 011 1v16l-4-2-4 2-4-2-4 2V4a1 1 0 011-1z"/><path stroke-linecap="round" d="M8 10h8M8 14h8"/></svg>';
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ─── helpers ────────────────────────────────────────────────────────────────
+
 function _normalizeType(raw) {
   return String(raw || '').trim().toLowerCase();
 }
@@ -108,11 +135,104 @@ function _isTransferOp(op) {
   return t === 'перевод_исходящий' || t === 'перевод_входящий' || d === 'перевод';
 }
 
-/** @returns {'in'|'out'|'transfer'} */
 function _opUiKind(op) {
   if (_isTransferOp(op)) return 'transfer';
   if (String(op.direction || '').trim() === 'приход') return 'in';
   return 'out';
+}
+
+function _splitCsv(v) {
+  if (!v) return [];
+  return String(v)
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+}
+
+function _roleFlags(user) {
+  const role = user?.role || ROLES.MECHANIC;
+  const isMechanic = role === ROLES.MECHANIC;
+  const showKassa = role === ROLES.OPERATIONS || role === ROLES.INVESTOR;
+  return { role, isMechanic, showKassa };
+}
+
+function _nextMonthDisabled() {
+  const m = _selMonth === 12 ? 1 : _selMonth + 1;
+  const y = _selMonth === 12 ? _selYear + 1 : _selYear;
+  return _isFutureMonth(y, m);
+}
+
+function _syncUrl() {
+  const p = new URLSearchParams(window.location.search);
+  p.set('month', `${_selYear}-${String(_selMonth).padStart(2, '0')}`);
+  p.set('type', _filters.type);
+  if (_filters.cars.length) p.set('car', _filters.cars.join(','));
+  else p.delete('car');
+  if (_filters.kassas.length) p.set('cassa', _filters.kassas.join(','));
+  else p.delete('cassa');
+  if (_filters.categories.length) p.set('category', _filters.categories.join(','));
+  else p.delete('category');
+  if (_filters.drivers.length) p.set('driver', _filters.drivers.join(','));
+  else p.delete('driver');
+  const q = p.toString();
+  history.replaceState(null, '', q ? `${location.pathname}?${q}` : location.pathname);
+}
+
+function _hydrateFromUrl() {
+  const p = new URLSearchParams(window.location.search);
+  const m = p.get('month');
+  if (m && /^\d{4}-\d{2}$/.test(m)) {
+    const [y, mo] = m.split('-').map(Number);
+    _selYear = y;
+    _selMonth = mo;
+  }
+  const t = p.get('type');
+  if (t && ['all', 'income', 'expense', 'transfer'].includes(t)) _filters.type = t;
+  _filters.cars = _splitCsv(p.get('car'));
+  _filters.kassas = _splitCsv(p.get('cassa'));
+  _filters.categories = _splitCsv(p.get('category'));
+  _filters.drivers = _splitCsv(p.get('driver'));
+}
+
+function _monthLabelPretty() {
+  return new Date(_selYear, _selMonth - 1, 1)
+    .toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })
+    .replace(/^./, c => c.toUpperCase());
+}
+
+function _monthGenitiveSaldo() {
+  const names = [
+    'январь',
+    'февраль',
+    'март',
+    'апрель',
+    'май',
+    'июнь',
+    'июль',
+    'август',
+    'сентябрь',
+    'октябрь',
+    'ноябрь',
+    'декабрь',
+  ];
+  return `${names[_selMonth - 1]} ${_selYear}`;
+}
+
+function _monthEmptyPhrase() {
+  return _monthGenitiveSaldo();
+}
+
+function _isFutureMonth(y, m) {
+  return y > _now.getFullYear() || (y === _now.getFullYear() && m > _now.getMonth() + 1);
+}
+
+function _kassaLineTitle(id) {
+  return KASSA_NAMES[id] || KASSA_EXTRA[id] || id || '';
+}
+
+function _driverLabel(drivers, driverId) {
+  const d = (drivers || []).find(x => String(x.driverId) === String(driverId));
+  return d ? `${d.name || driverId}`.trim() || driverId : driverId;
 }
 
 function _opsInMonth(ops) {
@@ -123,82 +243,919 @@ function _opsInMonth(ops) {
   });
 }
 
-/**
- * Фильтр по оси «тип» (для набора машин в bottomsheet).
- */
 function _filterByAxisType(ops) {
   const t = _filters.type;
   if (t === 'income') {
-    return ops.filter(o =>
-      String(o.direction).trim() === 'приход' && _normalizeType(o.type) !== 'перевод_входящий');
+    return ops.filter(
+      o => String(o.direction).trim() === 'приход' && !_isTransferOp(o),
+    );
   }
   if (t === 'expense') {
-    return ops.filter(o =>
-      String(o.direction).trim() === 'расход' && _normalizeType(o.type) !== 'перевод_исходящий');
+    return ops.filter(
+      o => String(o.direction).trim() === 'расход' && !_isTransferOp(o),
+    );
   }
   if (t === 'transfer') return ops.filter(_isTransferOp);
   return [...ops];
 }
 
-function _applyFilters(opsMonthUnsorted, filters, role) {
+function _applyFilters(opsMonthUnsorted, role) {
   let result = _filterByAxisType(opsMonthUnsorted);
-
-  if (filters.carId)
-    result = result.filter(o => String(o.carId || '').trim() === String(filters.carId).trim());
-
   const mechanic = role === ROLES.MECHANIC;
-  if (filters.kassaId && !mechanic)
-    result = result.filter(o => String(o.kassaId || '').trim() === String(filters.kassaId).trim());
 
-  if (filters.search) {
-    const q = filters.search.trim().toLowerCase();
-    if (q.length)
-      result = result.filter(o => String(o.comment || '').toLowerCase().includes(q));
+  if (_filters.cars.length) {
+    result = result.filter(o => _filters.cars.includes(String(o.carId || '').trim()));
+  }
+  if (_filters.kassas.length && !mechanic) {
+    result = result.filter(o => _filters.kassas.includes(String(o.kassaId || '').trim()));
+  }
+  if (_filters.categories.length) {
+    const set = new Set(_filters.categories.map(c => String(c).toLowerCase()));
+    result = result.filter(o => set.has(String(o.category || '').toLowerCase()));
+  }
+  if (_filters.drivers.length) {
+    result = result.filter(o => _filters.drivers.includes(String(o.driverId || '').trim()));
+  }
+  if (_filters.search.trim()) {
+    const q = _filters.search.trim().toLowerCase();
+    result = result.filter(o => String(o.comment || '').toLowerCase().includes(q));
   }
 
-  return result.sort((a, b) => _tsOp(b) - _tsOp(a));
-}
-
-function _tsOp(op) {
-  const d = _opDate(op);
-  return d && !Number.isNaN(d.getTime()) ? d.getTime() : 0;
-}
-
-function _monthLabelCapital() {
-  return new Date(_selYear, _selMonth - 1, 1)
-    .toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })
-    .replace(/^./, c => c.toUpperCase()) + ' г.';
-}
-
-function _monthLabelEmptyPhrase() {
-  const m = new Date(_selYear, _selMonth - 1, 1).toLocaleDateString('ru-RU', {
-    month: 'long',
-    year: 'numeric',
+  return result.sort((a, b) => {
+    const ta = _opDate(a)?.getTime() ?? 0;
+    const tb = _opDate(b)?.getTime() ?? 0;
+    if (tb !== ta) return tb - ta;
+    return String(b.opId || '').localeCompare(String(a.opId || ''));
   });
-  return m.replace(/^./, c => c.toUpperCase()) + ' г.';
 }
 
-function _carLabel(fleet, carId) {
-  const car = fleet.find(c => String(c.carId).trim() === String(carId).trim());
-  return car?.carId || carId || '';
+function _computeSaldo(ops) {
+  const filterType = _filters.type;
+  let income = 0;
+  let expense = 0;
+
+  if (filterType === 'transfer') {
+    return { income: 0, expense: 0, net: 0 };
+  }
+
+  for (const op of ops) {
+    const d = String(op.direction || '').trim();
+    const t = _normalizeType(op.type);
+    if (_isTransferOp(op)) {
+      if (filterType === 'all') continue;
+    }
+    if (filterType === 'all' && _isTransferOp(op)) continue;
+
+    if (d === 'приход' && INCOME_TYPES_FOR_SALDO.has(t)) {
+      income += Number(op.amount) || 0;
+    } else if (d === 'расход' && !_isTransferOp(op)) {
+      expense += Math.abs(Number(op.amount) || 0);
+    }
+  }
+  return { income, expense, net: income - expense };
 }
 
-function _kassaTitle(id) {
-  return KASSA_NAMES[id] || id || '';
+function _fmtNbsp(n) {
+  return `${Math.round(Math.abs(Number(n) || 0)).toLocaleString('ru-RU')}`.replace(/\s/g, '\u00A0');
 }
 
-function _roleFlags(user) {
-  const role = user?.role || ROLES.MECHANIC;
-  const isMechanic = role === ROLES.MECHANIC;
-  const showKassa = role === ROLES.OPERATIONS || role === ROLES.INVESTOR;
-  return { role, isMechanic, showKassa };
+function _fmtSigned(n) {
+  const num = Number(n) || 0;
+  const sign = num > 0 ? '+' : num < 0 ? '−' : '+';
+  return `${sign}${_fmtNbsp(num)} ₽`;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+function _dayHeaderLabel(iso) {
+  const d = new Date(`${iso}T12:00:00`);
+  const day = d.getDate();
+  const monthNames = ['ЯНВ', 'ФЕВ', 'МАРТ', 'АПР', 'МАЯ', 'ИЮН', 'ИЮЛ', 'АВГ', 'СЕН', 'ОКТ', 'НОЯ', 'ДЕК'];
+  const week = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ'][d.getDay()];
+  return `${day} ${monthNames[d.getMonth()]} · ${week}`;
+}
+
+function _pluralOps(n) {
+  const last = Math.abs(n) % 100;
+  const d = last % 10;
+  let w = 'операций';
+  if (last >= 11 && last <= 14) w = 'операций';
+  else if (d === 1) w = 'операция';
+  else if (d >= 2 && d <= 4) w = 'операции';
+  return `${n} ${w}`;
+}
+
+function _escapeHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function _capitalize(s) {
+  const v = String(s || '').trim();
+  if (!v) return '';
+  return v[0].toUpperCase() + v.slice(1);
+}
+
+function _truncate(s, n) {
+  const v = String(s || '');
+  if (v.length <= n) return v;
+  return `${v.slice(0, Math.max(0, n - 3)).trimEnd()}...`;
+}
+
+function _expenseIconName(cat) {
+  const c = String(cat || '').toLowerCase();
+  if (c === 'ремонт') return 'tools';
+  if (c === 'запчасти') return 'settings';
+  if (c === 'то') return 'clipboardCheck';
+  if (c === 'страховка') return 'shieldCheck';
+  if (c === 'связь_глонасс') return 'broadcast';
+  if (c === 'зп') return 'cash';
+  if (c === 'реклама') return 'speaker';
+  if (c === 'доставка') return 'truck';
+  if (c === 'покупка_машины') return 'car';
+  if (c === 'штраф_гибдд') return 'alertTriangle';
+  if (c === 'дтп') return 'carCrash';
+  if (c === 'прочее') return 'dots';
+  return 'dots';
+}
+
+function _svgIcon(name) {
+  const base = p =>
+    `<svg class="kassa-ic kassa-ic--tile" viewBox="0 0 24 24" aria-hidden="true">${p}</svg>`;
+  const paths = {
+    key: '<path d="M21 2l-2 2"/><path d="M7 14a5 5 0 1 1 3.9 2H9l-2 2H5v-2l2-2h2"/><path d="M16 6l2 2"/>',
+    shieldDollar:
+      '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12h6"/><path d="M12 9v6"/>',
+    arrowDownLeft: '<path d="M17 7 7 17"/><path d="M17 17H7V7"/>',
+    arrowUpRight: '<path d="M7 17 17 7"/><path d="M7 7h10v10"/>',
+    pencil:
+      '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>',
+    tools:
+      '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4l-6 6a2 2 0 0 0 2.8 2.8l6-6a4 4 0 0 0 5.4-5.4l-3 3-2.8-2.8 3-3z"/>',
+    settings:
+      '<path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15l.1.1-1.6 2.8a2 2 0 0 0-2 .1l-3.2-1.8a2 2 0 0 0-1.4 0L8 20.8a2 2 0 0 0-2-.1L4.1 18l.1-.1a1.7 1.7 0 0 0 .3-1.9L6 12.7a2 2 0 0 0 0-1.4L4.4 8.2a1.7 1.7 0 0 0-.3-1.9L5.7 3.2a2 2 0 0 0 2-.1L11.2 1.3a2 2 0 0 0 1.4 0L16 3.1a2 2 0 0 0 2 .1l1.6 2.8-.1.1a1.7 1.7 0 0 0-.3 1.9l1.4 2.8z"/>',
+    clipboardCheck:
+      '<path d="M9 5h6"/><path d="M9 3h6v4H9z"/><path d="M7 7h10v14H7z"/><path d="m9 14 2 2 4-4"/>',
+    shieldCheck:
+      '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>',
+    broadcast:
+      '<path d="M4.9 19.1a5 5 0 0 1 0-14.2"/><path d="M7.8 16.2a2 2 0 0 1 0-8.4"/><path d="M12 12h.01"/>',
+    cash: '<path d="M21 12H3"/><path d="M21 6H3"/><path d="M21 18H3"/><path d="M7 10h10"/><path d="M7 14h10"/>',
+    speaker:
+      '<path d="M11 5 6 9H2v6h4l5 4z"/><path d="M19 9a4 4 0 0 1 0 6"/><path d="M21 7a7 7 0 0 1 0 10"/>',
+    truck:
+      '<path d="M3 7h12v10H3z"/><path d="M15 10h4l2 2v5h-6z"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/>',
+    car: '<path d="M5 12 7.5 6h9L19 12"/><path d="M3 12h18v6H3z"/><circle cx="7.5" cy="18" r="1.5"/><circle cx="16.5" cy="18" r="1.5"/>',
+    alertTriangle: '<path d="M12 2 2 20h20z"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
+    carCrash:
+      '<path d="M5 16l-1 3h2l1-3"/><path d="M18 16l1 3h-2l-1-3"/><path d="M3 13l2-5h14l2 5"/><path d="M7 13h10"/>',
+    wallet:
+      '<path d="M20 12V8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/><path d="M20 12h-6a2 2 0 0 0 0 4h6"/>',
+    dots: '<path d="M12 12h.01"/><path d="M19 12h.01"/><path d="M5 12h.01"/>',
+  };
+  return base(paths[name] || paths.dots);
+}
+
+function _mapOpVisual(op) {
+  const type = _normalizeType(op.type);
+  const cat = _normalizeType(op.category);
+  const dir = String(op.direction || '').trim().toLowerCase();
+  const isIn = dir === 'приход';
+  const isOut = dir === 'расход';
+  const incC = '***REMOVED***2d8a3f';
+  const incBg = '***REMOVED***e3f5e8';
+  const expC = '***REMOVED***c43838';
+  const expBg = '***REMOVED***fce8e8';
+  const neuC = '***REMOVED***666';
+  const neuBg = '***REMOVED***ececea';
+
+  if (type === 'аренда' && isIn)
+    return { icon: _svgIcon('key'), color: incC, bg: incBg, amt: incC };
+  if (type === 'депозит_приём' && isIn)
+    return { icon: _svgIcon('shieldDollar'), color: incC, bg: incBg, amt: incC };
+  if (type === 'депозит_возврат' && isOut)
+    return { icon: _svgIcon('shieldDollar'), color: expC, bg: expBg, amt: expC };
+  if (type.includes('перевод')) {
+    const inward = type.includes('вход');
+    return {
+      icon: _svgIcon(inward ? 'arrowDownLeft' : 'arrowUpRight'),
+      color: neuC,
+      bg: neuBg,
+      amt: neuC,
+    };
+  }
+  if (type === 'корректировка')
+    return { icon: _svgIcon('pencil'), color: neuC, bg: neuBg, amt: neuC };
+  if (type === 'инвестиция')
+    return { icon: _svgIcon('wallet'), color: neuC, bg: neuBg, amt: neuC };
+  if (isOut) {
+    return {
+      icon: _svgIcon(_expenseIconName(cat)),
+      color: expC,
+      bg: expBg,
+      amt: expC,
+    };
+  }
+  if (isIn) {
+    return { icon: _svgIcon('key'), color: incC, bg: incBg, amt: incC };
+  }
+  return { icon: _svgIcon('dots'), color: neuC, bg: neuBg, amt: neuC };
+}
+
+function _zpTitleFromComment(comment) {
+  const m = String(comment || '').match(/(?:зп|ЗП)[\s:—-]+(.+)/);
+  if (m && m[1]) return _truncate(m[1].trim(), 40);
+  return 'ЗП';
+}
+
+function _opTitle(op) {
+  const type = _normalizeType(op.type);
+  const cat = String(op.category || '');
+  const carId = String(op.carId || '').trim();
+  const kid = String(op.kassaId || '').trim();
+
+  if (type === 'аренда') return carId ? `Аренда · ${carId}` : 'Аренда';
+  if (type.startsWith('депозит_'))
+    return type === 'депозит_приём' ? 'Депозит · приём' : 'Депозит · возврат';
+  if (type.includes('перевод')) {
+    const name = _kassaLineTitle(kid);
+    return type.includes('вход')
+      ? `Перевод в кассу ${name}`
+      : `Перевод из кассы ${name}`;
+  }
+  if (type === 'корректировка') return 'Корректировка';
+  if (type === 'инвестиция') return 'Инвестиция';
+  if (String(op.direction || '').trim() === 'расход') {
+    if (_normalizeType(cat) === 'зп') return _zpTitleFromComment(op.comment);
+    if (_normalizeType(cat) === 'штраф_гибдд' && carId) return `Штраф ГИБДД · ${carId}`;
+    const base = _capitalize(cat || 'Расход');
+    return carId ? `${base} · ${carId}` : base;
+  }
+  return _capitalize(op.type || op.category || 'Операция');
+}
+
+function _opSubtitle(op, drivers) {
+  const type = _normalizeType(op.type);
+  const kname = op.kassaId ? _kassaLineTitle(op.kassaId) : '';
+  const kassaPart = kname ? `Касса ${kname}` : '';
+
+  if (type === 'аренда') {
+    return kassaPart || '—';
+  }
+  const com = String(op.comment || '').trim();
+  const short = com ? _truncate(com, 25) : '';
+  if (short && kassaPart) return `${short} · ${kassaPart}`;
+  return kassaPart || short || '';
+}
+
+function _opAmountHtml(op) {
+  const kind = _opUiKind(op);
+  const amt = Number(op.amount) || 0;
+  const isTr = kind === 'transfer';
+  const sign = isTr ? '' : kind === 'in' ? '+' : '−';
+  return `${sign}${_fmtNbsp(amt)} ₽`;
+}
+
+function _groupByDaySorted(ops) {
+  const map = new Map();
+  const order = [];
+  for (const op of ops) {
+    const d = _opDate(op);
+    const key = d && !Number.isNaN(d.getTime()) ? _dayKey(d) : '__nodate';
+    if (!map.has(key)) {
+      map.set(key, []);
+      order.push(key);
+    }
+    map.get(key).push(op);
+  }
+  order.sort((a, b) => {
+    if (a === '__nodate') return 1;
+    if (b === '__nodate') return -1;
+    return b.localeCompare(a);
+  });
+  return order.map(k => ({ dayKey: k, ops: map.get(k) }));
+}
+
+function _hasExtraFilters() {
+  return (
+    _filters.cars.length +
+      _filters.kassas.length +
+      _filters.categories.length +
+      _filters.drivers.length >
+    0
+  );
+}
+
+function _shouldShowReset() {
+  return _filters.type !== 'all' || _hasExtraFilters() || !!_filters.search.trim();
+}
+
+// ─── shell & paint ───────────────────────────────────────────────────────────
+
+function _shellHTML() {
+  const chips = TYPE_AXIS.map(
+    p => `
+    <button type="button" class="kassa-type-chip ${_filters.type === p.id ? 'active' : ''}"
+      data-hist-type="${p.id}" aria-pressed="${_filters.type === p.id}">${p.label}</button>`,
+  ).join('');
+
+  const extra = _extraChipsHtml();
+
+  return `
+<div class="kassa-page">
+  <div class="kassa-header-dark">
+    <div class="kassa-topbar">
+      <button type="button" class="kassa-icon-btn" id="hist-prev" aria-label="Предыдущий месяц">${CHEV_L}</button>
+      <button type="button" class="kassa-month-btn" id="hist-month-open" aria-label="Выбрать месяц">
+        <span id="hist-month-label">${_escapeHtml(_monthLabelPretty())}</span>
+        ${SVG_CHEVRON}
+      </button>
+      <div class="kassa-topbar-right">
+        <button type="button" class="kassa-icon-btn" id="hist-search-toggle" aria-label="Поиск">${SVG_SEARCH}</button>
+        <button type="button" class="kassa-icon-btn" id="hist-next" aria-label="Следующий месяц" ${_nextMonthDisabled() ? 'disabled' : ''}>${CHEV_R}</button>
+      </div>
+    </div>
+
+    <div class="kassa-nav-search kassa-nav-search--hidden" id="hist-nav-search">
+      <button type="button" class="kassa-icon-btn" id="hist-search-back" aria-label="Назад">${CHEV_L}</button>
+      <div class="kassa-search-field">
+        ${SVG_SEARCH}
+        <input type="search" id="hist-search-input" placeholder="Поиск по комментарию…" autocomplete="off" />
+      </div>
+      <button type="button" class="kassa-icon-btn" id="hist-search-clear" aria-label="Очистить">${SVG_X}</button>
+    </div>
+
+    <div class="kassa-filters" id="kassa-filters">
+      <div class="kassa-filter-bar">
+        ${chips}
+        <div class="kassa-filter-divider" aria-hidden="true"></div>
+        <div class="kassa-extra-wrap">
+          ${extra}
+          <button type="button" class="kassa-plus-btn" id="hist-add-filter" aria-label="Добавить фильтр">
+            <svg class="kassa-ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="kassa-content">
+    <div class="kassa-summary" id="kassa-summary">${_saldoBlockHtml()}</div>
+    <div class="kassa-ops" id="kassa-ops"></div>
+  </div>
+</div>`;
+}
+
+function _extraChipsHtml() {
+  let html = '';
+  for (const cid of _filters.cars) {
+    html += `<button type="button" class="kassa-extra-chip" data-remove="car:${_escapeHtml(cid)}"><span>${_escapeHtml(cid)}</span>${SVG_X}</button>`;
+  }
+  for (const kid of _filters.kassas) {
+    html += `<button type="button" class="kassa-extra-chip" data-remove="kassa:${_escapeHtml(kid)}"><span>${_escapeHtml(_kassaLineTitle(kid))}</span>${SVG_X}</button>`;
+  }
+  for (const c of _filters.categories) {
+    html += `<button type="button" class="kassa-extra-chip" data-remove="cat:${_escapeHtml(c)}"><span>${_escapeHtml(c)}</span>${SVG_X}</button>`;
+  }
+  for (const did of _filters.drivers) {
+    const lbl = _ctx ? _driverLabel(_ctx.drivers, did) : did;
+    html += `<button type="button" class="kassa-extra-chip" data-remove="drv:${_escapeHtml(did)}"><span>${_escapeHtml(lbl)}</span>${SVG_X}</button>`;
+  }
+  return html;
+}
+
+function _saldoBlockHtml() {
+  const totals = _computeSaldo(_filtered);
+  const exp = _saldoExpanded;
+  const saldoStr = _fmtSigned(totals.net);
+  const cls = totals.net >= 0 ? 'pos' : 'neg';
+  return `
+    <div class="kassa-summary-card ${exp ? 'expanded' : ''}" id="kassa-summary-card">
+      <button type="button" class="kassa-summary-btn" id="hist-saldo-toggle" aria-expanded="${exp}">
+        <span class="kassa-summary-left">Сальдо за ${_escapeHtml(_monthGenitiveSaldo())}</span>
+        <span class="kassa-summary-right">
+          <span class="kassa-summary-value ${cls}">${saldoStr}</span>
+          <span class="kassa-summary-chevron">${SVG_CHEVRON}</span>
+        </span>
+      </button>
+      <div class="kassa-summary-details">
+        <span class="kassa-summary-row-label">Приход</span>
+        <span class="kassa-summary-row-val in">${_fmtSigned(totals.income)}</span>
+        <span class="kassa-summary-row-label">Расход</span>
+        <span class="kassa-summary-row-val out">${_fmtSigned(-Math.abs(totals.expense))}</span>
+      </div>
+    </div>`;
+}
+
+function _renderOpsList(rawOps, fleet) {
+  const root = document.getElementById('kassa-ops');
+  if (!root) return;
+
+  if (!_filtered.length) {
+    const monthPh = _monthEmptyPhrase();
+    let title = `В ${monthPh} операций ещё не было`;
+    if (_hasExtraFilters() || _filters.search.trim()) {
+      const parts = [
+        ..._filters.cars,
+        ..._filters.kassas.map(k => _kassaLineTitle(k)),
+        ..._filters.categories,
+        ..._filters.drivers.map(d => _driverLabel(_ctx?.drivers, d)),
+      ];
+      const j = parts.slice(0, 2).join(', ');
+      if (j) title = `По фильтру «${j}» в ${monthPh} ничего нет`;
+    }
+    const showReset = _shouldShowReset();
+    root.innerHTML = `
+      <div class="kassa-empty">
+        <div class="kassa-empty-icon">${SVG_RECEIPT}</div>
+        <div class="kassa-empty-title">${_escapeHtml(title)}</div>
+        <div class="kassa-empty-sub">Попробуй снять фильтр или сменить месяц</div>
+        ${showReset ? '<button type="button" class="kassa-empty-reset" id="hist-reset-filters">Сбросить фильтры</button>' : ''}
+      </div>`;
+    root.querySelector('***REMOVED***hist-reset-filters')?.addEventListener('click', () => {
+      _filters = { type: 'all', cars: [], kassas: [], categories: [], drivers: [], search: '' };
+      _searchMode = false;
+      _rebindSearchUi();
+      _refresh(rawOps, fleet);
+    });
+    return;
+  }
+
+  const drivers = _ctx?.drivers || [];
+  const groups = _groupByDaySorted(_filtered);
+  root.innerHTML = groups
+    .map(({ dayKey, ops }) => {
+      const label = dayKey === '__nodate' ? 'Без даты' : _dayHeaderLabel(dayKey);
+      return `
+      <div class="kassa-day-head">
+        <span class="kassa-day-left">${_escapeHtml(label)}</span>
+        <span class="kassa-day-right">${_pluralOps(ops.length)}</span>
+      </div>
+      <div class="kassa-day-group">
+        ${ops.map(op => _opCardHtml(op, fleet, drivers)).join('')}
+      </div>`;
+    })
+    .join('');
+
+  root.querySelectorAll('.op-card').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = el.getAttribute('data-op-id');
+      const op = _filtered.find(o => o.opId === id) ?? rawOps.find(o => o.opId === id);
+      if (op) _showOpDetail(op, fleet);
+    });
+  });
+}
+
+function _opCardHtml(op, fleet, drivers) {
+  const v = _mapOpVisual(op);
+  const title = _opTitle(op);
+  const sub = _opSubtitle(op, drivers);
+  const amt = _opAmountHtml(op);
+  return `
+    <div class="op-card" data-op-id="${_escapeHtml(op.opId)}">
+      <div class="op-icon-tile" style="background:${v.bg};color:${v.color}">${v.icon}</div>
+      <div class="op-body">
+        <div class="op-title">${_escapeHtml(title)}</div>
+        <div class="op-subtitle">${_escapeHtml(sub)}</div>
+      </div>
+      <div class="op-amount" style="color:${v.amt}">${amt}</div>
+    </div>`;
+}
+
+function _showOpDetail(op, fleet) {
+  const kind = _opUiKind(op);
+  const heroSign = kind === 'in' ? '+' : kind === 'transfer' ? '⇄' : '−';
+  const heroCls =
+    kind === 'in' ? 'bs-op-hero--in' : kind === 'transfer' ? 'bs-op-hero--xfer' : 'bs-op-hero--out';
+  const car = fleet.find(c => String(c.carId).trim() === String(op.carId || '').trim());
+  const carLbl = car ? `${car.carId}${car.name ? ' · ' + car.name : ''}` : (op.carId || '—');
+  const field = (label, value) =>
+    value
+      ? `<div class="bs-op-field"><span class="bs-op-field__lbl">${label}</span><span class="bs-op-field__val">${_escapeHtml(value)}</span></div>`
+      : '';
+  showBottomSheet(`
+    <div class="bs-op-hero ${heroCls}">
+      <span class="bs-op-hero__sign">${heroSign}</span>
+      <span class="bs-op-hero__amount">${_fmtNbsp(op.amount)} ₽</span>
+      <span class="bs-op-hero__dir">${_escapeHtml(String(op.direction || ''))}</span>
+    </div>
+    <div class="bs-op-fields">
+      ${field('ID', op.opId)}
+      ${field('Дата', op.dateRaw)}
+      ${field('Категория', op.category || op.type)}
+      ${field('Касса', op.kassaId ? _kassaLineTitle(op.kassaId) : '')}
+      ${field('Машина', carLbl)}
+      ${field('Провёл', op.provel)}
+      ${field('Комментарий', op.comment)}
+    </div>
+  `);
+}
+
+function _rebindSearchUi() {
+  const norm = document.querySelector('.kassa-topbar');
+  const sea = document.getElementById('hist-nav-search');
+  if (!sea) return;
+  sea.classList.toggle('kassa-nav-search--hidden', !_searchMode);
+  if (norm) norm.classList.toggle('kassa-topbar--hidden', !!_searchMode);
+  const inp = /** @type {HTMLInputElement} */ (document.getElementById('hist-search-input'));
+  if (inp && _searchMode) {
+    inp.value = _filters.search;
+    requestAnimationFrame(() => inp.focus());
+  }
+}
+
+function _bindShell(rawOps, fleet) {
+  document.getElementById('hist-prev')?.addEventListener('click', () => {
+    _selMonth -= 1;
+    if (_selMonth < 1) {
+      _selMonth = 12;
+      _selYear -= 1;
+    }
+    _syncUrl();
+    _refresh(rawOps, fleet);
+  });
+
+  document.getElementById('hist-next')?.addEventListener('click', () => {
+    const next = _selMonth === 12 ? { m: 1, y: _selYear + 1 } : { m: _selMonth + 1, y: _selYear };
+    if (_isFutureMonth(next.y, next.m)) return;
+    _selMonth = next.m;
+    _selYear = next.y;
+    _syncUrl();
+    _refresh(rawOps, fleet);
+  });
+
+  document.getElementById('hist-month-open')?.addEventListener('click', () =>
+    _openMonthSheet(rawOps, fleet),
+  );
+
+  document.getElementById('hist-search-toggle')?.addEventListener('click', () => {
+    _searchMode = true;
+    _rebindSearchUi();
+  });
+  document.getElementById('hist-search-back')?.addEventListener('click', () => {
+    _searchMode = false;
+    _rebindSearchUi();
+  });
+  document.getElementById('hist-search-clear')?.addEventListener('click', () => {
+    _filters.search = '';
+    const inp = /** @type {HTMLInputElement} */ (document.getElementById('hist-search-input'));
+    if (inp) inp.value = '';
+    _syncUrl();
+    _refresh(rawOps, fleet);
+  });
+  document.getElementById('hist-search-input')?.addEventListener('input', e => {
+    const inp = /** @type {HTMLInputElement} */ (e.target);
+    _filters.search = inp.value || '';
+    _syncUrl();
+    _refresh(rawOps, fleet);
+  });
+
+  document.getElementById('kassa-filters')?.addEventListener('click', e => {
+    const t = /** @type {HTMLElement} */ (e.target);
+    const chip = t.closest('[data-hist-type]');
+    if (chip) {
+      _filters.type = chip.getAttribute('data-hist-type') || 'all';
+      _syncUrl();
+      _refresh(rawOps, fleet);
+      return;
+    }
+    const rm = t.closest('[data-remove]');
+    if (rm) {
+      const v = rm.getAttribute('data-remove') || '';
+      const [axis, val] = v.split(':');
+      if (axis === 'car') _filters.cars = _filters.cars.filter(x => x !== val);
+      if (axis === 'kassa') _filters.kassas = _filters.kassas.filter(x => x !== val);
+      if (axis === 'cat') _filters.categories = _filters.categories.filter(x => x !== val);
+      if (axis === 'drv') _filters.drivers = _filters.drivers.filter(x => x !== val);
+      _syncUrl();
+      _refresh(rawOps, fleet);
+    }
+  });
+
+  document.getElementById('hist-add-filter')?.addEventListener('click', () =>
+    _openFilterSheet(rawOps, fleet),
+  );
+}
+
+/** @type {{ step: number, axis?: string, temp?: Set<string> } | null} */
+let _filterSheetDraft = null;
+
+function _axisToLabel(axis) {
+  if (axis === 'car') return 'Машина';
+  if (axis === 'cassa') return 'Касса';
+  if (axis === 'category') return 'Категория расхода';
+  if (axis === 'driver') return 'Водитель';
+  return 'Фильтр';
+}
+
+function _filtersKey(axis) {
+  if (axis === 'car') return 'cars';
+  if (axis === 'cassa') return 'kassas';
+  if (axis === 'category') return 'categories';
+  if (axis === 'driver') return 'drivers';
+  return 'cars';
+}
+
+function _collectAxisValues(axis, rawOps, fleet) {
+  const set = new Set();
+  if (axis === 'car') {
+    for (const c of fleet || []) {
+      const id = String(c.carId || '').trim();
+      if (id) set.add(id);
+    }
+    for (const op of rawOps || []) {
+      const id = String(op.carId || '').trim();
+      if (id) set.add(id);
+    }
+  } else if (axis === 'cassa') {
+    for (const k of Object.keys(KASSA_NAMES)) set.add(k);
+    for (const k of Object.keys(KASSA_EXTRA)) set.add(k);
+    for (const op of rawOps || []) {
+      const id = String(op.kassaId || '').trim();
+      if (id) set.add(id);
+    }
+  } else if (axis === 'category') {
+    for (const c of EXPENSE_CATEGORY_PRESET) set.add(c);
+    for (const op of rawOps || []) {
+      const c = String(op.category || '').trim();
+      if (c) set.add(c);
+    }
+  } else if (axis === 'driver') {
+    for (const d of _ctx?.drivers || []) {
+      const id = String(d.driverId || '').trim();
+      if (id) set.add(id);
+    }
+    for (const op of rawOps || []) {
+      const id = String(op.driverId || '').trim();
+      if (id) set.add(id);
+    }
+  }
+  return Array.from(set).sort((a, b) => a.localeCompare(b, 'ru'));
+}
+
+function _axisValueLabel(axis, value) {
+  if (axis === 'cassa') return _kassaLineTitle(value);
+  if (axis === 'driver') return _driverLabel(_ctx?.drivers, value);
+  if (axis === 'category') return _capitalize(value);
+  if (axis === 'car') {
+    const car = (_ctx?.fleet || []).find(c => String(c.carId).trim() === String(value).trim());
+    return car ? `${car.carId}${car.name ? ' · ' + car.name : ''}` : value;
+  }
+  return value;
+}
+
+function _renderFilterSheet(rawOps, fleet) {
+  const titleEl = document.getElementById('hist-filter-bs-title');
+  const body = document.getElementById('hist-filter-bs-body');
+  if (!body) return;
+
+  const draft = _filterSheetDraft || { step: 1 };
+  const showKassa = _ctx?.showKassa !== false;
+
+  if (draft.step === 1) {
+    if (titleEl) titleEl.textContent = 'Добавить фильтр';
+    const axes = [
+      { id: 'car', label: 'Машина' },
+      ...(showKassa ? [{ id: 'cassa', label: 'Касса' }] : []),
+      { id: 'category', label: 'Категория расхода' },
+      { id: 'driver', label: 'Водитель' },
+    ];
+    const key = ax => _filtersKey(ax.id);
+    body.innerHTML = axes
+      .map(a => {
+        const cnt = _filters[key(a)].length;
+        return `
+        <div class="kassa-sheet-list-item" data-hist-filter-axis="${_escapeHtml(a.id)}" role="button" tabindex="0">
+          <div>${_escapeHtml(a.label)}</div>
+          <div class="kassa-sheet-right">
+            ${cnt ? `${cnt} ▸` : `<svg class="kassa-ic kassa-ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg>`}
+          </div>
+        </div>`;
+      })
+      .join('');
+
+    body.querySelectorAll('[data-hist-filter-axis]').forEach(row => {
+      row.addEventListener('click', () => {
+        const axis = row.getAttribute('data-hist-filter-axis');
+        if (!axis) return;
+        const fk = _filtersKey(axis);
+        _filterSheetDraft = {
+          step: 2,
+          axis,
+          temp: new Set(_filters[fk].map(String)),
+        };
+        _renderFilterSheet(rawOps, fleet);
+      });
+    });
+    return;
+  }
+
+  const axis = draft.axis;
+  if (!axis) return;
+  if (titleEl) titleEl.textContent = _axisToLabel(axis);
+
+  const values = _collectAxisValues(axis, rawOps, fleet);
+  const temp = draft.temp instanceof Set ? draft.temp : new Set();
+  const selectedCount = temp.size;
+
+  body.innerHTML = `
+    <div class="kassa-sheet-values-head">
+      <button type="button" class="kassa-sheet-back" id="hist-filter-back">
+        <svg class="kassa-ic kassa-ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+        Назад
+      </button>
+      <button type="button" class="kassa-sheet-reset" id="hist-filter-reset" ${selectedCount ? '' : 'disabled'}>Сбросить</button>
+    </div>
+    <div>
+      <div class="kassa-sheet-checkbox-row" data-hist-filter-val="__all">
+        <input type="checkbox" ${selectedCount === 0 ? 'checked' : ''} aria-label="Все" />
+        <div>Все</div>
+      </div>
+      ${values
+        .map(v => {
+          const checked = temp.has(v);
+          const lbl = _axisValueLabel(axis, v);
+          return `
+        <div class="kassa-sheet-checkbox-row" data-hist-filter-val="${_escapeHtml(v)}">
+          <input type="checkbox" ${checked ? 'checked' : ''} aria-label="${_escapeHtml(lbl)}" />
+          <div>${_escapeHtml(lbl)}</div>
+        </div>`;
+        })
+        .join('')}
+    </div>
+    <div class="kassa-sheet-apply">
+      <button type="button" id="hist-filter-apply" ${selectedCount ? '' : 'disabled'}>Применить (${selectedCount})</button>
+    </div>`;
+
+  body.querySelector('***REMOVED***hist-filter-back')?.addEventListener('click', () => {
+    _filterSheetDraft = { step: 1 };
+    _renderFilterSheet(rawOps, fleet);
+  });
+  body.querySelector('***REMOVED***hist-filter-reset')?.addEventListener('click', () => {
+    if (_filterSheetDraft) _filterSheetDraft.temp = new Set();
+    _renderFilterSheet(rawOps, fleet);
+  });
+  body.querySelectorAll('[data-hist-filter-val]').forEach(row => {
+    row.addEventListener('click', () => {
+      const val = row.getAttribute('data-hist-filter-val');
+      if (!val || !_filterSheetDraft) return;
+      if (val === '__all') {
+        _filterSheetDraft.temp = new Set();
+        _renderFilterSheet(rawOps, fleet);
+        return;
+      }
+      const next = new Set(_filterSheetDraft.temp || []);
+      if (next.has(val)) next.delete(val);
+      else next.add(val);
+      _filterSheetDraft.temp = next;
+      _renderFilterSheet(rawOps, fleet);
+    });
+  });
+  body.querySelector('***REMOVED***hist-filter-apply')?.addEventListener('click', () => {
+    if (!_filterSheetDraft?.axis) return;
+    const fk = _filtersKey(_filterSheetDraft.axis);
+    const next = Array.from(_filterSheetDraft.temp || []);
+    _filters[fk] = next;
+    _filterSheetDraft = { step: 1 };
+    _syncUrl();
+    hideBottomSheet();
+    _refresh(rawOps, fleet);
+  });
+}
+
+function _openFilterSheet(rawOps, fleet) {
+  _filterSheetDraft = { step: 1 };
+  showBottomSheet(`
+    <div class="kassa-bs-wrap">
+      <p class="bottomsheet-title" id="hist-filter-bs-title">Добавить фильтр</p>
+      <div id="hist-filter-bs-body"></div>
+    </div>
+  `);
+  setTimeout(() => _renderFilterSheet(rawOps, fleet), 0);
+}
+
+function _renderMonthSheetBody(rawOps, fleet) {
+  const body = document.getElementById('hist-month-bs-body');
+  if (!body) return;
+
+  const currentKey = `${_now.getFullYear()}-${String(_now.getMonth() + 1).padStart(2, '0')}`;
+  const selectedKey = `${_selYear}-${String(_selMonth).padStart(2, '0')}`;
+  const year = _monthPickerYear;
+
+  const months = ['Янв', 'Фев', 'Март', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+  const grid = months
+    .map((m, idx) => {
+      const key = `${year}-${String(idx + 1).padStart(2, '0')}`;
+      const isActive = key === selectedKey;
+      const isFuture = key > currentKey;
+      return `<button type="button" class="kassa-month-cell ${isActive ? 'active' : ''}" data-hist-month="${key}" ${isFuture ? 'disabled' : ''}>${_escapeHtml(m)}</button>`;
+    })
+    .join('');
+
+  body.innerHTML = `
+    <div class="kassa-month-grid">${grid}</div>
+    <div class="kassa-month-footer">
+      <div class="kassa-year-switch">
+        <button type="button" class="kassa-year-btn" id="hist-year-prev" aria-label="Предыдущий год">
+          <svg class="kassa-ic kassa-ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <div style="min-width:48px;text-align:center;font-weight:600;">${_escapeHtml(String(year))}</div>
+        <button type="button" class="kassa-year-btn" id="hist-year-next" aria-label="Следующий год">
+          <svg class="kassa-ic kassa-ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg>
+        </button>
+      </div>
+      <button type="button" class="kassa-today-btn" id="hist-month-today">Сегодня</button>
+    </div>`;
+
+  body.querySelectorAll('[data-hist-month]').forEach(b => {
+    b.addEventListener('click', () => {
+      const key = b.getAttribute('data-hist-month');
+      if (!key) return;
+      const [y, mo] = key.split('-').map(Number);
+      _selYear = y;
+      _selMonth = mo;
+      _syncUrl();
+      hideBottomSheet();
+      _refresh(rawOps, fleet);
+    });
+  });
+  body.querySelector('***REMOVED***hist-year-prev')?.addEventListener('click', () => {
+    _monthPickerYear -= 1;
+    _renderMonthSheetBody(rawOps, fleet);
+  });
+  body.querySelector('***REMOVED***hist-year-next')?.addEventListener('click', () => {
+    _monthPickerYear += 1;
+    _renderMonthSheetBody(rawOps, fleet);
+  });
+  body.querySelector('***REMOVED***hist-month-today')?.addEventListener('click', () => {
+    _selYear = _now.getFullYear();
+    _selMonth = _now.getMonth() + 1;
+    _monthPickerYear = _selYear;
+    _syncUrl();
+    hideBottomSheet();
+    _refresh(rawOps, fleet);
+  });
+}
+
+function _openMonthSheet(rawOps, fleet) {
+  _monthPickerYear = _selYear;
+  showBottomSheet(`
+    <div class="kassa-bs-wrap">
+      <p class="bottomsheet-title">Выбор месяца</p>
+      <div id="hist-month-bs-body"></div>
+    </div>
+  `);
+  setTimeout(() => _renderMonthSheetBody(rawOps, fleet), 0);
+}
+
+function _refresh(rawOps, fleet) {
+  const user = getCurrentUser();
+  const { role } = _roleFlags(user);
+  const monthSlice = _opsInMonth(rawOps);
+  _filtered = _applyFilters(monthSlice, role);
+  const shell = document.getElementById('history-body');
+  if (!shell) return;
+  shell.innerHTML = _shellHTML();
+  _bindShell(rawOps, fleet);
+  _renderOpsList(rawOps, fleet);
+  _rebindSearchUi();
+}
+
+function _skeletonHTML() {
+  return `
+<div class="kassa-page">
+  <div class="kassa-topbar"><div class="skeleton skeleton-line skeleton-line--lg" style="width:90%;margin:0 auto"></div></div>
+  <div class="kassa-content">
+    <div class="skeleton-card" style="margin-top:12px"></div>
+    <div class="skeleton-card"></div>
+    <div class="skeleton-card"></div>
+  </div>
+</div>`;
+}
+
 export function initHistory() {
+  const histRoot = document.getElementById('history-body');
+  if (histRoot && histRoot.dataset.kassaSaldoDeleg !== '1') {
+    histRoot.dataset.kassaSaldoDeleg = '1';
+    histRoot.addEventListener('click', e => {
+      const t = /** @type {HTMLElement} */ (e.target);
+      if (!t.closest('***REMOVED***hist-saldo-toggle')) return;
+      e.preventDefault();
+      _saldoExpanded = !_saldoExpanded;
+      localStorage.setItem(LS_SUMMARY, _saldoExpanded ? '1' : '0');
+      const el = document.getElementById('kassa-summary');
+      if (el) el.innerHTML = _saldoBlockHtml();
+    });
+  }
+
   document.addEventListener('history:filter', e => {
     const { kassaId } = e.detail ?? {};
-    if (kassaId) _filters.kassaId = kassaId;
+    if (kassaId) {
+      const id = String(kassaId).trim();
+      if (!_filters.kassas.includes(id)) _filters.kassas.push(id);
+      _syncUrl();
+    }
   });
 
   document.addEventListener('screen:activated', e => {
@@ -212,698 +1169,77 @@ export async function renderHistory() {
 
   const user = getCurrentUser();
   const { role, isMechanic, showKassa } = _roleFlags(user);
-  _paintCtx = { rawOps: [], fleet: [], role, isMechanic, showKassa };
+  _ctx = { rawOps: [], fleet: [], drivers: [], role, isMechanic, showKassa };
 
-  _offset = 0;
-  _destroyObserver();
+  _hydrateFromUrl();
+  _monthPickerYear = _selYear;
 
   shell.innerHTML = '';
-  let rawOpsAll = /** @type {any[]} */ (undefined);
-  let fleet = /** @type {any[]} */ (undefined);
+  let rawOpsAll = /** @type {any[] | undefined} */ (undefined);
+  let fleet = /** @type {any[] | undefined} */ (undefined);
+  let drivers = /** @type {any[] | undefined} */ (undefined);
   let cacheHit = false;
 
-  const paintHistoryShell = () => {
-    if (rawOpsAll === undefined || fleet === undefined) return;
-
+  const paint = () => {
+    if (rawOpsAll === undefined || fleet === undefined || drivers === undefined) return;
     let rawOps = isMechanic
       ? rawOpsAll.filter(op => String(op.kassaId ?? '').trim() === String(KASSA_ID.AZAMAT))
       : rawOpsAll;
-
-    _paintCtx = { rawOps, fleet, role, isMechanic, showKassa };
-
-    const monthSlice = _opsInMonth(rawOps);
-    _filtered = _applyFilters(monthSlice, _filters, role);
-
-    shell.innerHTML = _shellHTML(fleet);
-
-    _bindHistShell(rawOps, fleet);
-    _offset = 0;
-    _renderPage(rawOps, fleet);
-    _paintSaldo();
-    _paintAxis2();
-    _toggleSearchViews();
-    _toggleNextDisabled();
+    _ctx = { rawOps, fleet, drivers, role, isMechanic, showKassa };
+    _refresh(rawOps, fleet);
   };
 
   getWithSWR(CACHE_KEYS.CASH_OPS, () => getOperations(), {
     onCached: d => {
       cacheHit = true;
-      rawOpsAll = d;
-      paintHistoryShell();
+      rawOpsAll = Array.isArray(d) ? d : [];
+      paint();
     },
     onFresh: d => {
-      rawOpsAll = d;
-      paintHistoryShell();
+      rawOpsAll = Array.isArray(d) ? d : [];
+      paint();
     },
     onFetchError: (_e, meta) => {
       if (!meta?.hadCache) rawOpsAll = [];
-      paintHistoryShell();
+      paint();
     },
   });
 
   getWithSWR(CACHE_KEYS.CARS, () => getFleet(), {
     onCached: d => {
       cacheHit = true;
-      fleet = d;
-      paintHistoryShell();
+      fleet = Array.isArray(d) ? d : [];
+      paint();
     },
     onFresh: d => {
-      fleet = d;
-      paintHistoryShell();
+      fleet = Array.isArray(d) ? d : [];
+      paint();
     },
     onFetchError: (_e, meta) => {
       if (!meta?.hadCache) fleet = [];
-      paintHistoryShell();
+      paint();
+    },
+  });
+
+  getWithSWR(CACHE_KEYS.DRIVERS, () => getDrivers(), {
+    onCached: d => {
+      cacheHit = true;
+      drivers = Array.isArray(d) ? d : [];
+      paint();
+    },
+    onFresh: d => {
+      drivers = Array.isArray(d) ? d : [];
+      paint();
+    },
+    onFetchError: (_e, meta) => {
+      if (!meta?.hadCache) drivers = [];
+      paint();
     },
   });
 
   setTimeout(() => {
-    if (!cacheHit && (rawOpsAll === undefined || fleet === undefined)) {
+    if (!cacheHit && (rawOpsAll === undefined || fleet === undefined || drivers === undefined)) {
       shell.innerHTML = _skeletonHTML();
     }
   }, 0);
-}
-
-function _shellHTML(fleet) {
-  const n = _filtered.length;
-  const axisPills = TYPE_AXIS.map(p => `
-    <button type="button"
-      class="hist-pill hist-chip ${_filters.type === p.id ? 'hist-pill--active hist-chip--active' : 'hist-pill--idle'}"
-      data-hist-axis-type="${p.id}">
-      ${p.label}
-    </button>
-  `).join('');
-
-  return `
-<div class="hist-page">
-  <div class="hist-hdr">
-    <div class="hist-hdr__top">
-      <span class="app-logo">История</span>
-      <span class="hist-count" id="hist-count">${n} операций</span>
-    </div>
-
-    <div class="hist-nav-row" id="hist-nav-normal">
-      <button type="button" class="hist-month-btn hist-nav-btn hist-nav-btn--ghost" id="hist-prev" aria-label="Предыдущий месяц">${CHEV_L}</button>
-      <div class="hist-month-sw">
-        <button type="button" class="hist-nav-month hist-month-btn" id="hist-month-trigger" aria-label="Выбор месяца (скоро)">
-          <span class="hist-month-label" id="hist-month-label">${_monthLabelCapital()}</span>
-          ${SVG_CHEVRON_DOWN}
-        </button>
-      </div>
-      <div class="hist-nav-actions">
-        <button type="button" class="hist-nav-btn" id="hist-search-toggle" aria-label="Поиск">${SVG_SEARCH}</button>
-        <button type="button" class="hist-month-btn hist-nav-btn hist-nav-btn--ghost" id="hist-next" aria-label="Следующий месяц">${CHEV_R}</button>
-      </div>
-    </div>
-
-    <div class="hist-nav-row hist-nav-row--search hist-nav-row--hidden" id="hist-nav-search">
-      <button type="button" class="hist-month-btn hist-nav-btn hist-nav-btn--ghost" id="hist-search-back" aria-label="Назад">${CHEV_L}</button>
-      <div class="hist-search-field">
-        <span class="hist-search-field__ico">${SVG_SEARCH}</span>
-        <input type="search" id="hist-search-input" class="hist-search-field__inp" placeholder="Поиск по комментарию…" autocomplete="off" spellcheck="false" />
-      </div>
-      <button type="button" class="hist-nav-btn" id="hist-search-clear" aria-label="Очистить">${SVG_X}</button>
-    </div>
-
-    <div class="hist-axis1 hist-chips" id="hist-type-chips">
-      ${axisPills}
-      <button type="button" class="hist-add-filter" id="hist-add-filter">+ фильтр</button>
-    </div>
-
-    <div class="hist-axis2" id="hist-axis2"></div>
-
-    <div class="hist-saldo${_saldoExpanded ? ' hist-saldo--expanded' : ''}" id="hist-saldo" tabindex="0" role="button" aria-expanded="${_saldoExpanded}">
-      ${_saldoMainHTML()}
-    </div>
-  </div>
-
-  <div class="hist-body">
-    <div class="hist-list" id="hist-list"></div>
-    <div id="hist-sentinel" style="height:1px"></div>
-  </div>
-</div>`;
-}
-
-function _saldoMainHTML() {
-  const totals = _computeSaldoTotals();
-  const cls = totals.net >= 0 ? 'hist-saldo__value hist-saldo__value--pos' : 'hist-saldo__value hist-saldo__value--neg';
-  const sign = totals.net >= 0 ? '+' : '−';
-
-  const gridHtml = `
-    <div class="hist-saldo__grid-inner">
-      <div>
-        <div class="hist-saldo__sub-label">Приходы</div>
-        <div class="hist-saldo__sub-val">${_fmt(totals.inTotal)}</div>
-      </div>
-      <div>
-        <div class="hist-saldo__sub-label">Расходы</div>
-        <div class="hist-saldo__sub-val">${_fmt(totals.outTotal)}</div>
-      </div>
-      <div>
-        <div class="hist-saldo__sub-label">Переводы</div>
-        <div class="hist-saldo__sub-val">${totals.transferCount} шт.</div>
-      </div>
-      <div>
-        <div class="hist-saldo__sub-label">Операций</div>
-        <div class="hist-saldo__sub-val">${_filtered.length}</div>
-      </div>
-    </div>`;
-
-  return `
-    <div class="hist-saldo__main">
-      <div>
-        <div class="hist-saldo__label">Сальдо за период</div>
-      </div>
-      <span class="${cls}">${sign}${_fmt(Math.abs(totals.net))}</span>
-    </div>
-    <div class="hist-saldo__grid">${gridHtml}</div>
-  `;
-}
-
-function _computeSaldoTotals() {
-  let inTotal = 0;
-  let outTotal = 0;
-  let transferCount = 0;
-  _filtered.forEach(op => {
-    const k = _opUiKind(op);
-    const amt = Math.abs(Number(op.amount) || 0);
-    if (k === 'transfer') transferCount++;
-    else if (k === 'in') inTotal += amt;
-    else outTotal += amt;
-  });
-  return { net: inTotal - outTotal, inTotal, outTotal, transferCount };
-}
-
-function _paintSaldo() {
-  const el = document.getElementById('hist-saldo');
-  if (!el) return;
-  el.classList.toggle('hist-saldo--expanded', _saldoExpanded);
-  el.innerHTML = _saldoMainHTML();
-  el.setAttribute('aria-expanded', _saldoExpanded ? 'true' : 'false');
-}
-
-function _toggleNextDisabled() {
-  const btn = document.getElementById('hist-next');
-  if (!btn) return;
-  const current =
-    _selMonth === _now.getMonth() + 1 && _selYear === _now.getFullYear();
-  btn.classList.toggle('hist-nav-btn--disabled', !!current);
-  btn.style.opacity = current ? '0.35' : '';
-  btn.style.pointerEvents = current ? 'none' : '';
-}
-
-function _toggleSearchViews() {
-  const norm = document.getElementById('hist-nav-normal');
-  const sea = document.getElementById('hist-nav-search');
-  if (!norm || !sea) return;
-  norm.classList.toggle('hist-nav-row--hidden', !!_searchMode);
-  sea.classList.toggle('hist-nav-row--hidden', !_searchMode);
-  const inp = /** @type {HTMLInputElement} */ (document.getElementById('hist-search-input'));
-  if (inp && _searchMode) requestAnimationFrame(() => inp.focus());
-}
-
-/** Активны ли доп. фильтры оси 2 (машина / касса), без учёта поиска. */
-function _hasExtraFilters() {
-  return !!(_filters.carId || _filters.kassaId);
-}
-
-function _paintAxis2() {
-  const row = document.getElementById('hist-axis2');
-  if (!row) return;
-
-  const { showKassa } = _paintCtx || {};
-
-  const chips = [];
-
-  if (_filters.carId) {
-    const label = String(_filters.carId);
-    chips.push(`
-      <button type="button" class="hist-chip-active" data-chip-remove="car">
-        <span>${label}</span>
-        <span class="hist-chip-active__x">${SVG_X}</span>
-      </button>`);
-  }
-
-  if (showKassa && _filters.kassaId) {
-    chips.push(`
-      <button type="button" class="hist-chip-active" data-chip-remove="kassa">
-        <span>${_escapeHtml(_kassaTitle(_filters.kassaId))}</span>
-        <span class="hist-chip-active__x">${SVG_X}</span>
-      </button>`);
-  }
-
-  row.innerHTML = chips.join('');
-  row.style.display = chips.length ? 'flex' : 'none';
-
-  row.querySelectorAll('[data-chip-remove]').forEach(btn => {
-    btn.addEventListener('click', ev => {
-      const key = btn.getAttribute('data-chip-remove');
-      if (key === 'car') _filters.carId = null;
-      else if (key === 'kassa') _filters.kassaId = null;
-      ev.stopPropagation();
-      _refreshFromFilters();
-    });
-  });
-}
-
-function _bindHistShell(rawOps, fleet) {
-  document.getElementById('hist-prev')?.addEventListener('click', () => {
-    _selMonth--;
-    if (_selMonth < 1) {
-      _selMonth = 12;
-      _selYear--;
-    }
-    _refreshMonth(rawOps, fleet);
-  });
-
-  document.getElementById('hist-next')?.addEventListener('click', () => {
-    const next = _selMonth === 12 ? { m: 1, y: _selYear + 1 } : { m: _selMonth + 1, y: _selYear };
-    if (
-      next.y > _now.getFullYear()
-      || (next.y === _now.getFullYear() && next.m > _now.getMonth() + 1)
-    )
-      return;
-    _selMonth = next.m;
-    _selYear = next.y;
-    _refreshMonth(rawOps, fleet);
-  });
-
-  document.getElementById('hist-search-toggle')?.addEventListener('click', () => {
-    _searchMode = true;
-    _toggleSearchViews();
-    const inp = /** @type {HTMLInputElement} */ (document.getElementById('hist-search-input'));
-    if (inp) {
-      inp.value = _filters.search;
-      requestAnimationFrame(() => inp.focus());
-    }
-  });
-
-  document.getElementById('hist-search-back')?.addEventListener('click', () => {
-    _searchMode = false;
-    _toggleSearchViews();
-  });
-
-  document.getElementById('hist-search-clear')?.addEventListener('click', () => {
-    const inp = /** @type {HTMLInputElement} */ (document.getElementById('hist-search-input'));
-    if (inp) inp.value = '';
-    _filters.search = '';
-    _refreshFromFilters();
-  });
-
-  document.getElementById('hist-search-input')?.addEventListener('input', e => {
-    const inp = /** @type {HTMLInputElement} */ (e.target);
-    _filters.search = inp.value || '';
-    _refreshFromFilters();
-  });
-
-  document.getElementById('hist-type-chips')?.addEventListener('click', e => {
-    const btn = /** @type {HTMLElement} */ (e.target.closest('[data-hist-axis-type]'));
-    if (!btn) return;
-    _filters.type = btn.getAttribute('data-hist-axis-type') || 'all';
-    document.querySelectorAll('[data-hist-axis-type]').forEach(b => {
-      const act = /** @type {HTMLElement} */ (b);
-      act.classList.toggle('hist-pill--active', act.dataset.histAxisType === _filters.type);
-      act.classList.toggle('hist-chip--active', act.dataset.histAxisType === _filters.type);
-      act.classList.toggle('hist-pill--idle', act.dataset.histAxisType !== _filters.type);
-    });
-    _refreshFromFilters();
-  });
-
-  document.getElementById('hist-saldo')?.addEventListener('click', () => {
-    _saldoExpanded = !_saldoExpanded;
-    _paintSaldo();
-  });
-
-  document.getElementById('hist-add-filter')?.addEventListener('click', () => _showFilterSheet());
-
-  document.getElementById('hist-list')?.addEventListener('click', e => {
-    if (/** @type {HTMLElement} */ (e.target).closest('***REMOVED***hist-reset')) {
-      e.preventDefault();
-      _filters = { type: 'all', carId: null, kassaId: null, search: '' };
-      _searchMode = false;
-      const inp = /** @type {HTMLInputElement} */ (document.getElementById('hist-search-input'));
-      if (inp) inp.value = '';
-      document.querySelectorAll('[data-hist-axis-type]').forEach(b => {
-        const act = /** @type {HTMLElement} */ (b);
-        const isAll = act.dataset.histAxisType === 'all';
-        act.classList.toggle('hist-pill--active', isAll);
-        act.classList.toggle('hist-chip--active', isAll);
-        act.classList.toggle('hist-pill--idle', !isAll);
-      });
-      _toggleSearchViews();
-      _refreshFromFilters();
-      return;
-    }
-    const row = /** @type {HTMLElement} */ (e.target.closest('[data-op-id]'));
-    if (!row?.dataset.opId) return;
-    const op =
-      _filtered.find(o => o.opId === row.dataset.opId)
-      ?? rawOps.find(o => o.opId === row.dataset.opId);
-    if (op) _showOpDetail(op, fleet);
-  });
-
-  document.getElementById('hist-month-trigger')?.addEventListener('click', () => {});
-}
-
-function _refreshMonth(rawOps, fleet) {
-  const ctx = _paintCtx;
-  _filtered = _applyFilters(_opsInMonth(rawOps), _filters, ctx?.role ?? ROLES.MECHANIC);
-
-  const monthLabel = document.getElementById('hist-month-label');
-  if (monthLabel) monthLabel.textContent = _monthLabelCapital();
-  const histCount = document.getElementById('hist-count');
-  if (histCount) histCount.textContent = `${_filtered.length} операций`;
-
-  _offset = 0;
-  _destroyObserver();
-  const list = document.getElementById('hist-list');
-  if (list) list.innerHTML = '';
-  _renderPage(rawOps, fleet);
-  _paintSaldo();
-  _paintAxis2();
-  _toggleNextDisabled();
-
-  document.querySelectorAll('[data-hist-axis-type]').forEach(b => {
-    const act = /** @type {HTMLElement} */ (b);
-    act.classList.toggle('hist-pill--active', act.dataset.histAxisType === _filters.type);
-    act.classList.toggle('hist-chip--active', act.dataset.histAxisType === _filters.type);
-    act.classList.toggle('hist-pill--idle', act.dataset.histAxisType !== _filters.type);
-  });
-}
-
-function _refreshFromFilters() {
-  const { rawOps, fleet, role } = _paintCtx || {};
-  if (!rawOps || !fleet) return;
-
-  _filtered = _applyFilters(_opsInMonth(rawOps), _filters, role);
-
-  const hc = document.getElementById('hist-count');
-  if (hc) hc.textContent = `${_filtered.length} операций`;
-
-  _offset = 0;
-  _destroyObserver();
-  const list = document.getElementById('hist-list');
-  if (list) list.innerHTML = '';
-  _renderPage(rawOps, fleet);
-
-  _paintSaldo();
-  _paintAxis2();
-}
-
-function _renderPage(rawOps, fleet) {
-  const list = document.getElementById('hist-list');
-  if (!list) return;
-
-  const page = _filtered.slice(_offset, _offset + _PAGE);
-  const { showKassa } = _paintCtx || {};
-
-  if (!page.length) {
-    _destroyObserver();
-    if (_offset === 0) list.innerHTML = _emptyOpsHTML(rawOps.length === 0, fleet);
-    return;
-  }
-
-  const groups = _groupByDay(page);
-  let html = '';
-  groups.forEach(({ label, ops, groupKey }) => {
-    if (!list.querySelector(`[data-day-key="${groupKey}"]`)) {
-      html += `<div class="ops-day-label" data-day-key="${groupKey}" data-day="${_escapeHtml(label)}">${label}</div>`;
-    }
-    html += ops.map(op => _opRowHTML(op, fleet, !!showKassa)).join('');
-  });
-
-  list.insertAdjacentHTML('beforeend', html);
-  _offset += page.length;
-
-  if (_offset >= _filtered.length) {
-    _destroyObserver();
-    return;
-  }
-  _initObserver(rawOps, fleet);
-}
-
-function _emptyOpsHTML(isNoOpsAtAll, fleet) {
-  const month = _monthLabelEmptyPhrase();
-  let txt = '';
-  if (isNoOpsAtAll && !_hasExtraFilters()) {
-    txt = 'Ещё нет ни одной операции';
-  } else if (_filters.carId) {
-    txt = `По фильтру «${_filters.carId}» в ${month} ничего нет`;
-  } else if (_filters.search.trim()) {
-    txt = `По запросу в ${month} ничего не найдено`;
-  } else if (_filters.type === 'income')
-    txt = `Доходов в ${month} нет`;
-  else if (_filters.type === 'expense')
-    txt = `Расходов в ${month} нет`;
-  else if (_filters.type === 'transfer')
-    txt = `Переводов в ${month} нет`;
-  else txt = `В ${month} операций нет`;
-
-  void fleet;
-  return `
-    <div class="hist-empty" id="hist-empty-block">
-      <div class="hist-empty__icon">${SVG_RECEIPT}</div>
-      <div class="hist-empty__text">${_escapeHtml(txt)}</div>
-      <div class="hist-empty__sub">Попробуй снять фильтр или сменить месяц</div>
-      <button type="button" class="hist-empty__reset" id="hist-reset">Сбросить фильтры</button>
-    </div>`;
-}
-
-function _opRowHTML(op, fleet, showKassaInMeta) {
-  const kind = _opUiKind(op);
-  let dotCls = 'op-row__dot op-row__dot--exp';
-  let sign = '−';
-  if (kind === 'in') {
-    dotCls = 'op-row__dot op-row__dot--inc';
-    sign = '+';
-  } else if (kind === 'transfer') {
-    dotCls = 'op-row__dot op-row__dot--xfer';
-    sign = '⇄';
-  }
-
-  const cat = String(op.category || op.type || op.direction || '—');
-
-  const car = fleet.find(c => String(c.carId).trim() === String(op.carId || '').trim());
-  const carTxt = car ? car.carId : String(op.carId || '').trim();
-  const provel = op.provel ? String(op.provel) : '';
-  const kassaTit = showKassaInMeta && op.kassaId ? _kassaTitle(op.kassaId) : '';
-
-  let metaParts = [];
-  if (carTxt) metaParts.push(carTxt);
-  if (provel) metaParts.push(provel);
-  if (kassaTit) metaParts.push(kassaTit);
-  const meta = metaParts.join(' · ');
-
-  const colorCls =
-    kind === 'in'
-      ? 'op-row__amount op-row__amount--inc'
-      : kind === 'transfer'
-        ? 'op-row__amount op-row__amount--xfer'
-        : 'op-row__amount op-row__amount--exp';
-
-  const amtPrefix = kind === 'transfer' ? '' : sign;
-  const amtDisp = amtPrefix !== '' ? amtPrefix + _fmtBare(op.amount) : _fmtBare(op.amount);
-
-  return `
-    <div class="op-row" data-op-id="${_escapeHtml(op.opId ?? '')}">
-      <span class="${dotCls}">${kind === 'transfer' ? '⇄' : sign}</span>
-      <div class="op-row__body">
-        <div class="op-row__cat">${_escapeHtml(cat)}</div>
-        ${meta ? `<div class="op-row__meta">${_escapeHtml(meta)}</div>` : ''}
-      </div>
-      <div class="op-row__right">
-        <span class="${colorCls}">${amtDisp} ₽</span>
-        ${op.dateRaw ? `<span class="op-row__time">${_escapeHtml(String(op.dateRaw))}</span>` : ''}
-      </div>
-    </div>`;
-}
-
-function _showFilterSheet() {
-  const { rawOps, fleet, showKassa } = _paintCtx || {};
-  if (!rawOps) return;
-
-  const monthSlice = _opsInMonth(rawOps);
-  const baseCars = _filterByAxisType(monthSlice);
-
-  const uniq = new Set(
-    baseCars
-      .map(o => String(o.carId || '').trim())
-      .filter(Boolean),
-  );
-
-  (fleet || []).forEach(car => uniq.add(String(car.carId)));
-
-  const carOpts = Array.from(uniq)
-    .sort((a, b) => String(a).localeCompare(String(b), 'ru'))
-    .map(cid => `
-      <button type="button" class="hist-filter-opt ${_filters.carId === cid ? 'hist-filter-opt--active' : ''}"
-        data-filter-type="car" data-val="${_escapeHtml(cid)}">${_escapeHtml(cid)}</button>
-    `)
-    .join('');
-
-  const kassaOpts = `
-    ${[KASSA_ID.AZAMAT, KASSA_ID.VLADIMIR, KASSA_ID.YULIA]
-      .map(
-        kid => `
-      <button type="button"
-        class="hist-filter-opt ${_filters.kassaId === kid ? 'hist-filter-opt--active' : ''}"
-        data-filter-type="kassa" data-val="${kid}">
-        ${_escapeHtml(_kassaShort(kid))}
-      </button>`,
-      )
-      .join('')}`;
-
-  const kassaSection =
-    showKassa
-      ? `
-    <div class="hist-filter-section" id="hist-filter-kassa-section">
-      <div class="hist-filter-section__label">По кассе</div>
-      <div class="hist-filter-options" id="hist-filter-kassa">
-        ${kassaOpts}
-      </div>
-    </div>`
-      : '';
-
-  const html = `
-    <div class="hist-filter-sheet">
-      <div class="hist-filter-sheet__title">Добавить фильтр</div>
-      <div class="hist-filter-section">
-        <div class="hist-filter-section__label">По машине</div>
-        <div class="hist-filter-options" id="hist-filter-cars">${carOpts || '<span class="hist-filter-empty">Нет данных</span>'}</div>
-      </div>
-      ${kassaSection}
-    </div>`;
-
-  showBottomSheet(html);
-
-  const onPick = /** @type {EventListener} */ (ev => {
-    const opt = /** @type {HTMLElement} */ (ev.target.closest('.hist-filter-opt'));
-    if (!opt) return;
-    ev.stopPropagation();
-    const fType = opt.getAttribute('data-filter-type');
-    const val = opt.getAttribute('data-val');
-    if (fType === 'car' && val != null && val !== '') _filters.carId = val;
-    if (fType === 'kassa' && val) _filters.kassaId = val;
-    hideBottomSheet(() => {
-      _refreshFromFilters();
-    });
-  });
-
-  setTimeout(() => {
-    document.getElementById('bs-content')?.addEventListener('click', onPick, { once: true });
-  }, 0);
-}
-
-function _kassaShort(id) {
-  if (id === KASSA_ID.AZAMAT) return 'Азамат';
-  if (id === KASSA_ID.VLADIMIR) return 'Владимир';
-  if (id === KASSA_ID.YULIA) return 'Юлия';
-  return id;
-}
-
-function _showOpDetail(op, fleet) {
-  const dir = String(op.direction || '');
-  const kind = _opUiKind(op);
-  const heroSign = kind === 'in' ? '+' : kind === 'transfer' ? '⇄' : '−';
-  const heroCls =
-    kind === 'in' ? 'bs-op-hero--in' : kind === 'transfer' ? 'bs-op-hero--xfer' : 'bs-op-hero--out';
-
-  const car = fleet.find(c => String(c.carId).trim() === String(op.carId || '').trim());
-  const carLbl = car ? `${car.carId}${car.name ? ' · ' + car.name : ''}` : (op.carId || '—');
-
-  const field = (label, value) =>
-    value
-      ? `<div class="bs-op-field"><span class="bs-op-field__lbl">${label}</span><span class="bs-op-field__val">${_escapeHtml(value)}</span></div>`
-      : '';
-
-  showBottomSheet(`
-    <div class="bs-op-hero ${heroCls}">
-      <span class="bs-op-hero__sign">${heroSign}</span>
-      <span class="bs-op-hero__amount">${_fmtBare(op.amount)} ₽</span>
-      <span class="bs-op-hero__dir">${_escapeHtml(dir)}</span>
-    </div>
-    <div class="bs-op-fields">
-      ${field('ID', op.opId)}
-      ${field('Дата', op.dateRaw)}
-      ${field('Категория', op.category || op.type)}
-      ${field('Касса', op.kassaId ? _kassaTitle(op.kassaId) : '')}
-      ${field('Машина', carLbl)}
-      ${field('Провёл', op.provel)}
-      ${field('Комментарий', op.comment)}
-    </div>
-  `);
-}
-
-function _initObserver(rawOps, fleet) {
-  const sentinel = document.getElementById('hist-sentinel');
-  if (!sentinel) return;
-  _observer = new IntersectionObserver(
-    ents => {
-      if (ents[0].isIntersecting) void _renderPage(rawOps, fleet);
-    },
-    { rootMargin: '120px' },
-  );
-  _observer.observe(sentinel);
-}
-
-function _destroyObserver() {
-  _observer?.disconnect();
-  _observer = null;
-}
-
-function _groupByDay(ops) {
-  const map = new Map();
-  const order = [];
-  ops.forEach(op => {
-    const d = _opDate(op);
-    const key =
-      d && !Number.isNaN(d.getTime()) ? _dayKey(d) : '__nodate';
-    const lbl = key === '__nodate' ? 'Без даты' : formatGroupLabel(d);
-    if (!map.has(key)) {
-      map.set(key, { groupKey: key, label: lbl, ops: [] });
-      order.push(key);
-    }
-    map.get(key).ops.push(op);
-  });
-  return order.map(key => map.get(key));
-}
-
-function _fmt(n) {
-  return `${Math.round(Math.abs(Number(n))).toLocaleString('ru-RU')} ₽`;
-}
-
-function _fmtBare(n) {
-  return `${Math.round(Math.abs(Number(n))).toLocaleString('ru-RU')}`;
-}
-
-function _escapeHtml(s) {
-  return String(s ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-function _skeletonHTML() {
-  const ln = w =>
-    `<div class="skeleton skeleton-line" style="width:${w}%;margin-bottom:6px"></div>`;
-  return `
-<div class="hist-page">
-    <div class="hist-hdr hist-hdr--skeleton">${ln(40)}${ln(65)}${ln(50)}
-    </div>
-    <div class="hist-body hist-body--loading">
-      <div class="hist-list">
-      ${[1, 2, 3, 4, 5, 6]
-        .map(
-          () => `
-        <div class="op-row" style="pointer-events:none">
-          <div class="skeleton op-row__dot" style="width:28px;height:28px;border-radius:50%;flex-shrink:0"></div>
-          <div style="flex:1">${ln(55)}${ln(35)}</div>
-          <div class="skeleton skeleton-line" style="width:64px"></div>
-        </div>`,
-        )
-        .join('')}
-      </div>
-    </div>
-</div>`;
 }
