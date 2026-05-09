@@ -5415,11 +5415,23 @@
 
 .home-park-card { padding: 12px !important; margin-bottom: 8px; }
 .home-park-head { display: flex; justify-content: space-between; align-items: center; font-size: 14px; margin-bottom: 10px; }
-.home-park-bar { height: 8px; background: ***REMOVED***efefef; border-radius: 6px; display: flex; overflow: hidden; gap: 2px; }
-.home-park-bar span { display: block; height: 100%; }
+.home-park-bar { height: 16px; background: ***REMOVED***efefef; border-radius: 10px; display: flex; overflow: hidden; gap: 2px; cursor: pointer; }
+.home-park-seg { display: block; height: 100%; border: none; padding: 0; margin: 0; cursor: pointer; }
+.home-park-seg:active { opacity: 0.8; }
 .home-park-legend { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 10px; text-align: center; }
 .home-park-legend strong { display: block; font-size: 18px; }
 .home-park-legend span { color: ***REMOVED***888; font-size: 11px; text-transform: uppercase; }
+
+.home-park-legend-btn {
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  cursor: pointer;
+  text-align: center;
+}
+.home-park-legend-btn:active { opacity: 0.7; }
 
 .income-payment-page {
   min-height: 100dvh;

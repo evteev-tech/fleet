@@ -2,7 +2,7 @@ import { getOperations, getFleet, getDrivers, getRentals, saveRentalPromise } fr
 import { getWithSWR, CACHE_KEYS } from '../cache.js';
 import { getCurrentUser } from '../auth.js';
 import { showScreen } from '../router.js?v=7';
-import { KASSA_ID, ROLES, USE_MOCK } from '../config.js';
+import { CAR_STATUSES, KASSA_ID, ROLES, USE_MOCK } from '../config.js';
 import { calcPaidUntil, parseRatePerDay, latestRentalByCarMap } from '../utils/rent.js';
 import { parseRuDate } from './history.js';
 
@@ -243,15 +243,24 @@ function _render(body, allOps, fleet, drivers, rentalRows) {
       <div class="home-block-title"><span>ПАРК</span></div>
       <div class="white-card home-park-card">
         <div class="home-park-head"><span>Здоровье парка</span><strong>${fleet.length} машин</strong></div>
-        <div class="home-park-bar">
-          <span style="width:${park.rentPct}%;background:***REMOVED***22c55e"></span>
-          <span style="width:${park.idlePct}%;background:***REMOVED***f97316"></span>
-          <span style="width:${park.repairPct}%;background:***REMOVED***ef4444"></span>
+        <div class="home-park-bar" id="home-park-bar" role="button" tabindex="0" aria-label="Открыть парк">
+          <button type="button" class="home-park-seg" data-park-status="rent" aria-label="В аренде"
+            style="width:${park.rentPct}%;background:***REMOVED***22c55e"></button>
+          <button type="button" class="home-park-seg" data-park-status="idle" aria-label="Простой"
+            style="width:${park.idlePct}%;background:***REMOVED***f97316"></button>
+          <button type="button" class="home-park-seg" data-park-status="repair" aria-label="В ремонте"
+            style="width:${park.repairPct}%;background:***REMOVED***ef4444"></button>
         </div>
         <div class="home-park-legend">
-          <div><strong style="color:***REMOVED***22c55e">${park.rent}</strong><span>Аренда</span></div>
-          <div><strong style="color:***REMOVED***f97316">${park.idle}</strong><span>Простой</span></div>
-          <div><strong style="color:***REMOVED***ef4444">${park.repair}</strong><span>Ремонт</span></div>
+          <button type="button" class="home-park-legend-btn" data-park-status="rent" aria-label="Парк: в аренде">
+            <strong style="color:***REMOVED***22c55e">${park.rent}</strong><span>Аренда</span>
+          </button>
+          <button type="button" class="home-park-legend-btn" data-park-status="idle" aria-label="Парк: простой">
+            <strong style="color:***REMOVED***f97316">${park.idle}</strong><span>Простой</span>
+          </button>
+          <button type="button" class="home-park-legend-btn" data-park-status="repair" aria-label="Парк: ремонт">
+            <strong style="color:***REMOVED***ef4444">${park.repair}</strong><span>Ремонт</span>
+          </button>
         </div>
       </div>
     </div>
@@ -260,6 +269,29 @@ function _render(body, allOps, fleet, drivers, rentalRows) {
   body.querySelector('***REMOVED***home-btn-income')?.addEventListener('click', () => showScreen('screen-income'));
   body.querySelector('***REMOVED***home-btn-expense')?.addEventListener('click', () => showScreen('screen-expense'));
   body.querySelector('***REMOVED***home-btn-transfer')?.addEventListener('click', () => showScreen('screen-transfer'));
+
+  const openPark = statusKey => {
+    const st =
+      statusKey === 'rent' ? CAR_STATUSES.RENT :
+      statusKey === 'idle' ? CAR_STATUSES.IDLE :
+      statusKey === 'repair' ? CAR_STATUSES.REPAIR :
+      null;
+    if (st) {
+      document.dispatchEvent(new CustomEvent('fleet:filter', { detail: { status: st } }));
+    }
+    showScreen('screen-fleet');
+  };
+
+  body.querySelector('***REMOVED***home-park-bar')?.addEventListener('click', e => {
+    const seg = /** @type {HTMLElement} */ (e.target).closest('[data-park-status]');
+    openPark(seg?.dataset.parkStatus || 'all');
+  });
+  body.querySelector('***REMOVED***home-park-bar')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') openPark('all');
+  });
+  body.querySelectorAll('.home-park-legend-btn[data-park-status]').forEach(btn => {
+    btn.addEventListener('click', () => openPark(btn.dataset.parkStatus));
+  });
 
   body.querySelectorAll('[data-task-id]').forEach(el => {
     el.addEventListener('click', ev => _onTaskClick(ev, taskViewTasks, isReadOnlyPayments));
