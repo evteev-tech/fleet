@@ -75,6 +75,16 @@ function formatDate(date) {
 }
 
 /**
+ * Дата и время для колонки promised_at (лист Аренда).
+ * @param {Date} date
+ * @returns {string}
+ */
+function formatDateTime(date) {
+  if (!date || !(date instanceof Date)) return '';
+  return Utilities.formatDate(date, Session.getScriptTimeZone(), 'dd.MM.yyyy HH:mm');
+}
+
+/**
  * Конвертирует строку DD.MM.YYYY в Excel serial number.
  * @param {string} ddmmyyyy
  * @returns {number}
@@ -215,7 +225,8 @@ function doPost(e) {
       case 'GET_FLEET':         return handleGetFleet(SS);
       case 'GET_DRIVERS':       return handleGetDrivers(SS);
       case 'GET_INCOME_FORM':   return handleGetIncomeForm(SS);
-      case 'ADD_INCOME':        return handleAddIncome(SS, body);
+      case 'ADD_INCOME':            return handleAddIncome(SS, body);
+      case 'SAVE_RENTAL_PROMISE':   return handleSaveRentalPromise(SS, body);
       default:
         logFailure(SS, action, 'UNKNOWN_ACTION', 'Action not implemented');
         return err('UNKNOWN_ACTION');
@@ -445,7 +456,7 @@ function handleAddRental(ss, body) {
   const serialStart = dateToExcelSerial(date_start);
   const serialEnd     = date_end ? dateToExcelSerial(date_end) : '';
 
-  sheet.appendRow([rental_id, car_id, driver_id, serialStart, serialEnd, Number(rate_day), comment]);
+  sheet.appendRow([rental_id, car_id, driver_id, serialStart, serialEnd, Number(rate_day), comment, '', '']);
 
   const newRow = sheet.getLastRow();
   sheet.getRange(newRow, 4).setNumberFormat('DD.MM.YYYY');
@@ -735,6 +746,76 @@ function handleGetIncomeForm(ss) {
 }
 
 // -----------------------------------------------------------------------------
+// SAVE_RENTAL_PROMISE — лист «Аренда»: H = promised_until, I = promised_at
+// -----------------------------------------------------------------------------
+
+/**
+ * Последняя строка аренды по машине: макс. дата_окончания (колонка E), затем больший суффикс rental_id.
+ * @returns {{ sheet: GoogleAppsScript.Spreadsheet.Sheet|null, row: number }} row — 1-based или 0
+ */
+function findLastRentalRowNumberForCar_(ss, carId) {
+  var sheet = ss.getSheetByName(SHEET.RENTALS);
+  if (!sheet) return { sheet: null, row: 0 };
+  var needle = String(carId || '').trim();
+  var data = sheet.getDataRange().getValues();
+  var bestRow = 0;
+  var bestTs = -1;
+  var bestNum = -1;
+  for (var i = 1; i < data.length; i++) {
+    var rCar = String(data[i][1] != null ? data[i][1] : '').trim();
+    if (rCar !== needle) continue;
+    var endDt = parseDate(data[i][4]);
+    var ts = endDt ? endDt.getTime() : 0;
+    var rn = _rentalNum(data[i][0]);
+    if (ts > bestTs || (ts === bestTs && rn > bestNum)) {
+      bestTs = ts;
+      bestNum = rn;
+      bestRow = i + 1;
+    }
+  }
+  return { sheet: sheet, row: bestRow };
+}
+
+function clearRentalPromiseFieldsForCar_(ss, carId) {
+  var f = findLastRentalRowNumberForCar_(ss, carId);
+  if (!f.sheet || !f.row) return;
+  f.sheet.getRange(f.row, 8, f.row, 9).clearContent();
+}
+
+function handleSaveRentalPromise(ss, body) {
+  var car_id = String(body.car_id || '').trim();
+  if (!car_id) return err('MISSING_FIELD: car_id');
+
+  var rawPu = body.promised_until;
+  var clear = rawPu === '' || rawPu === null || rawPu === undefined;
+
+  var found = findLastRentalRowNumberForCar_(ss, car_id);
+  if (!found.sheet || !found.row) {
+    logFailure(ss, 'SAVE_RENTAL_PROMISE', 'ROW_NOT_FOUND', car_id);
+    return err('RENTAL_ROW_NOT_FOUND');
+  }
+
+  if (clear) {
+    found.sheet.getRange(found.row, 8, found.row, 9).clearContent();
+    return ok({ cleared: true });
+  }
+
+  var pu = String(rawPu).trim();
+  var parts = pu.split('.');
+  if (parts.length !== 3) return err('BAD_DATE_FORMAT');
+
+  var jsDate = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+  if (isNaN(jsDate.getTime())) return err('BAD_DATE');
+
+  found.sheet.getRange(found.row, 8).setValue(jsDate);
+  found.sheet.getRange(found.row, 8).setNumberFormat('dd.MM.yyyy');
+
+  found.sheet.getRange(found.row, 9).setValue(formatDateTime(new Date()));
+
+  return ok({ updated: true, row: found.row });
+}
+
+// -----------------------------------------------------------------------------
 // ADD_INCOME (атомарная запись: касса + аренда)
 // -----------------------------------------------------------------------------
 
@@ -776,13 +857,15 @@ function handleAddIncome(ss, body) {
     if (!date_from)                                       return err('MISSING: date_from');
     if (!date_to)                                         return err('MISSING: date_to');
 
+    clearRentalPromiseFieldsForCar_(ss, car_id);
+
     var opOut = handleAddOperation(ss, {
       date:      formatDate(new Date()),
       kassa_id:  String(kassa_id),
       direction: '\u043f\u0440\u0438\u0445\u043e\u0434',
       amount:    Number(amount),
       type:      '\u0430\u0440\u0435\u043d\u0434\u0430',
-      category:  '\u0430\u0440\u0435\u043d\u0434\u0430',
+      category:  '',
       car_id,
       driver_id,
       comment,

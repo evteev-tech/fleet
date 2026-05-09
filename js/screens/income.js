@@ -1,8 +1,8 @@
-import { getFleet, getDrivers, postAddIncome } from '../api.js';
+import { getFleet, getDrivers, postAddIncome, saveRentalPromise } from '../api.js';
 import { getWithSWR, CACHE_KEYS } from '../cache.js';
 import { getCurrentUser } from '../auth.js';
 import { showScreen } from '../router.js?v=7';
-import { CAR_STATUSES, KASSA_ID } from '../config.js';
+import { CAR_STATUSES, KASSA_ID, USE_MOCK } from '../config.js';
 
 let _context = null;
 let _state = {
@@ -187,6 +187,10 @@ async function _submit(root) {
       acceptedAt: new Date(),
     },
   }));
+
+  if (USE_MOCK) {
+    void saveRentalPromise(car.carId, null).catch(() => {});
+  }
 
   _showSuccess(root, car, _state.amount, today);
 }

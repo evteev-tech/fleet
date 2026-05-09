@@ -42,3 +42,27 @@ export function parseSheetDate(raw) {
 
   return null;
 }
+
+/**
+ * Дата+время из ячейки (DD.MM.YYYY HH:mm или то, что понимает parseSheetDate).
+ * @param {*} raw
+ * @returns {Date|null}
+ */
+export function parseSheetDateTime(raw) {
+  if (raw === undefined || raw === null || raw === '') return null;
+  if (raw instanceof Date && !isNaN(raw.getTime())) return raw;
+
+  const s = String(raw).trim();
+  const m = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})\s+(\d{1,2}):(\d{2})$/);
+  if (m) {
+    const d = new Date(
+      Number(m[3]),
+      Number(m[2]) - 1,
+      Number(m[1]),
+      Number(m[4]),
+      Number(m[5]),
+    );
+    return isNaN(d.getTime()) ? null : d;
+  }
+  return parseSheetDate(raw);
+}

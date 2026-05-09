@@ -5,14 +5,21 @@
  * Запись:  POST WEBHOOK_URL  (Apps Script doPost)
  */
 
-import { SHEET_ID, API_KEY, WEBHOOK_URL, CACHE_TTL_MS, SHEETS } from './config.js';
+import { SHEET_ID, API_KEY, WEBHOOK_URL, CACHE_TTL_MS, SHEETS, USE_MOCK } from './config.js';
 import {
   CACHE_KEYS,
   clearAllCache,
   getWithSWR,
   invalidateCache as invalidateSwrCache,
 } from './cache.js';
-import { parseSheetDate, formatDate } from './utils/date.js';
+import { parseSheetDate, parseSheetDateTime, formatDate } from './utils/date.js';
+import {
+  getMockFleetNormalized,
+  getMockDriversNormalized,
+  getMockOperationsNormalized,
+  getMockRentalsNormalized,
+  mutateMockRentalPromise,
+} from './mock/data.js';
 
 export { clearAllCache, getWithSWR, CACHE_KEYS } from './cache.js';
 
@@ -168,6 +175,7 @@ export async function getUsers() {
  * @returns {Promise<Array>}
  */
 export async function getOperations({ kassaId = null, month = null, year = null } = {}) {
+  if (USE_MOCK) return getMockOperationsNormalized({ kassaId, month, year });
   const rows = await readSheet(SHEETS.OPERATIONS);
 
   return rows
@@ -223,6 +231,7 @@ export async function getKassas() {
  * @returns {Promise<Array<{carId,name,color,status,dateBuy,priceBuy,rateDay,note,mileage,toMileage}>>}
  */
 export async function getFleet() {
+  if (USE_MOCK) return getMockFleetNormalized();
   try {
     const body = await postAction('GET_FLEET', {});
     const rows = body.fleet ?? [];
@@ -272,6 +281,7 @@ function _normalizeFleetRow(r) {
  * @returns {Promise<Array<{driverId,name,phone,license,status,deposit,note,carId,currentCar}>>}
  */
 export async function getDrivers() {
+  if (USE_MOCK) return getMockDriversNormalized();
   try {
     const body = await postAction('GET_DRIVERS', {});
     const rows = body.drivers ?? [];
@@ -318,13 +328,16 @@ function _normalizeDriverRow(r) {
 
 /**
  * Колонки: A=rental_id, B=car_id, C=driver_id, D=дата_начала,
- *          E=дата_окончания, F=ставка_день, G=примечание
+ *          E=дата_окончания, F=ставка_день, G=примечание,
+ *          H=promised_until, I=promised_at (опционально, в конце листа)
  *
  * Даты могут храниться как Excel-число или DD.MM.YYYY — парсим оба варианта.
  *
- * @returns {Promise<Array<{rentalId,carId,driverId,dateStart,dateEnd,rateDay,note}>>}
+ * @returns {Promise<Array<{rentalId,carId,driverId,dateStart,dateEnd,rateDay,note,promisedUntil,promisedAt}>>}
  */
 export async function getRentals() {
+  if (USE_MOCK) return getMockRentalsNormalized();
+
   const rows = await readSheet(SHEETS.RENTALS);
   return rows
     .map(row => ({
@@ -335,6 +348,10 @@ export async function getRentals() {
       dateEnd:   _parseFlexDate(cell(row, 4)),
       rateDay:   parseFloat(cell(row, 5)) || 0,
       note:      cell(row, 6),
+      promisedUntil:
+        _parseFlexDate(cell(row, 7)) ?? parseSheetDate(cell(row, 7)) ?? null,
+      promisedAt:
+        parseSheetDateTime(cell(row, 8)) ?? parseSheetDate(cell(row, 8)) ?? null,
     }))
     .filter(r => r.rentalId);
 }
@@ -457,6 +474,34 @@ export async function postAddIncome(payload) {
   return postAction('ADD_INCOME', payload);
 }
 
+/**
+ * Запись «обещал заплатить» в последнюю строку аренды по car_id (лист «Аренда», колонки H–I).
+ * @param {string} carId
+ * @param {Date|null} promisedUntil  null — очистить поля
+ */
+export async function saveRentalPromise(carId, promisedUntil) {
+  const cid = String(carId || '').trim();
+  if (!cid) throw new Error('MISSING: car_id');
+
+  if (USE_MOCK) {
+    mutateMockRentalPromise(
+      cid,
+      promisedUntil == null ? null : promisedUntil,
+      promisedUntil == null ? null : new Date(),
+    );
+    invalidateSwrCache(CACHE_KEYS.RENTALS);
+    return { status: 'ok' };
+  }
+
+  return postAction('SAVE_RENTAL_PROMISE', {
+    car_id: cid,
+    promised_until:
+      promisedUntil != null && promisedUntil instanceof Date && !Number.isNaN(promisedUntil.getTime())
+        ? formatDate(promisedUntil)
+        : '',
+  });
+}
+
 // ─── Какие листы сбрасываем после каждого action ─────────────────────────────
 const ACTION_INVALIDATES = {
   ADD_OPERATION:    [SHEETS.OPERATIONS],
@@ -466,6 +511,7 @@ const ACTION_INVALIDATES = {
   ADD_DEPOSIT:      [SHEETS.DEPOSITS, SHEETS.DRIVERS],
   ADD_RENTAL:       [SHEETS.RENTALS, SHEETS.CARS, SHEETS.DRIVERS],
   ADD_INCOME:       [SHEETS.OPERATIONS, SHEETS.RENTALS, SHEETS.CARS],
+  SAVE_RENTAL_PROMISE: [SHEETS.RENTALS],
 };
 
 function _invalidateByAction(action) {

@@ -1,8 +1,8 @@
-import { getOperations, getFleet, getDrivers } from '../api.js';
+import { getOperations, getFleet, getDrivers, getRentals, saveRentalPromise } from '../api.js';
 import { getWithSWR, CACHE_KEYS } from '../cache.js';
 import { getCurrentUser } from '../auth.js';
 import { showScreen } from '../router.js?v=7';
-import { CAR_STATUSES, KASSA_ID } from '../config.js';
+import { CAR_STATUSES, KASSA_ID, USE_MOCK } from '../config.js';
 
 const PROMISE_PRESETS = [
   { id: 'today_evening', label: 'сегодня вечером', days: 0 },
@@ -43,10 +43,12 @@ export function renderHome() {
   let ops = null;
   let cars = null;
   let drivers = null;
+  let rentalsLoaded = false;
+  let rentalRows = [];
 
   const paint = () => {
-    if (!ops || !cars || !drivers) return;
-    _render(body, ops, cars, drivers);
+    if (!ops || !cars || !drivers || !rentalsLoaded) return;
+    _render(body, ops, cars, drivers, rentalRows);
   };
 
   getWithSWR(CACHE_KEYS.CASH_OPS, () => getOperations(), {
@@ -64,9 +66,26 @@ export function renderHome() {
     onFresh: d => { drivers = d; paint(); },
     onFetchError: () => { drivers = []; paint(); },
   });
+  getWithSWR(CACHE_KEYS.RENTALS, () => getRentals(), {
+    onCached: d => {
+      rentalRows = d;
+      rentalsLoaded = true;
+      paint();
+    },
+    onFresh: d => {
+      rentalRows = d;
+      rentalsLoaded = true;
+      paint();
+    },
+    onFetchError: () => {
+      rentalRows = [];
+      rentalsLoaded = true;
+      paint();
+    },
+  });
 }
 
-function _render(body, allOps, fleet, drivers) {
+function _render(body, allOps, fleet, drivers, rentalRows) {
   const user = getCurrentUser();
   const firstName = String(user?.name || 'Азамат').split(' ')[0];
   const kassaId = KASSA_ID.AZAMAT;
@@ -74,7 +93,8 @@ function _render(body, allOps, fleet, drivers) {
   const balance = _calcBalance(kassaOps);
   const deltaToday = _calcDeltaToday(kassaOps);
   const rentCars = fleet.filter(c => _bucketStatus(c.status) === 'rent');
-  const allTasks = _buildTasks(allOps, rentCars, drivers);
+  const latestByCar = _latestRentalsMap(rentalRows || []);
+  const allTasks = _buildTasks(allOps, rentCars, drivers, latestByCar);
   const taskViewTasks = allTasks.tasks.filter(_isTaskVisibleInPayments);
   const dueSoon = _buildDueSoonRows(allOps, rentCars, drivers);
   const park = _parkStats(fleet);
@@ -86,6 +106,7 @@ function _render(body, allOps, fleet, drivers) {
   };
 
   body.innerHTML = `
+    ${USE_MOCK ? '<div class="mock-banner" role="status">🧪 Mock-режим · живые данные отключены</div>' : ''}
     <div class="home-header">
       <div class="home-hdr__brand-row">
         <span class="home-hdr__logo">Матизы</span>
@@ -168,6 +189,9 @@ function _applyPromise(event, _body, _tasks) {
   _sessionState.promisedByCar.set(carId, promisedUntil);
   _sessionState.expandedCarId = null;
   void renderHome();
+  void saveRentalPromise(carId, promisedUntil).catch(e => {
+    console.error('Не удалось сохранить обещание:', e);
+  });
 }
 
 /** В секции «Оплаты»: срок сегодня/просрочка, завтра (warning), обещание или оплачено в сессии */
@@ -194,7 +218,54 @@ function _paidAcceptedToday(paidInfo, todayStart) {
   return _sameCalendarDay(at, todayStart);
 }
 
-function _buildTasks(ops, rentCars, drivers) {
+/**
+ * Статус задачи оплаты (как resolveTaskStatus для rental):
+ * diffDays(today, paid_until): &gt; 0 — просрочка оплаты по аренде.
+ */
+function _resolveTaskStatus({ paidInfo, paidUntil, promiseDate }) {
+  if (paidInfo) return 'paid';
+  const today = _todayStart();
+  const daysOverdue =
+    paidUntil != null ? _daysDiff(today, paidUntil) : null;
+  const hasPromise = !!promiseDate;
+  const promiseBroke = hasPromise && _daysDiff(today, promiseDate) > 0;
+
+  if (promiseBroke) return 'broke_promise';
+  if (hasPromise) return 'promised';
+  if (daysOverdue !== null && daysOverdue >= 0) return 'overdue';
+  if (daysOverdue === -1) return 'warning';
+  return 'neutral';
+}
+
+function _latestRentalsMap(rows) {
+  const map = new Map();
+  for (const r of rows || []) {
+    const cid = String(r.carId || '').trim();
+    if (!cid) continue;
+    const prev = map.get(cid);
+    const ts =
+      r.dateEnd instanceof Date && !Number.isNaN(r.dateEnd.getTime())
+        ? r.dateEnd.getTime()
+        : -1;
+    const prevTs =
+      prev?.dateEnd instanceof Date && !Number.isNaN(prev.dateEnd.getTime())
+        ? prev.dateEnd.getTime()
+        : -2;
+    const n = _rentalIdTailNum(r.rentalId);
+    const prevN = _rentalIdTailNum(prev?.rentalId ?? '');
+    if (!prev || ts > prevTs || (ts === prevTs && n > prevN)) {
+      map.set(cid, r);
+    }
+  }
+  return map;
+}
+
+function _rentalIdTailNum(id) {
+  const m = String(id || '').match(/(\d+)$/);
+  return m ? parseInt(m[1], 10) : 0;
+}
+
+function _buildTasks(ops, rentCars, drivers, latestByCar) {
   const byCarDriver = new Map();
   drivers.forEach(d => {
     if (d.currentCar) byCarDriver.set(String(d.currentCar).trim(), d);
@@ -212,20 +283,22 @@ function _buildTasks(ops, rentCars, drivers) {
     const overdue =
       paidUntil != null ? _daysDiff(_todayStart(), paidUntil) : null;
     const paidInfo = _sessionState.paidByCar.get(carId);
-    const promiseDate = _sessionState.promisedByCar.get(carId);
 
-    let status = 'neutral';
-    if (paidInfo) status = 'paid';
-    else if (
-      promiseDate &&
-      overdue !== null &&
-      overdue >= 0 &&
-      _daysDiff(_todayStart(), promiseDate) > 0
-    )
-      status = 'broke_promise';
-    else if (promiseDate) status = 'promised';
-    else if (overdue !== null && overdue >= 1) status = 'overdue';
-    else if (overdue !== null && overdue < 0 && overdue >= -1) status = 'warning';
+    const latestRental = latestByCar.get(carId);
+    let promisedSheet = latestRental?.promisedUntil ?? null;
+    if (promisedSheet instanceof Date && !Number.isNaN(promisedSheet.getTime())) {
+      promisedSheet = new Date(promisedSheet);
+      promisedSheet.setHours(0, 0, 0, 0);
+    } else {
+      promisedSheet = null;
+    }
+
+    let promiseDate = _sessionState.promisedByCar.get(carId);
+    if (!(promiseDate instanceof Date && !Number.isNaN(promiseDate.getTime()))) {
+      promiseDate = promisedSheet ?? undefined;
+    }
+
+    const status = _resolveTaskStatus({ paidInfo, paidUntil, promiseDate });
 
     return {
       carId,
@@ -334,9 +407,6 @@ function _paymentBadgeHtml(task) {
     if (o === 0) return `<span class="payment-task-card__badge payment-task-card__badge--dark">сегодня</span>`;
     if (o === 1) return `<span class="payment-task-card__badge payment-task-card__badge--red">просрочка 1д</span>`;
     return `<span class="payment-task-card__badge payment-task-card__badge--red">просрочка ${_esc(String(o))}д</span>`;
-  }
-  if (task.status === 'neutral' && o !== null) {
-    if (o === 0) return `<span class="payment-task-card__badge payment-task-card__badge--dark">сегодня</span>`;
   }
   return '';
 }

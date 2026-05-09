@@ -4453,6 +4453,16 @@
 .home-pill--count-purple { background: ***REMOVED***7c3aed; }
 .home-pill--count-orange { background: ***REMOVED***f97316; }
 
+.mock-banner {
+  background: ***REMOVED***7c3aed;
+  color: ***REMOVED***fff;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  padding: 4px 0;
+  letter-spacing: 0.04em;
+}
+
 /* PaymentTaskCard — карточка задачи оплаты на главной */
 .payment-task-card {
   display: flex;

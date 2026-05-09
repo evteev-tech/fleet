@@ -1,3 +1,7 @@
+// ─── Feature flags (URL → без пересборки) ────────────────────────────────────
+export const USE_MOCK =
+  typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('mock');
+
 // ─── Идентификаторы Google Таблицы ──────────────────────────────────────────
 export const SHEET_ID = '1z4raGK4oamjZNznow-OesTljRz649_wCFYIFOh3mufg';
 export const API_KEY     = 'REDACTED_OLD_APIKEY';
