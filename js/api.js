@@ -29,6 +29,7 @@ const SHEET_TO_CACHE_KEYS = {
   [SHEETS.DRIVERS]: [CACHE_KEYS.DRIVERS],
   [SHEETS.RENTALS]: [CACHE_KEYS.RENTALS, CACHE_KEYS.INCOME_FORM],
   [SHEETS.OPERATIONS]: [CACHE_KEYS.CASH_OPS, CACHE_KEYS.KASSAS, CACHE_KEYS.DASHBOARD],
+  [SHEETS.KASSAS]: [CACHE_KEYS.KASSAS],
   [SHEETS.DEPOSITS]: [CACHE_KEYS.DRIVERS, CACHE_KEYS.DEPOSITS],
 };
 
@@ -116,6 +117,19 @@ const cell = (row, idx, fallback = '') =>
   row[idx] !== undefined && row[idx] !== null
     ? String(row[idx]).trim()
     : fallback;
+
+/** Балансы из листа «Кассы»: число, форматированная строка или (отриц.) в скобках */
+export function parseAmount(val) {
+  if (val == null || val === '') return 0;
+  if (typeof val === 'number' && Number.isFinite(val)) return val;
+  let t = String(val).trim().replace(/\u00a0/g, ' ');
+  t = t.replace(/[₽]/g, '');
+  const compact = t.replace(/\s/g, '');
+  const parenNeg = /^\(.*\)$/.test(compact);
+  const core = compact.replace(/[()]/g, '').replace(/,/g, '.');
+  const n = parseFloat(parenNeg ? `-${core}` : core);
+  return Number.isFinite(n) ? n : 0;
+}
 
 // ─── Парсинг даты: DD.MM.YYYY или Excel serial (UNFORMATTED_VALUE из Sheets) ─
 function parseDate(raw) {
@@ -215,7 +229,7 @@ export async function getKassas() {
     .map(row => ({
       kassaId: cell(row, 0),
       name: cell(row, 1),
-      balanceCurrent: parseFloat(cell(row, 2)) || 0,
+      balanceCurrent: parseAmount(row[2]),
     }))
     .filter(k => k.kassaId);
 }

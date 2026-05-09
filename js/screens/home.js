@@ -2,8 +2,11 @@ import { getOperations, getFleet, getDrivers, getRentals, saveRentalPromise } fr
 import { getWithSWR, CACHE_KEYS } from '../cache.js';
 import { getCurrentUser } from '../auth.js';
 import { showScreen } from '../router.js?v=7';
-import { CAR_STATUSES, KASSA_ID, ROLES, USE_MOCK } from '../config.js';
+import { KASSA_ID, ROLES, USE_MOCK } from '../config.js';
 import { calcPaidUntil, parseRatePerDay, latestRentalByCarMap } from '../utils/rent.js';
+import { parseRuDate } from './history.js';
+
+const HOME_KASSA_ORDER = [KASSA_ID.AZAMAT, KASSA_ID.VLADIMIR, KASSA_ID.YULIA];
 
 const PROMISE_PRESETS = [
   { id: 'today_evening', label: 'сегодня вечером', days: 0 },
@@ -86,21 +89,126 @@ export function renderHome() {
   });
 }
 
+/** Роль с бэка: без учёта регистра и пробелов */
+function _roleNorm(role) {
+  return String(role ?? '')
+    .trim()
+    .toLowerCase();
+}
+
+function _isPaymentsReadOnly(user) {
+  const r = _roleNorm(user?.role);
+  return r === ROLES.OPERATIONS || r === ROLES.INVESTOR;
+}
+
+/** Главная со сводкой как дашборд: operations / investor (если когда-либо попадут на home) */
+function _isOpsFinanceHome(user) {
+  const r = _roleNorm(user?.role);
+  return r === ROLES.OPERATIONS || r === ROLES.INVESTOR;
+}
+
+function _calcKassaBalancesFromOps(ops) {
+  const result = /** @type {Record<string, number>} */ ({});
+  HOME_KASSA_ORDER.forEach(id => {
+    result[id] = 0;
+  });
+  ops.forEach(op => {
+    const kid = String(op.kassaId ?? '').trim();
+    if (!(kid in result)) return;
+    if (op.direction === 'приход') result[kid] += Number(op.amount) || 0;
+    if (op.direction === 'расход') result[kid] -= Number(op.amount) || 0;
+  });
+  return result;
+}
+
+function _opDateResolved(op) {
+  if (op.date instanceof Date && !Number.isNaN(op.date.getTime())) return op.date;
+  return parseRuDate(op.dateRaw);
+}
+
+function _opsInCalendarMonth(ops, month, year) {
+  return ops.filter(op => {
+    const d = _opDateResolved(op);
+    return (
+      d instanceof Date &&
+      !Number.isNaN(d.getTime()) &&
+      d.getMonth() + 1 === month &&
+      d.getFullYear() === year
+    );
+  });
+}
+
+function _formatSignedAmt(n) {
+  const rounded = Math.round(Number(n) || 0);
+  const sign = rounded < 0 ? '−' : '';
+  return `${sign}${Math.abs(rounded).toLocaleString('ru-RU')} ₽`;
+}
+
+function _operationsCashSummaryHtml(allOps) {
+  const now = new Date();
+  const month = now.getMonth() + 1;
+  const year = now.getFullYear();
+  const monthOps = _opsInCalendarMonth(allOps, month, year);
+  let monthIncome = 0;
+  let monthExpense = 0;
+  monthOps.forEach(op => {
+    if (op.direction === 'приход') monthIncome += Number(op.amount) || 0;
+    if (op.direction === 'расход') monthExpense += Number(op.amount) || 0;
+  });
+  const monthNet = monthIncome - monthExpense;
+  const bals = _calcKassaBalancesFromOps(allOps);
+  const total = HOME_KASSA_ORDER.reduce((s, id) => s + (bals[id] ?? 0), 0);
+  const monthTitle = new Date(year, month - 1, 1)
+    .toLocaleDateString('ru-RU', { month: 'long' })
+    .replace(/^./, c => c.toUpperCase());
+
+  return `
+    <div class="home-cash-card home-cash-card--ops-overview">
+      <div class="home-ops-fin__label">ИТОГО В КАССАХ</div>
+      <div class="home-ops-fin__total">${_formatSignedAmt(total)}</div>
+      <div class="home-ops-fin__subtitle">За ${monthTitle} ${year} г.</div>
+      <div class="home-ops-fin__tiles">
+        <div class="home-ops-fin__tile">
+          <div class="home-ops-fin__tile-val home-ops-fin__tile-val--inc">${_formatSignedAmt(monthIncome)}</div>
+          <div class="home-ops-fin__tile-lbl">Доходы</div>
+        </div>
+        <div class="home-ops-fin__tile">
+          <div class="home-ops-fin__tile-val home-ops-fin__tile-val--exp">${_formatSignedAmt(monthExpense)}</div>
+          <div class="home-ops-fin__tile-lbl">Расходы</div>
+        </div>
+        <div class="home-ops-fin__tile">
+          <div class="home-ops-fin__tile-val home-ops-fin__tile-val--net">${_formatSignedAmt(monthNet)}</div>
+          <div class="home-ops-fin__tile-lbl">Чистыми</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function _render(body, allOps, fleet, drivers, rentalRows) {
   const user = getCurrentUser();
   const firstName = String(user?.name || 'Азамат').split(' ')[0];
+  const isOpsFinance = _isOpsFinanceHome(user);
+  const isReadOnlyPayments = _isPaymentsReadOnly(user);
+
   const kassaId = KASSA_ID.AZAMAT;
   const kassaOps = allOps.filter(op => String(op.kassaId || '').trim() === kassaId);
   const balance = _calcBalance(kassaOps);
   const deltaToday = _calcDeltaToday(kassaOps);
+
+  const cashPrimaryHtml = isOpsFinance
+    ? _operationsCashSummaryHtml(allOps)
+    : `<div class="home-cash-card">
+        <div class="home-cash-card__label">КАССА АЗАМАТА</div>
+        <div class="home-cash-card__amount">${_fmtInt(balance)} ₽</div>
+        <div class="home-cash-card__delta ${deltaToday >= 0 ? 'is-pos' : 'is-neg'}">${deltaToday >= 0 ? '+' : '−'}${_fmtInt(Math.abs(deltaToday))} ₽ сегодня</div>
+      </div>`;
   const rentCars = fleet.filter(c => _bucketStatus(c.status) === 'rent');
   const latestByCar = latestRentalByCarMap(rentalRows || []);
   const allTasks = _buildTasks(allOps, rentCars, drivers, latestByCar);
   const taskViewTasks = allTasks.tasks.filter(_isTaskVisibleInPayments);
   const dueSoon = _buildDueSoonRows(allOps, rentCars, drivers, rentalRows);
   const park = _parkStats(fleet);
-  const isReadOnlyPayments =
-    user?.role === ROLES.OPERATIONS || user?.role === ROLES.INVESTOR;
 
   const counters = {
     red: taskViewTasks.filter(t => t.status === 'overdue' || t.status === 'broke_promise').length,
@@ -115,11 +223,7 @@ function _render(body, allOps, fleet, drivers, rentalRows) {
         <span class="home-hdr__logo">Матизы</span>
         <div class="home-hdr__avatar">${_esc(firstName[0] || 'А')}</div>
       </div>
-      <div class="home-cash-card">
-        <div class="home-cash-card__label">КАССА АЗАМАТА</div>
-        <div class="home-cash-card__amount">${_fmtInt(balance)} ₽</div>
-        <div class="home-cash-card__delta ${deltaToday >= 0 ? 'is-pos' : 'is-neg'}">${deltaToday >= 0 ? '+' : '−'}${_fmtInt(Math.abs(deltaToday))} ₽ сегодня</div>
-      </div>
+      ${cashPrimaryHtml}
       <div class="home-action-row home-action-row--3">
         <button id="home-btn-income" class="btn-primary">＋ Платёж</button>
         <button id="home-btn-expense" class="btn-secondary">− Расход</button>
@@ -184,8 +288,7 @@ function _onTaskClick(event, tasks, isReadOnlyPayments) {
 }
 
 function _applyPromise(event, _body, _tasks) {
-  const user = getCurrentUser();
-  if (user?.role === ROLES.OPERATIONS || user?.role === ROLES.INVESTOR) return;
+  if (_isPaymentsReadOnly(getCurrentUser())) return;
 
   event.stopPropagation();
   const btn = event.currentTarget;

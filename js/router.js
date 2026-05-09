@@ -125,7 +125,10 @@ export function currentScreen() {
 export async function mountNavbarInContainer(container, role, activeScreenId = null) {
   if (!container) return;
 
-  const items = NAVBAR_CONFIG[role] ?? [];
+  const roleKey = String(role ?? '')
+    .trim()
+    .toLowerCase();
+  const items = NAVBAR_CONFIG[roleKey] ?? [];
 
   container.innerHTML = items
     .map(
@@ -195,10 +198,11 @@ export function initRouter({ onNeedLogin, onLoggedIn }) {
   }
 
   void renderNavbar(session.role).then(() => {
+    const r = String(session.role ?? '')
+      .trim()
+      .toLowerCase();
     const startScreen =
-      session.role === ROLES.MECHANIC || session.role === ROLES.OPERATIONS
-        ? 'screen-home'
-        : 'screen-dashboard';
+      r === ROLES.MECHANIC || r === ROLES.OPERATIONS ? 'screen-home' : 'screen-dashboard';
     showScreen(startScreen);
     onLoggedIn?.(session);
   });

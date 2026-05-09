@@ -26,8 +26,12 @@ export function getCurrentUser() {
     const raw = localStorage.getItem(LS_KEY);
     if (!raw) return null;
     const user = JSON.parse(raw);
-    if (!user?.email || !user?.role) return null;
-    return user;
+    if (!user?.email || user?.role == null || user.role === '') return null;
+    return {
+      name: user.name,
+      email: user.email,
+      role: String(user.role).trim().toLowerCase(),
+    };
   } catch {
     return null;
   }
@@ -38,11 +42,16 @@ export function getCurrentUser() {
  * @param {{ name: string, role: string, email: string }} user
  */
 export function setCurrentUser(user) {
-  localStorage.setItem(LS_KEY, JSON.stringify({
-    name:  user.name,
-    role:  user.role,
-    email: user.email,
-  }));
+  localStorage.setItem(
+    LS_KEY,
+    JSON.stringify({
+      name: user.name,
+      role: String(user.role ?? '')
+        .trim()
+        .toLowerCase(),
+      email: user.email,
+    }),
+  );
 }
 
 /**
@@ -205,7 +214,10 @@ function _setKeyboardDisabled(keyboard, disabled) {
 
 // ─── Роутинг после логина ───────────────────────────────────────────────────
 function _goHome(role) {
-  if (role === ROLES.MECHANIC || role === ROLES.OPERATIONS) {
+  const r = String(role ?? '')
+    .trim()
+    .toLowerCase();
+  if (r === ROLES.MECHANIC || r === ROLES.OPERATIONS) {
     showScreen('screen-home');
   } else {
     showScreen('screen-dashboard');

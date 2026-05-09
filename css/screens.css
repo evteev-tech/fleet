@@ -4848,6 +4848,57 @@
 .home-cash-card__delta { font-size: 13px; margin-top: 4px; font-weight: 600; }
 .home-cash-card__delta.is-pos { color: ***REMOVED***22c55e; }
 .home-cash-card__delta.is-neg { color: ***REMOVED***ef4444; }
+
+.home-cash-card--ops-overview { margin-top: 10px; }
+.home-ops-fin__label {
+  color: ***REMOVED***a1a1aa;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+.home-ops-fin__total {
+  color: ***REMOVED***fff;
+  font-size: 34px;
+  font-weight: 800;
+  margin-top: 6px;
+  text-align: center;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.home-ops-fin__subtitle {
+  text-align: center;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+  margin-top: 6px;
+  font-weight: 500;
+}
+.home-ops-fin__tiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 14px;
+}
+.home-ops-fin__tile-val {
+  font-size: 14px;
+  font-weight: 800;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+}
+.home-ops-fin__tile-val--inc { color: ***REMOVED***22c55e; }
+.home-ops-fin__tile-val--exp { color: ***REMOVED***ef4444; }
+.home-ops-fin__tile-val--net { color: ***REMOVED***ffffff; }
+.home-ops-fin__tile-lbl {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.55);
+  text-align: center;
+  margin-top: 4px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
 .home-action-row--3 { grid-template-columns: 1fr 1fr 1fr; margin-top: 10px; }
 .home-action-row--3 .btn-secondary { font-size: 13px; padding: 12px 8px; }
 .home-action-row--3 .btn-primary { font-size: 14px; padding: 12px 8px !important; }
@@ -5064,27 +5115,27 @@
 
 /* OPERATIONS / INVESTOR — карточка оплат только для просмотра */
 .payment-task-card--readonly .payment-task-card__pay-btn {
-  opacity: 0.4;
-  pointer-events: none;
+  opacity: 0.4 !important;
+  pointer-events: none !important;
   background: ***REMOVED***e5e5ea !important;
   color: ***REMOVED***8a8a8e !important;
-  cursor: default;
+  cursor: default !important;
 }
 
 .payment-task-card--readonly .payment-task-card__pay-btn:disabled {
-  opacity: 0.4;
+  opacity: 0.4 !important;
 }
 
 .payment-task-card--readonly .payment-task-card__promise-shortcut {
-  opacity: 0.4;
-  pointer-events: none;
-  cursor: default;
+  opacity: 0.4 !important;
+  pointer-events: none !important;
+  cursor: default !important;
 }
 
 .payment-task-card--readonly .payment-task-card__promise-shortcut:hover,
 .payment-task-card--readonly .payment-task-card__promise-shortcut:active {
-  background: ***REMOVED***ede9fe;
-  color: ***REMOVED***7c3aed;
+  background: ***REMOVED***ede9fe !important;
+  color: ***REMOVED***7c3aed !important;
 }
 
 .payment-task-card--readonly .payment-task-card__promise-title::after {
