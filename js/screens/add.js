@@ -404,7 +404,14 @@ function _resetForm(isMech, savedDate, savedKassa) {
 
 function _goBack() {
   const user = getCurrentUser();
-  showScreen(user?.role === ROLES.MECHANIC ? 'screen-home' : 'screen-dashboard');
+  const role = String(user?.role ?? '')
+    .trim()
+    .toLowerCase();
+  showScreen(
+    role === ROLES.MECHANIC || role === ROLES.OPERATIONS
+      ? 'screen-home'
+      : 'screen-dashboard',
+  );
 }
 
 function _todayISO() {
