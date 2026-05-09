@@ -17,7 +17,7 @@ const TABS = [
 
 let _pendingTab = null;
 let _lastDrivers = [];
-let _activeTab = 'all';
+let _activeTab = 'active';
 
 function isActiveStatus(raw) {
   const s = String(raw || '').toLowerCase();

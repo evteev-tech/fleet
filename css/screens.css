@@ -1407,69 +1407,50 @@
   padding: 48px var(--space-lg) var(--space-md);
 }
 
-.hist-hdr__top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px 8px;
-}
-
-.hist-count {
-  font-size: 12px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.45);
-}
-
-/* Навигация месяца */
+/* Навигация месяца — одна симметричная строка */
 .hist-nav-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 14px 16px 10px;
+  padding: 8px 16px 10px;
 }
 
 .hist-nav-row--hidden {
   display: none !important;
 }
 
-.hist-month-sw {
+.hist-month-center {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  margin-bottom: 0;
-}
-
-.hist-nav-month {
-  display: flex;
-  align-items: center;
-  gap: 4px;
   background: transparent;
   border: none;
   color: ***REMOVED***fff;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 500;
   cursor: pointer;
-  padding: 4px 8px;
+  padding: 6px 8px;
   border-radius: 8px;
+  min-width: 0;
 }
 
-.hist-nav-month svg {
+.hist-month-center svg {
   flex-shrink: 0;
   opacity: 0.7;
 }
 
 .hist-nav-actions {
   display: flex;
-  gap: 4px;
+  gap: 6px;
   align-items: center;
 }
 
-.hist-nav-btn {
-  width: 32px;
-  height: 32px;
+.hist-round-btn {
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.06);
   border: none;
@@ -1482,41 +1463,19 @@
   flex-shrink: 0;
 }
 
-.hist-nav-btn:active {
+.hist-round-btn:active {
   background: rgba(255, 255, 255, 0.12);
 }
 
-.hist-nav-btn--ghost {
-  background: transparent;
-}
-
-.hist-nav-btn--disabled,
-.hist-nav-btn.hist-nav-btn--disabled {
-  opacity: 0.35;
+.hist-round-btn--disabled,
+.hist-round-btn:disabled {
+  opacity: 0.4;
   pointer-events: none;
 }
 
-.hist-month-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 32px;
-  min-height: 32px;
-  width: auto;
-  height: auto;
-  border-radius: 50%;
-  color: rgba(255, 255, 255, 0.85);
-  cursor: pointer;
-  border: none;
-  background: transparent;
-  padding: 0;
-}
-
-.hist-month-label {
-  font-size: 17px;
-  font-weight: 500;
-  color: ***REMOVED***fff;
-  flex: none;
+.hist-round-btn--dark {
+  background: rgba(0, 0, 0, 0.06);
+  color: ***REMOVED***1a1a1a;
 }
 
 .hist-search-field {
@@ -1550,176 +1509,207 @@
   color: rgba(255, 255, 255, 0.35);
 }
 
-/* Ось 1 — тип */
-.hist-axis1 {
+/* Фильтры: типы + разделитель + доп. чипы и «+» */
+.hist-filters-row {
   display: flex;
-  gap: 6px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  margin: 0 -16px;
-  padding: 2px 16px 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 4px;
+  padding: 4px 16px 8px;
 }
 
-.hist-axis1::-webkit-scrollbar {
-  display: none;
+.hist-filters-row__types {
+  display: flex;
+  flex: 1 1 220px;
+  gap: 4px;
+  min-width: 0;
 }
 
-.hist-pill {
-  flex-shrink: 0;
-  padding: 7px 14px;
-  border-radius: 16px;
-  font-size: 13px;
+.hist-type-chip {
+  flex: 1;
+  padding: 6px 4px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-family: var(--font-family);
+  text-align: center;
   cursor: pointer;
   border: none;
-  font-family: var(--font-family);
-}
-
-.hist-pill--active {
-  background: ***REMOVED***ffdd2d;
-  color: ***REMOVED***1a1a1a;
-  font-weight: 500;
-}
-
-.hist-pill--idle {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
   color: ***REMOVED***d4d4d4;
 }
 
-.hist-chips {
-  display: flex;
-  gap: 6px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  padding-bottom: 0;
-}
-
-.hist-chips::-webkit-scrollbar {
-  display: none;
-}
-
-.hist-chip {
-  border: none;
-}
-
-.hist-chip--active {
-  background: ***REMOVED***ffdd2d;
+.hist-type-chip--on {
+  background: ***REMOVED***ffc72c;
   color: ***REMOVED***1a1a1a;
+  font-weight: 500;
 }
 
-/* Ось 2 — видна только при активных фильтрах машина/касса (JS: flex) */
-.hist-axis2 {
-  display: none;
-  gap: 6px;
-  align-items: center;
-  flex-wrap: wrap;
-  padding: 0 16px 8px;
+.hist-filters-row__vsep {
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.12);
+  margin: 0 2px;
+  flex-shrink: 0;
 }
 
-.hist-chip-active {
+.hist-filters-row__extra-wrap {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 4px;
-  padding: 6px 10px 6px 12px;
-  border-radius: 14px;
-  background: rgba(255, 221, 45, 0.16);
-  border: 0.5px solid rgba(255, 221, 45, 0.4);
-  color: ***REMOVED***ffdd2d;
+  gap: 6px 4px;
+  flex: 1 1 96px;
+  justify-content: flex-end;
+}
+
+.hist-filters-row__extra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 4px;
+  justify-content: flex-end;
+}
+
+.hist-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 10px;
+  border-radius: 12px;
   font-size: 12px;
   cursor: pointer;
+  border: 0.5px solid rgba(255, 199, 44, 0.4);
+  background: rgba(255, 199, 44, 0.16);
+  color: ***REMOVED***ffc72c;
+  font-family: var(--font-family);
 }
 
-.hist-chip-active__x {
+.hist-filter-chip__x {
+  display: flex;
+  align-items: center;
+  line-height: 0;
+  color: ***REMOVED***ffc72c;
+}
+
+.hist-add-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 14px;
+  border: 0.5px dashed rgba(255, 255, 255, 0.25);
+  background: transparent;
+  color: ***REMOVED***888;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-left: 2px;
-  line-height: 0;
-}
-
-.hist-chip-active__x svg {
-  width: 14px;
-  height: 14px;
-}
-
-.hist-add-filter {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 10px;
-  border-radius: 14px;
-  background: transparent;
-  border: 0.5px dashed rgba(255, 255, 255, 0.25);
-  color: ***REMOVED***888;
-  font-size: 12px;
-  cursor: pointer;
   flex-shrink: 0;
-  margin-left: auto;
+  cursor: pointer;
+  padding: 0;
 }
 
-/* Сводка */
-.hist-saldo {
+.hist-add-dot:active {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Сводка (раскрывающаяся) */
+.hist-saldo-wrap {
   margin: 0 16px 10px;
+}
+
+.hist-saldo2 {
   background: rgba(255, 255, 255, 0.04);
   border-radius: 12px;
-  padding: 10px 12px;
-  cursor: pointer;
+  overflow: hidden;
 }
 
-.hist-saldo__main {
+.hist-saldo2__toggle {
+  width: 100%;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-family);
 }
 
-.hist-saldo__label {
+.hist-saldo2__lbl {
   font-size: 11px;
   color: ***REMOVED***888;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.3px;
 }
 
-.hist-saldo__value {
-  font-size: 16px;
+.hist-saldo2__right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hist-saldo2__val {
+  font-size: 15px;
   font-weight: 500;
-  color: ***REMOVED***fff;
 }
 
-.hist-saldo__value--pos {
+.hist-saldo2__val--pos {
   color: ***REMOVED***4ade80;
 }
 
-.hist-saldo__value--neg {
+.hist-saldo2__val--neg {
   color: ***REMOVED***ff5e5e;
 }
 
-.hist-saldo__grid {
-  display: none;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 0.5px solid rgba(255, 255, 255, 0.08);
-}
-
-.hist-saldo--expanded .hist-saldo__grid {
-  display: block;
-}
-
-.hist-saldo__grid-inner {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.hist-saldo__sub-label {
-  font-size: 11px;
+.hist-saldo2__chev-wrap {
   color: ***REMOVED***888;
-  margin-bottom: 2px;
+  display: flex;
+  transition: transform 0.25s ease;
 }
 
-.hist-saldo__sub-val {
+.hist-saldo2--open .hist-saldo2__chev-wrap {
+  transform: rotate(180deg);
+}
+
+.hist-saldo2__detail {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.28s ease, opacity 0.22s ease;
+  border-top: 0.5px solid transparent;
+}
+
+.hist-saldo2--open .hist-saldo2__detail {
+  max-height: 120px;
+  opacity: 1;
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+.hist-saldo2__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px 10px;
+}
+
+.hist-saldo2__row:first-child {
+  padding-top: 10px;
+}
+
+.hist-saldo2__sub-lbl {
+  font-size: 12px;
+  color: ***REMOVED***888;
+}
+
+.hist-saldo2__sub-val {
   font-size: 14px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.92);
+}
+
+.hist-saldo2__sub-val--inc {
+  color: ***REMOVED***4ade80;
+}
+
+.hist-saldo2__sub-val--exp {
+  color: ***REMOVED***ff5e5e;
 }
 
 /* Тело — светлый блок */
@@ -1746,50 +1736,96 @@
   border-bottom-color: ***REMOVED***e5e5e0;
 }
 
-.screen-history .hist-list .ops-day-label {
-  color: ***REMOVED***888;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  padding: 12px 0 6px;
+.hist-day-block {
+  margin-bottom: 4px;
 }
 
-.screen-history .hist-list .op-row__dot {
-  width: 28px;
-  height: 28px;
+.hist-day-hdr {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 16px 4px 8px;
+}
+
+.hist-day-hdr__left {
+  font-size: 11px;
+  font-weight: 500;
+  color: ***REMOVED***888;
+  letter-spacing: 0.5px;
+}
+
+.hist-day-hdr__cnt {
+  font-size: 11px;
+  color: ***REMOVED***999;
+}
+
+.hist-day-cards {
+  background: ***REMOVED***fff;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.op-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 0.5px solid ***REMOVED***ececea;
+  cursor: pointer;
+  font-family: var(--font-family);
+}
+
+.op-card:last-child {
+  border-bottom: none;
+}
+
+.op-card__tile {
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+}
+
+.op-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.op-card__title {
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 500;
+  color: ***REMOVED***1a1a1a;
+  line-height: 1.25;
 }
 
-.screen-history .hist-list .op-row__dot--inc {
-  background: ***REMOVED***1c4b30;
-  color: ***REMOVED***4ade80;
+.op-card__sub {
+  margin-top: 1px;
+  font-size: 12px;
+  color: ***REMOVED***888;
+  line-height: 1.3;
 }
 
-.screen-history .hist-list .op-row__dot--exp {
-  background: ***REMOVED***4b1c1c;
-  color: ***REMOVED***ff5e5e;
+.op-card__amt {
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+  align-self: flex-start;
 }
 
-.screen-history .hist-list .op-row__dot--xfer {
-  background: ***REMOVED***1c2e4b;
-  color: ***REMOVED***60a5fa;
+.op-card__amt--inc {
+  color: ***REMOVED***2d8a3f;
 }
 
-.screen-history .hist-list .op-row__amount--inc {
-  color: ***REMOVED***16a34a;
+.op-card__amt--exp {
+  color: ***REMOVED***c43838;
 }
 
-.screen-history .hist-list .op-row__amount--exp {
-  color: ***REMOVED***ef4444;
-}
-
-.screen-history .hist-list .op-row__amount--xfer {
-  color: ***REMOVED***2563eb;
+.op-card__amt--xfer {
+  color: ***REMOVED***666;
 }
 
 .op-row__rub {
@@ -1885,6 +1921,226 @@
 .hist-filter-empty {
   font-size: 13px;
   color: var(--color-muted);
+}
+
+/* Bottomsheet: добавить фильтр (2 шага) */
+.hist-fs {
+  text-align: left;
+  padding: 0 0 calc(12px + env(safe-area-inset-bottom, 0px));
+}
+
+.hist-fs-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: ***REMOVED***ddd;
+  margin: 8px auto 12px;
+}
+
+.hist-fs-head,
+.hist-fs-head2 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px 12px;
+  border-bottom: 0.5px solid ***REMOVED***ececea;
+}
+
+.hist-fs-head2 {
+  gap: 8px;
+}
+
+.hist-fs-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: ***REMOVED***1a1a1a;
+}
+
+.hist-fs-title--center {
+  flex: 1;
+  text-align: center;
+}
+
+.hist-fs-close {
+  border: none;
+  background: transparent;
+  padding: 4px;
+  cursor: pointer;
+  color: ***REMOVED***666;
+  display: flex;
+}
+
+.hist-fs-back {
+  border: none;
+  background: transparent;
+  padding: 4px;
+  cursor: pointer;
+  color: ***REMOVED***1a1a1a;
+}
+
+.hist-fs-reset {
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  color: ***REMOVED***0066ff;
+  cursor: pointer;
+  padding: 4px;
+  min-width: 72px;
+  text-align: right;
+}
+
+.hist-fs-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 16px;
+  border: none;
+  border-bottom: 0.5px solid ***REMOVED***ececea;
+  background: ***REMOVED***fff;
+  font-size: 15px;
+  color: ***REMOVED***1a1a1a;
+  cursor: pointer;
+  text-align: left;
+}
+
+.hist-fs-row__meta {
+  color: ***REMOVED***888;
+  font-size: 14px;
+}
+
+.hist-fs-list {
+  max-height: 52vh;
+  overflow-y: auto;
+  padding: 8px 0 72px;
+}
+
+.hist-fs-check-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  font-size: 15px;
+  color: ***REMOVED***1a1a1a;
+  cursor: pointer;
+}
+
+.hist-fs-apply {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: calc(100% - 32px);
+  margin: 12px 16px;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 12px;
+  background: ***REMOVED***ffc72c;
+  color: ***REMOVED***1a1a1a;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Модалка выбора месяца */
+.hist-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 12050;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.hist-modal.hidden {
+  display: none;
+}
+
+.hist-mp-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.hist-mp-panel {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  background: ***REMOVED***fff;
+  border-radius: 16px 16px 0 0;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  z-index: 1;
+}
+
+.hist-mp-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: ***REMOVED***ddd;
+  margin: 8px auto 4px;
+}
+
+.hist-mp-year {
+  text-align: center;
+  font-size: 14px;
+  color: ***REMOVED***888;
+  padding: 4px 0 8px;
+}
+
+.hist-mp-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 8px 16px 16px;
+}
+
+.hist-mp__cell {
+  height: 40px;
+  border-radius: 8px;
+  border: none;
+  background: ***REMOVED***f4f4f0;
+  font-size: 13px;
+  font-weight: 500;
+  color: ***REMOVED***1a1a1a;
+  cursor: pointer;
+}
+
+.hist-mp__cell--on {
+  background: ***REMOVED***ffc72c;
+  color: ***REMOVED***1a1a1a;
+}
+
+.hist-mp__cell:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.hist-mp-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px 8px;
+  gap: 12px;
+  border-top: 0.5px solid ***REMOVED***ececea;
+  padding-top: 12px;
+}
+
+.hist-mp-year-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.hist-mp-today {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: none;
+  background: ***REMOVED***f4f4f0;
+  font-size: 14px;
+  cursor: pointer;
 }
 
 /* Bottomsheet: детали операции */

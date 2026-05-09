@@ -34,7 +34,7 @@ const BADGE = {
 
 let _pendingTab = null;
 let _lastFleet = [];
-let _activeTab = 'all';
+let _activeTab = 'rent';
 
 /** Нормализация статуса из таблицы → rent | idle | repair */
 function statusKey(raw) {

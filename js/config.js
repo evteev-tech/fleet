@@ -12,12 +12,16 @@ export const KASSA_ID = {
   AZAMAT:   'K_AZAMAT',
   VLADIMIR: 'K_VLADIMIR',
   YULIA:    'K_YULIA',
+  INVEST_YULIA: 'K_INVEST_YULIA',
+  INVEST_VLAD:  'K_INVEST_VLAD',
 };
 
 export const KASSA_NAMES = {
   K_AZAMAT:   'Касса Азамата',
   K_VLADIMIR: 'Касса Владимира',
   K_YULIA:    'Касса Юлии',
+  K_INVEST_YULIA: 'Инвест. счёт Юлии',
+  K_INVEST_VLAD:  'Инвест. счёт Владимира',
 };
 
 // ─── Роли ────────────────────────────────────────────────────────────────────
