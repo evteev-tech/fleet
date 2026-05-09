@@ -3,6 +3,7 @@ import { getWithSWR, CACHE_KEYS } from '../cache.js';
 import { getCurrentUser } from '../auth.js';
 import { showScreen } from '../router.js?v=7';
 import { CAR_STATUSES, KASSA_ID, USE_MOCK } from '../config.js';
+import { calcPaidUntil, parseRatePerDay, latestRentalByCarMap } from '../utils/rent.js';
 
 const PROMISE_PRESETS = [
   { id: 'today_evening', label: 'сегодня вечером', days: 0 },
@@ -93,10 +94,10 @@ function _render(body, allOps, fleet, drivers, rentalRows) {
   const balance = _calcBalance(kassaOps);
   const deltaToday = _calcDeltaToday(kassaOps);
   const rentCars = fleet.filter(c => _bucketStatus(c.status) === 'rent');
-  const latestByCar = _latestRentalsMap(rentalRows || []);
+  const latestByCar = latestRentalByCarMap(rentalRows || []);
   const allTasks = _buildTasks(allOps, rentCars, drivers, latestByCar);
   const taskViewTasks = allTasks.tasks.filter(_isTaskVisibleInPayments);
-  const dueSoon = _buildDueSoonRows(allOps, rentCars, drivers);
+  const dueSoon = _buildDueSoonRows(allOps, rentCars, drivers, rentalRows);
   const park = _parkStats(fleet);
 
   const counters = {
@@ -237,34 +238,6 @@ function _resolveTaskStatus({ paidInfo, paidUntil, promiseDate }) {
   return 'neutral';
 }
 
-function _latestRentalsMap(rows) {
-  const map = new Map();
-  for (const r of rows || []) {
-    const cid = String(r.carId || '').trim();
-    if (!cid) continue;
-    const prev = map.get(cid);
-    const ts =
-      r.dateEnd instanceof Date && !Number.isNaN(r.dateEnd.getTime())
-        ? r.dateEnd.getTime()
-        : -1;
-    const prevTs =
-      prev?.dateEnd instanceof Date && !Number.isNaN(prev.dateEnd.getTime())
-        ? prev.dateEnd.getTime()
-        : -2;
-    const n = _rentalIdTailNum(r.rentalId);
-    const prevN = _rentalIdTailNum(prev?.rentalId ?? '');
-    if (!prev || ts > prevTs || (ts === prevTs && n > prevN)) {
-      map.set(cid, r);
-    }
-  }
-  return map;
-}
-
-function _rentalIdTailNum(id) {
-  const m = String(id || '').match(/(\d+)$/);
-  return m ? parseInt(m[1], 10) : 0;
-}
-
 function _buildTasks(ops, rentCars, drivers, latestByCar) {
   const byCarDriver = new Map();
   drivers.forEach(d => {
@@ -278,13 +251,36 @@ function _buildTasks(ops, rentCars, drivers, latestByCar) {
     const carId = String(car.carId || '').trim();
     const driver = byCarDriver.get(carId);
     const op = rentOps.find(x => String(x.carId || '').trim() === carId);
-    const paidUntil = _parsePaidUntil(op?.comment || '');
+    const latestRental = latestByCar.get(carId);
+    const rate = parseRatePerDay(latestRental?.rateDay ?? car.rateDay);
+
     const amount = Math.round(Number(car.rateDay || 0) * 7);
-    const overdue =
-      paidUntil != null ? _daysDiff(_todayStart(), paidUntil) : null;
     const paidInfo = _sessionState.paidByCar.get(carId);
 
-    const latestRental = latestByCar.get(carId);
+    let paidUntil = null;
+    if (paidInfo) {
+      const paySrc =
+        paidInfo.date instanceof Date
+          ? paidInfo.date
+          : (paidInfo.date != null
+            ? new Date(paidInfo.date)
+            : new Date(paidInfo.acceptedAt || Date.now()));
+      if (!Number.isNaN(paySrc.getTime())) {
+        const payDt = new Date(paySrc);
+        payDt.setHours(0, 0, 0, 0);
+        paidUntil = calcPaidUntil(payDt, Number(paidInfo.amount) || 0, rate);
+      }
+    } else if (op) {
+      const opD = _toDate(op);
+      if (opD && !Number.isNaN(opD.getTime())) {
+        opD.setHours(0, 0, 0, 0);
+        paidUntil = calcPaidUntil(opD, Number(op.amount) || 0, rate);
+      }
+    }
+
+    const overdue =
+      paidUntil != null ? _daysDiff(_todayStart(), paidUntil) : null;
+
     let promisedSheet = latestRental?.promisedUntil ?? null;
     if (promisedSheet instanceof Date && !Number.isNaN(promisedSheet.getTime())) {
       promisedSheet = new Date(promisedSheet);
@@ -329,7 +325,9 @@ function _taskRank(t) {
   return 9;
 }
 
-function _buildDueSoonRows(allOps, rentCars, drivers) {
+function _buildDueSoonRows(allOps, rentCars, drivers, rentalRows) {
+  const latestRent = latestRentalByCarMap(rentalRows || []);
+
   const byCarDriver = new Map();
   drivers.forEach(d => {
     if (d.currentCar) byCarDriver.set(String(d.currentCar).trim(), d);
@@ -345,12 +343,20 @@ function _buildDueSoonRows(allOps, rentCars, drivers) {
   rentCars.forEach(car => {
     const carId = String(car.carId || '').trim();
     const op = rentOps.find(x => String(x.carId || '').trim() === carId);
-    const paidUntil = _parsePaidUntil(op?.comment || '');
-    if (!paidUntil) return;
+    if (!op) return;
+
+    const opD = _toDate(op);
+    if (!opD || Number.isNaN(opD.getTime())) return;
+
+    opD.setHours(0, 0, 0, 0);
+    const rate = parseRatePerDay(latestRent.get(carId)?.rateDay ?? car.rateDay);
+    const rawPaidUntil = calcPaidUntil(opD, Number(op.amount) || 0, rate);
+    if (!rawPaidUntil || Number.isNaN(rawPaidUntil.getTime())) return;
+
     const pt = new Date(
-      paidUntil.getFullYear(),
-      paidUntil.getMonth(),
-      paidUntil.getDate(),
+      rawPaidUntil.getFullYear(),
+      rawPaidUntil.getMonth(),
+      rawPaidUntil.getDate(),
     );
     if (pt.getTime() < today.getTime() || pt.getTime() > windowEnd.getTime()) return;
 
@@ -511,16 +517,6 @@ function _calcBalance(ops) {
 function _calcDeltaToday(ops) {
   const today = _todayStart().getTime();
   return ops.filter(op => _toDate(op)?.setHours(0, 0, 0, 0) === today).reduce((sum, op) => sum + (op.direction === 'приход' ? op.amount : -op.amount), 0);
-}
-
-function _parsePaidUntil(comment) {
-  const c = String(comment || '').toLowerCase();
-  const m = c.match(/до\s+(\d{1,2})\.(\d{1,2})(?:\.(\d{2,4}))?/);
-  if (!m) return null;
-  const year = m[3] ? Number(m[3].length === 2 ? `20${m[3]}` : m[3]) : new Date().getFullYear();
-  const d = new Date(year, Number(m[2]) - 1, Number(m[1]));
-  d.setHours(0, 0, 0, 0);
-  return Number.isNaN(d.getTime()) ? null : d;
 }
 
 function _toDate(op) {

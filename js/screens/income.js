@@ -1,8 +1,12 @@
-import { getFleet, getDrivers, postAddIncome, saveRentalPromise } from '../api.js';
+import { getFleet, getDrivers, getRentals, postAddIncome, saveRentalPromise } from '../api.js';
 import { getWithSWR, CACHE_KEYS } from '../cache.js';
 import { getCurrentUser } from '../auth.js';
 import { showScreen } from '../router.js?v=7';
 import { CAR_STATUSES, KASSA_ID, USE_MOCK } from '../config.js';
+import { calcPaidUntil, parseRatePerDay, latestRentalByCarMap } from '../utils/rent.js';
+
+let _incomeRentalsLoaded = false;
+let _incomeRentalRows = [];
 
 let _context = null;
 let _state = {
@@ -41,8 +45,11 @@ export function renderIncome() {
 
   let cars = null;
   let drivers = null;
+  _incomeRentalsLoaded = false;
+  _incomeRentalRows = [];
+
   const paint = () => {
-    if (!cars || !drivers) return;
+    if (!cars || !drivers || !_incomeRentalsLoaded) return;
     _state.cars = _buildCars(cars, drivers);
     if (!_state.selectedCarId && _context?.carId) _state.selectedCarId = _context.carId;
     _renderPaymentScreen(root);
@@ -57,6 +64,23 @@ export function renderIncome() {
     onCached: d => { drivers = d; paint(); },
     onFresh: d => { drivers = d; paint(); },
     onFetchError: () => { drivers = []; paint(); },
+  });
+  getWithSWR(CACHE_KEYS.RENTALS, () => getRentals(), {
+    onCached: d => {
+      _incomeRentalRows = d;
+      _incomeRentalsLoaded = true;
+      paint();
+    },
+    onFresh: d => {
+      _incomeRentalRows = d;
+      _incomeRentalsLoaded = true;
+      paint();
+    },
+    onFetchError: () => {
+      _incomeRentalRows = [];
+      _incomeRentalsLoaded = true;
+      paint();
+    },
   });
 }
 
@@ -155,7 +179,13 @@ async function _submit(root) {
   const car = _selectedCar() || _context;
   if (!car || _state.amount <= 0) return;
   const today = _today();
-  const nextPaidUntil = _addDays(today, 7);
+  const latestRent = latestRentalByCarMap(_incomeRentalRows);
+  const rentalRow = latestRent.get(car.carId);
+  const rate = parseRatePerDay(rentalRow?.rateDay ?? car.rateDay);
+  const amountRounded = Math.round(_state.amount);
+  const paidDays =
+    rate > 0 ? Math.floor(amountRounded / rate) : 0;
+  const nextPaidUntil = calcPaidUntil(today, amountRounded, rate);
   const comment = `аренда до ${_fmtDayMonth(nextPaidUntil)}`;
   const user = getCurrentUser();
 
@@ -163,14 +193,14 @@ async function _submit(root) {
     await postAddIncome({
       car_id: car.carId,
       driver_id: car.driverId || '',
-      amount: Math.round(_state.amount),
+      amount: amountRounded,
       kassa_id: KASSA_ID.AZAMAT,
       provel: String(user?.name || 'Азамат').split(' ')[0],
       comment,
       date_from: _fmtDate(today),
       date_to: _fmtDate(nextPaidUntil),
-      days: 7,
-      rate: car.rateDay || 0,
+      days: paidDays,
+      rate: rate || car.rateDay || 0,
     });
   } catch (_e) {
     // В демо-потоке не блокируем UX при сетевой ошибке.
@@ -181,7 +211,7 @@ async function _submit(root) {
       carId: car.carId,
       driverId: car.driverId,
       driverName: car.driverName,
-      amount: _state.amount,
+      amount: amountRounded,
       paidUntil: nextPaidUntil,
       date: today,
       acceptedAt: new Date(),
@@ -217,7 +247,6 @@ function _selectedCar() {
 function _fmtMoney(n) { return `${_fmtInt(n)} ₽`; }
 function _fmtInt(n) { return Math.round(n || 0).toLocaleString('ru-RU'); }
 function _today() { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }
-function _addDays(d, days) { const x = new Date(d); x.setDate(x.getDate() + days); return x; }
 function _fmtDate(d) { return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`; }
 function _fmtDayMonth(d) { return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}`; }
 function _esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }

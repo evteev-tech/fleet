@@ -1,9 +1,12 @@
 /**
  * Статичный набор данных для UI/демо (?mock=1).
  * Изменение «обещаний» в mock — см. mutateMockRentalPromise().
+ * Срок оплаты (paid_until) считается из даты последней операции аренды, суммы и ставки —
+ * см. calcPaidUntil в utils/rent.js.
  */
 
 import { KASSA_ID } from '../config.js';
+import { calcPaidUntil } from '../utils/rent.js';
 
 /** @typedef {{ rentalId: string, carId: string, driverId: string, dateStart: Date, dateEnd: Date|null, rateDay: number, note: string, promisedUntil: Date|null, promisedAt: Date|null }} MockRental */
 
@@ -30,12 +33,6 @@ function daysFromNow(n) {
   return d;
 }
 
-function today() {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
 function fmtComment(paidUntil) {
   const dd = String(paidUntil.getDate()).padStart(2, '0');
   const mm = String(paidUntil.getMonth() + 1).padStart(2, '0');
@@ -50,15 +47,25 @@ function opDateDaysAgo(n) {
   return d;
 }
 
-/** Параметры карточек + парк (как в ТЗ) */
-const _MOCK_TASKS = [
-  { carId: 'А982', driverName: 'Марат', driverId: 'D982', amount: 5950, paidUntil: daysAgo(17) },
+/**
+ * @typedef {{
+ *   carId: string, driverName: string, driverId: string,
+ *   amount: number, rateDay: number, opDaysAgo: number, opAmount: number,
+ *   promisedUntil?: Date, promisedAt?: Date
+ * }} MockTaskSpec
+ */
+
+/** @type {MockTaskSpec[]} */
+const _MOCK_TASK_SPECS = [
+  { carId: 'А982', driverName: 'Марат', driverId: 'D982', amount: 5950, rateDay: 800, opDaysAgo: 30, opAmount: 13 * 800 },
   {
     carId: 'А165',
     driverName: 'Сергей',
     driverId: 'D165',
     amount: 5950,
-    paidUntil: daysAgo(10),
+    rateDay: 850,
+    opDaysAgo: 25,
+    opAmount: 15 * 850,
     promisedUntil: daysAgo(1),
     promisedAt: daysAgo(3),
   },
@@ -67,20 +74,25 @@ const _MOCK_TASKS = [
     driverName: 'Алексей',
     driverId: 'D086',
     amount: 5950,
-    paidUntil: daysAgo(5),
+    rateDay: 850,
+    opDaysAgo: 20,
+    opAmount: 15 * 850,
     promisedUntil: daysFromNow(1),
     promisedAt: daysAgo(1),
   },
-  { carId: 'Н723', driverName: 'Иван', driverId: 'D723', amount: 5950, paidUntil: today() },
-  {
-    carId: 'К268',
-    driverName: 'Руслан',
-    driverId: 'D268',
-    amount: 5100,
-    paidUntil: daysFromNow(1),
-  },
-  { carId: 'Н052', driverName: 'Дмитрий', driverId: 'D052', amount: 5950, paidUntil: daysFromNow(2) },
+  { carId: 'Н723', driverName: 'Иван', driverId: 'D723', amount: 5950, rateDay: 850, opDaysAgo: 1, opAmount: 850 },
+  { carId: 'К268', driverName: 'Руслан', driverId: 'D268', amount: 729 * 7, rateDay: 729, opDaysAgo: 0, opAmount: 729 },
+  { carId: 'Н052', driverName: 'Дмитрий', driverId: 'D052', amount: 5950, rateDay: 850, opDaysAgo: 0, opAmount: 2 * 850 },
 ];
+
+const _MOCK_TASKS = _MOCK_TASK_SPECS.map(spec => {
+  const opAt = opDateDaysAgo(spec.opDaysAgo);
+  const paidUntil = calcPaidUntil(opAt, spec.opAmount, spec.rateDay);
+  return {
+    ...spec,
+    paidUntil,
+  };
+});
 
 /** @type {MockRental[]} — по одному «активному» блоку аренды на машину из списка задач */
 const _MOCK_RENTALS = _MOCK_TASKS.map((t, i) => ({
@@ -89,7 +101,7 @@ const _MOCK_RENTALS = _MOCK_TASKS.map((t, i) => ({
   driverId: t.driverId,
   dateStart: daysAgo(30),
   dateEnd: t.paidUntil ? new Date(t.paidUntil) : null,
-  rateDay: Math.round(Number(t.amount) / 7) || 0,
+  rateDay: t.rateDay,
   note: '',
   promisedUntil: t.promisedUntil ? new Date(t.promisedUntil) : null,
   promisedAt: t.promisedAt ? new Date(t.promisedAt) : null,
@@ -132,7 +144,7 @@ export async function getMockFleetNormalized() {
     status: 'в аренде',
     dateBuy: null,
     priceBuy: 0,
-    rateDay: Math.round(Number(t.amount) / 7) || 0,
+    rateDay: t.rateDay,
     note: '',
     mileage: 0,
     toMileage: 0,
@@ -167,7 +179,7 @@ export async function getMockDriversNormalized() {
 }
 
 /** Баланс кассы Азамата ≈ 21746 ₽ и дельта сегодня 0 — одна суммирующая операция не сегодня.
- * Строки «аренда» с amount = 0: только чтобы подтянуть срок до … из комментария для карточек.
+ * Операции «аренда»: дата и сумма согласованы с calcPaidUntil и ставкой из _MOCK_TASKS.
  */
 export async function getMockOperationsNormalized(opts = {}) {
   const amount = 21746;
@@ -188,22 +200,26 @@ export async function getMockOperationsNormalized(opts = {}) {
     classItog: 'revenue',
   };
 
-  const rentOps = _MOCK_TASKS.map((t, i) => ({
-    opId: `CO_MOCK_RENT_${i}`,
-    date: opDateDaysAgo(1),
-    dateRaw: '',
-    kassaId: KASSA_ID.AZAMAT,
-    direction: 'приход',
-    amount: 0,
-    type: 'аренда',
-    category: '',
-    carId: String(t.carId).trim(),
-    driverId: t.driverId,
-    comment: fmtComment(t.paidUntil),
-    provel: 'mock',
-    classOverride: '',
-    classItog: 'revenue',
-  }));
+  const rentOps = _MOCK_TASKS.map((t, i) => {
+    const opAt = opDateDaysAgo(t.opDaysAgo);
+    const paidUntil = calcPaidUntil(opAt, t.opAmount, t.rateDay);
+    return {
+      opId: `CO_MOCK_RENT_${i}`,
+      date: new Date(opAt),
+      dateRaw: '',
+      kassaId: KASSA_ID.AZAMAT,
+      direction: 'приход',
+      amount: t.opAmount,
+      type: 'аренда',
+      category: '',
+      carId: String(t.carId).trim(),
+      driverId: t.driverId,
+      comment: fmtComment(paidUntil),
+      provel: 'mock',
+      classOverride: '',
+      classItog: 'revenue',
+    };
+  });
 
   const all = [op, ...rentOps];
 
