@@ -1,0 +1,9 @@
+***REMOVED*** Local artifacts
+*.xlsx
+
+***REMOVED*** OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
