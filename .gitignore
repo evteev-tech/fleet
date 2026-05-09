@@ -3,6 +3,7 @@ node_modules/
 
 ***REMOVED*** Local artifacts
 *.xlsx
+_worktrees/
 
 ***REMOVED*** OS
 .DS_Store
