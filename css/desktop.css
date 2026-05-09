@@ -37,25 +37,29 @@
     flex: 1;
     height: 100dvh;
     max-height: 100dvh;
-    overflow-x: hidden;
-    overflow-y: hidden;
+    overflow: hidden;
     min-width: 0;
   }
 
-  /* Каркас экранов: высота вьюпорта, скролл внутри колонок */
+  /* Каркас экранов */
   ***REMOVED***app-content > .screen {
-    display: flex;
-    flex-direction: column;
     height: 100dvh;
     max-height: 100dvh;
     min-height: 0;
     overflow: hidden;
   }
 
-  /* Вместо отступа под нижний navbar */
+  ***REMOVED***app-content > .screen.screen--active {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Убрать отступ под мобильный navbar */
   ***REMOVED***app-content .pb-navbar {
     padding-bottom: 24px;
   }
+
+  /* ── Sidebar компоненты ── */
 
   .sidebar-header {
     display: flex;
@@ -156,7 +160,7 @@
     opacity: 0;
     pointer-events: none;
     transition: opacity 150ms ease;
-    z-index: 200;
+    z-index: 400;
     font-weight: 500;
   }
 
@@ -194,7 +198,7 @@
   }
 }
 
-/* Развёрнутый sidebar */
+/* ── Развёрнутый sidebar (≥1280px) ── */
 @media (min-width: 1280px) {
   ***REMOVED***sidebar {
     width: 210px;
@@ -210,7 +214,7 @@
   }
 }
 
-/* Свернутый sidebar + тултипы */
+/* ── Свёрнутый sidebar (1024–1279px) ── */
 @media (min-width: 1024px) and (max-width: 1279px) {
   ***REMOVED***sidebar {
     width: 64px;
@@ -248,121 +252,116 @@
   }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   Экраны: дашборд и главная (двухколоночный layout, ≥1024px)
-══════════════════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════
+   ЭКРАНЫ: двухколоночный layout (≥1024px)
+══════════════════════════════════════════════════════════════ */
 
 @media (min-width: 1024px) {
-  /* ── Дашборд ── */
+
+  /* ── screen-dashboard ── */
+
   ***REMOVED***screen-dashboard {
-    flex-direction: row;
-    align-items: stretch;
-    overflow: hidden;
+    flex-direction: row !important;
+    overflow: hidden !important;
   }
 
+  /* Левая тёмная колонка */
   ***REMOVED***screen-dashboard .dashboard-header {
-    width: 300px;
-    flex-shrink: 0;
-    height: 100dvh;
-    max-height: 100dvh;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    padding: 32px 24px 24px;
-    padding-top: 32px;
-    box-sizing: border-box;
+    width: 300px !important;
+    flex-shrink: 0 !important;
+    height: 100dvh !important;
+    overflow-y: auto !important;
+    padding: 32px 24px 24px !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
 
+  /* Скрыть логотип и аватар — они в sidebar */
   ***REMOVED***screen-dashboard .header-top-row {
-    display: none;
+    display: none !important;
   }
 
   ***REMOVED***screen-dashboard .header-total-amount {
-    font-size: 42px;
+    font-size: 42px !important;
   }
 
-  ***REMOVED***screen-dashboard .dash-total-skeleton {
-    width: min(220px, 100%);
-    max-width: 100%;
-  }
-
+  /* Правая колонка с кассами и парком */
   ***REMOVED***screen-dashboard .dashboard-body {
-    flex: 1;
-    min-width: 0;
-    min-height: 0;
-    height: 100dvh;
-    max-height: 100dvh;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    padding: 32px 32px 24px;
-    padding-bottom: 24px;
-    box-sizing: border-box;
+    flex: 1 !important;
+    min-width: 0 !important;
+    height: 100dvh !important;
+    overflow-y: auto !important;
+    padding: 32px 32px 24px !important;
+    box-sizing: border-box !important;
   }
 
-  ***REMOVED***screen-dashboard .white-card {
-    border-radius: 16px;
-  }
+  /* ── screen-home ── */
 
   /*
-   * Главная: ***REMOVED***screen-home > .home-scroll > (.mock-banner?) + .home-header + .home-content-sheet
-   * Две колонки задаём на .home-scroll (единственный прямой потомок section).
+   * DOM-структура которую рендерит home.js внутрь ***REMOVED***home-body:
+   *
+   * ***REMOVED***screen-home
+   *   └── ***REMOVED***home-body.home-scroll.pb-navbar   ← единственный потомок в HTML
+   *         ├── .home-header                 ← тёмная левая колонка
+   *         └── .home-content-sheet          ← светлая правая колонка
+   *
+   * Решение: делаем ***REMOVED***home-body горизонтальным flex-контейнером.
+   * Каждый прямой потомок становится колонкой.
    */
+
   ***REMOVED***screen-home {
-    overflow: hidden;
+    overflow: hidden !important;
   }
 
-  ***REMOVED***screen-home .home-scroll {
-    flex: 1 1 auto;
-    min-height: 0;
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-    display: flex;
-    flex-flow: row wrap;
-    align-items: stretch;
-    align-content: stretch;
-    overflow: hidden;
+  /* ***REMOVED***home-body — горизонтальный контейнер двух колонок */
+  ***REMOVED***screen-home ***REMOVED***home-body {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: stretch !important;
+    height: 100dvh !important;
+    overflow: hidden !important;
+    padding-bottom: 0 !important; /* убрать отступ под мобильный navbar */
   }
 
-  /* Баннер mock — полная ширина, следующая строка: две колонки */
-  ***REMOVED***screen-home .mock-banner {
-    flex: 0 0 100%;
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-  }
-
-  /* Левая колонка: фиксированная ширина, не сжимается */
+  /* Левая колонка — тёмная панель с балансом */
   ***REMOVED***screen-home .home-header {
-    flex: 0 0 320px !important;
+    /* размеры */
     width: 320px !important;
     min-width: 320px !important;
     max-width: 320px !important;
+    flex-shrink: 0 !important;
+    /* высота = весь экран, своя прокрутка */
     height: 100dvh !important;
-    min-height: 100dvh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    /* внутренний layout — flex-колонка чтобы margin-top:auto работал */
+    display: flex !important;
+    flex-direction: column !important;
+    /* отступы */
+    padding: 32px 24px 24px !important;
+    box-sizing: border-box !important;
+    /* z-index ниже sidebar */
     position: relative !important;
     z-index: 1 !important;
-    align-self: stretch;
-    overflow-x: hidden;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    padding: 32px 24px 24px;
-    padding-top: 32px;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
   }
 
+  /* Скрыть логотип и аватар — они в sidebar */
   ***REMOVED***screen-home .home-hdr__brand-row {
-    display: none;
+    display: none !important;
   }
 
+  /* Баланс покрупнее */
   ***REMOVED***screen-home .kassa-amount {
-    font-size: 40px;
+    font-size: 40px !important;
   }
 
-  /* Кнопки внизу левой колонки (.home-action-wrap в моб. CSS; в DOM — .home-action-row) */
-  ***REMOVED***screen-home .home-action-wrap,
-  ***REMOVED***screen-home .home-action-row {
+  /*
+   * Кнопки «Принять платёж» и «Расход» — прижать к низу левой панели.
+   * margin-top: auto работает только если родитель (.home-header)
+   * является flex-колонкой И имеет height: 100dvh — оба условия выше выполнены.
+   */
+  ***REMOVED***screen-home .home-action-wrap {
     margin-top: auto !important;
     padding-top: 24px !important;
     flex-shrink: 0 !important;
@@ -372,29 +371,25 @@
     width: 100% !important;
   }
 
-  /* Правая колонка: забирает всю оставшуюся ширину ряда */
+  /* Правая колонка — парк и список операций */
   ***REMOVED***screen-home .home-content-sheet {
-    flex: 1 1 0;
-    min-width: 0;
-    min-height: 0;
-    align-self: stretch;
-    overflow-x: hidden;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    margin-top: 0;
-    border-radius: 20px 0 0 0;
-    padding: 32px 32px 24px;
-    padding-bottom: 24px;
-    box-sizing: border-box;
+    flex: 1 !important;
+    min-width: 0 !important;
+    height: 100dvh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 32px !important;
+    padding-bottom: 24px !important;
+    box-sizing: border-box !important;
+    /* убрать мобильные стили */
+    margin-top: 0 !important;
+    border-radius: 0 !important;
   }
+}
 
-  ***REMOVED***screen-home .home-scroll.pb-navbar {
-    padding-bottom: 24px;
-  }
-
-  /* Скрыть мобильный expense bottom sheet (нумпад) на десктопе */
-  ***REMOVED***screen-expense .expense-numpad,
-  ***REMOVED***screen-expense .expense-numpad-overlay {
+@media (min-width: 1024px) {
+  .expense-bottom,
+  .transfer-bottom {
     display: none !important;
   }
 }

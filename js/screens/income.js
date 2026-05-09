@@ -64,7 +64,7 @@ export function renderIncome() {
   document.getElementById('income-back-btn')?.addEventListener('click', () => {
     _closeNumpad();
     const u = getCurrentUser();
-    showScreen(u?.role === ROLES.MECHANIC ? 'screen-home' : 'screen-dashboard');
+    showScreen(u?.role === ROLES.INVESTOR ? 'screen-dashboard' : 'screen-home');
   });
 
   let fleet;
@@ -200,7 +200,7 @@ function _renderIncomeShell(root) {
   document.getElementById('income-back-btn2')?.addEventListener('click', () => {
     _closeNumpad();
     const u = getCurrentUser();
-    showScreen(u?.role === ROLES.MECHANIC ? 'screen-home' : 'screen-dashboard');
+    showScreen(u?.role === ROLES.INVESTOR ? 'screen-dashboard' : 'screen-home');
   });
 
   root.querySelectorAll('.income-card').forEach(el => {
@@ -528,7 +528,7 @@ async function _submit(root) {
 
     showToast('Операция записана', 'success', 2000);
     const u = getCurrentUser();
-    showScreen(u?.role === ROLES.MECHANIC ? 'screen-home' : 'screen-dashboard');
+    showScreen(u?.role === ROLES.INVESTOR ? 'screen-dashboard' : 'screen-home');
   } catch (e) {
     console.error(e);
     showToast(`Ошибка записи: ${e.message || e}`, 'error', 3000);
