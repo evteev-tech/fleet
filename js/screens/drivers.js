@@ -288,6 +288,8 @@ function _errorHTML() {
 export function openDriverForm(driver, fleet, drivers) {
   const isEdit = !!driver;
   const title = isEdit ? 'Редактировать водителя' : 'Новый водитель';
+  const phoneValue = isEdit ? (driver?.phone ?? '') : '+7';
+  const vuValue = driver?.license ?? '';
 
   showBottomSheet(`
     <p class="bottomsheet-title">${title}</p>
@@ -299,10 +301,17 @@ export function openDriverForm(driver, fleet, drivers) {
       <div class="add-field-err hidden" id="err-drv-fio"></div>
     </div>
 
-    <div class="add-field">
-      <label class="add-label">Телефон</label>
-      <input id="drv-phone" class="field-input" type="tel"
-        placeholder="+7 777 000 00 00" value="${_esc(driver?.phone ?? '')}" />
+    <div class="add-field-row">
+      <div class="add-field">
+        <label class="add-label">Телефон</label>
+        <input id="drv-phone" class="field-input" type="tel"
+          placeholder="+7 777 000 00 00" value="${_esc(phoneValue)}" />
+      </div>
+      <div class="add-field">
+        <label class="add-label">ВУ</label>
+        <input id="drv-vu" class="field-input" type="text"
+          placeholder="Номер ВУ" value="${_esc(vuValue)}" autocomplete="off" />
+      </div>
     </div>
 
     <div class="add-field">
@@ -330,6 +339,7 @@ export function openDriverForm(driver, fleet, drivers) {
 async function _saveDriver(existing, fleet, drivers) {
   const fio = document.getElementById('drv-fio')?.value.trim();
   const phone = document.getElementById('drv-phone')?.value.trim();
+  const vu = document.getElementById('drv-vu')?.value.trim() ?? '';
   const deposit = parseFloat(document.getElementById('drv-deposit')?.value) || 0;
   const note = document.getElementById('drv-comment')?.value.trim();
 
@@ -348,7 +358,7 @@ async function _saveDriver(existing, fleet, drivers) {
       driver_id: existing?.driverId ?? '',
       fio,
       phone,
-      vu: '',
+      vu,
       car_id: '',
       status: existing?.status ?? 'активный',
       comment: note,

@@ -166,7 +166,7 @@ export function renderDriver(driverId) {
         driver_id: driver.driverId,
         fio:       driver.name,
         phone:     driver.phone ?? '',
-        vu:        '',
+        vu:        driver.license ?? '',
         car_id:    driver.carId ?? '',
         status:    'архив',
         comment:   driver.note ?? '',

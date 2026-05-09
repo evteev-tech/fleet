@@ -1329,6 +1329,17 @@
   gap: 5px;
 }
 
+.add-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 12px;
+  align-items: start;
+}
+
+.add-field-row > .add-field {
+  min-width: 0;
+}
+
 .add-label {
   font-size: 12px;
   font-weight: 600;
