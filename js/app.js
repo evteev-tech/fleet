@@ -3,10 +3,10 @@
  * Инициализирует авторизацию и все экраны приложения.
  */
 
-import { initRouter, showScreen, renderNavbar }
-  from './router.js?v=7';
+import { currentScreen } from './router.js?v=7';
 
 import { initAuth, getCurrentUser, clearCurrentUser } from './auth.js';
+import { renderSidebar, updateSidebarActive, removeSidebar } from './sidebar.js';
 
 // Экраны
 import { initHome }      from './screens/home.js';
@@ -38,6 +38,43 @@ document.addEventListener('DOMContentLoaded', () => {
   initDrivers();
   initDriver();
   initSettings();
+
+  document.addEventListener('screen:activated', e => {
+    const screenId = e.detail?.screenId;
+    if (screenId === 'screen-login') {
+      removeSidebar();
+      return;
+    }
+    const user = getCurrentUser();
+    if (user && typeof window !== 'undefined' && window.innerWidth >= 1024) {
+      if (!document.getElementById('sidebar')) {
+        renderSidebar(user.role);
+      }
+      updateSidebarActive(screenId);
+    }
+  });
+
+  let _desktopResizeTimer = 0;
+  window.addEventListener('resize', () => {
+    clearTimeout(_desktopResizeTimer);
+    _desktopResizeTimer = setTimeout(() => {
+      const user = getCurrentUser();
+      const w = typeof window !== 'undefined' ? window.innerWidth : 0;
+      if (!user) return;
+      if (w >= 1024) {
+        if (!document.getElementById('sidebar')) {
+          renderSidebar(user.role);
+        }
+        const sid =
+          currentScreen() ||
+          document.querySelector('***REMOVED***app-content .screen--active')?.id ||
+          '';
+        if (sid) updateSidebarActive(sid);
+      } else {
+        removeSidebar();
+      }
+    }, 150);
+  });
 
   // Проверяем сессию и показываем нужный экран
   initAuth();
