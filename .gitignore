@@ -1,5 +1,6 @@
 ***REMOVED*** Local artifacts
 *.xlsx
+_worktrees/
 
 ***REMOVED*** OS / editor
 .DS_Store
