@@ -2,7 +2,7 @@ import { getOperations, getFleet, getDrivers, getRentals, saveRentalPromise } fr
 import { getWithSWR, CACHE_KEYS } from '../cache.js';
 import { getCurrentUser } from '../auth.js';
 import { showScreen } from '../router.js?v=7';
-import { CAR_STATUSES, KASSA_ID, USE_MOCK } from '../config.js';
+import { CAR_STATUSES, KASSA_ID, ROLES, USE_MOCK } from '../config.js';
 import { calcPaidUntil, parseRatePerDay, latestRentalByCarMap } from '../utils/rent.js';
 
 const PROMISE_PRESETS = [
@@ -99,6 +99,8 @@ function _render(body, allOps, fleet, drivers, rentalRows) {
   const taskViewTasks = allTasks.tasks.filter(_isTaskVisibleInPayments);
   const dueSoon = _buildDueSoonRows(allOps, rentCars, drivers, rentalRows);
   const park = _parkStats(fleet);
+  const isReadOnlyPayments =
+    user?.role === ROLES.OPERATIONS || user?.role === ROLES.INVESTOR;
 
   const counters = {
     red: taskViewTasks.filter(t => t.status === 'overdue' || t.status === 'broke_promise').length,
@@ -129,7 +131,7 @@ function _render(body, allOps, fleet, drivers, rentalRows) {
         <span>ОПЛАТЫ</span>
         <div class="home-pill-counters">${_counterPillsHtml(counters)}</div>
       </div>
-      <div id="home-task-list">${taskViewTasks.map(_paymentTaskCardHtml).join('') || '<div class="empty-state"><div class="empty-state__text">Нет задач по оплатам</div></div>'}</div>
+      <div id="home-task-list">${taskViewTasks.map(t => _paymentTaskCardHtml(t, isReadOnlyPayments)).join('') || '<div class="empty-state"><div class="empty-state__text">Нет задач по оплатам</div></div>'}</div>
 
       <div class="home-block-title"><span>БЛИЖАЙШИЕ 3 ДНЯ</span></div>
       <div class="white-card home-due-list">${dueSoon.map(_dueRowHtml).join('') || '<div class="card-row">Пусто</div>'}</div>
@@ -156,14 +158,14 @@ function _render(body, allOps, fleet, drivers, rentalRows) {
   body.querySelector('***REMOVED***home-btn-transfer')?.addEventListener('click', () => showScreen('screen-transfer'));
 
   body.querySelectorAll('[data-task-id]').forEach(el => {
-    el.addEventListener('click', ev => _onTaskClick(ev, body, taskViewTasks));
+    el.addEventListener('click', ev => _onTaskClick(ev, taskViewTasks, isReadOnlyPayments));
   });
   body.querySelectorAll('[data-promise]').forEach(el => {
     el.addEventListener('click', ev => _applyPromise(ev, body, taskViewTasks));
   });
 }
 
-function _onTaskClick(event, body, tasks) {
+function _onTaskClick(event, tasks, isReadOnlyPayments) {
   const card = event.currentTarget;
   const carId = card?.dataset.taskId;
   if (!carId) return;
@@ -171,6 +173,7 @@ function _onTaskClick(event, body, tasks) {
   if (!task) return;
 
   if (event.target.closest('[data-open-payment]')) {
+    if (isReadOnlyPayments) return;
     showScreen('screen-income', { paymentContext: task });
     return;
   }
@@ -181,6 +184,9 @@ function _onTaskClick(event, body, tasks) {
 }
 
 function _applyPromise(event, _body, _tasks) {
+  const user = getCurrentUser();
+  if (user?.role === ROLES.OPERATIONS || user?.role === ROLES.INVESTOR) return;
+
   event.stopPropagation();
   const btn = event.currentTarget;
   const carId = btn?.dataset.carId;
@@ -417,12 +423,25 @@ function _paymentBadgeHtml(task) {
   return '';
 }
 
+/** Текст ярлыка обещания (как пресеты «завтра утром», …), иначе дата */
+function _promisePresetLabel(promiseDate) {
+  if (!(promiseDate instanceof Date) || Number.isNaN(promiseDate.getTime())) return '';
+  const pd = new Date(promiseDate);
+  pd.setHours(0, 0, 0, 0);
+  const diff = _daysDiff(pd, _todayStart());
+  const preset = PROMISE_PRESETS.find(p => p.days === diff);
+  if (preset) return preset.label;
+  return `до ${_fmtDayMonth(pd)}`;
+}
+
 /**
  * Карточка задачи оплаты (эквивалент PaymentTaskCard).
+ * @param {boolean} [isReadOnly] — OPERATIONS / INVESTOR: кнопки неактивны
  */
-function _paymentTaskCardHtml(task) {
+function _paymentTaskCardHtml(task, isReadOnly = false) {
   const statusMod = task.status === 'broke_promise' ? 'broke-promise' : task.status;
   const showPay = task.status !== 'paid';
+  const roClass = isReadOnly ? ' payment-task-card--readonly' : '';
 
   const acceptedAt = task.paidInfo?.acceptedAt instanceof Date
     ? task.paidInfo.acceptedAt
@@ -449,19 +468,31 @@ function _paymentTaskCardHtml(task) {
 
   let badgeHtml = _paymentBadgeHtml(task);
 
-  const promiseBlock = task.expanded && task.status !== 'paid'
-    ? `<div class="payment-task-card__promise-section">
+  let promiseBlock = '';
+  if (task.expanded && task.status !== 'paid') {
+    const hasPromise =
+      task.promiseDate instanceof Date && !Number.isNaN(task.promiseDate.getTime());
+    if (isReadOnly && hasPromise) {
+      const line = `Обещал заплатить: ${_promisePresetLabel(task.promiseDate)}`;
+      promiseBlock = `<div class="payment-task-card__promise-section">
+        <div class="payment-task-card__promise-readonly-line">${_esc(line)}</div>
+      </div>`;
+    } else {
+      const dis = isReadOnly ? ' disabled' : '';
+      promiseBlock = `<div class="payment-task-card__promise-section">
         <div class="payment-task-card__promise-title">Когда обещал заплатить?</div>
-        <div class="payment-task-card__promise-grid">${PROMISE_PRESETS.map(p => `<button type="button" class="payment-task-card__promise-shortcut" data-promise="${p.days}" data-car-id="${_esc(task.carId)}">${_esc(p.label)}</button>`).join('')}</div>
-      </div>`
-    : '';
+        <div class="payment-task-card__promise-grid">${PROMISE_PRESETS.map(p => `<button type="button" class="payment-task-card__promise-shortcut" data-promise="${p.days}" data-car-id="${_esc(task.carId)}"${dis}>${_esc(p.label)}</button>`).join('')}</div>
+      </div>`;
+    }
+  }
 
+  const payDis = isReadOnly ? ' disabled title="Только для механика"' : '';
   const payBtn = showPay
-    ? `<button type="button" class="payment-task-card__pay-btn" data-open-payment="1">Платёж</button>`
+    ? `<button type="button" class="payment-task-card__pay-btn" data-open-payment="1"${payDis}>Платёж</button>`
     : '';
 
   return `
-    <article class="payment-task-card payment-task-card--${_esc(statusMod)}" data-task-id="${_esc(task.carId)}">
+    <article class="payment-task-card payment-task-card--${_esc(statusMod)}${roClass}" data-task-id="${_esc(task.carId)}">
       <div class="payment-task-card__status-stripe" aria-hidden="true"></div>
       <div class="payment-task-card__inner">
         <div class="payment-task-card__top">

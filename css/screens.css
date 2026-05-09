@@ -5055,6 +5055,45 @@
   color: ***REMOVED***ffffff;
 }
 
+.payment-task-card__promise-readonly-line {
+  font-size: 13px;
+  font-weight: 500;
+  color: ***REMOVED***3f3f46;
+  line-height: 1.35;
+}
+
+/* OPERATIONS / INVESTOR — карточка оплат только для просмотра */
+.payment-task-card--readonly .payment-task-card__pay-btn {
+  opacity: 0.4;
+  pointer-events: none;
+  background: ***REMOVED***e5e5ea !important;
+  color: ***REMOVED***8a8a8e !important;
+  cursor: default;
+}
+
+.payment-task-card--readonly .payment-task-card__pay-btn:disabled {
+  opacity: 0.4;
+}
+
+.payment-task-card--readonly .payment-task-card__promise-shortcut {
+  opacity: 0.4;
+  pointer-events: none;
+  cursor: default;
+}
+
+.payment-task-card--readonly .payment-task-card__promise-shortcut:hover,
+.payment-task-card--readonly .payment-task-card__promise-shortcut:active {
+  background: ***REMOVED***ede9fe;
+  color: ***REMOVED***7c3aed;
+}
+
+.payment-task-card--readonly .payment-task-card__promise-title::after {
+  content: ' (только механик)';
+  font-size: 11px;
+  color: ***REMOVED***8a8a8e;
+  font-weight: 400;
+}
+
 .home-due-list { margin-bottom: 12px; }
 .home-due-row { display: grid; grid-template-columns: 42px 1fr auto; align-items: center; gap: 10px; }
 .home-due-date { font-size: 18px; font-weight: 800; line-height: 1; }

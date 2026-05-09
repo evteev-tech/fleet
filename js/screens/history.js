@@ -569,8 +569,10 @@ function _refreshMonth(rawOps, fleet) {
   const ctx = _paintCtx;
   _filtered = _applyFilters(_opsInMonth(rawOps), _filters, ctx?.role ?? ROLES.MECHANIC);
 
-  document.getElementById('hist-month-label')!.textContent = _monthLabelCapital();
-  document.getElementById('hist-count')!.textContent = `${_filtered.length} операций`;
+  const monthLabel = document.getElementById('hist-month-label');
+  if (monthLabel) monthLabel.textContent = _monthLabelCapital();
+  const histCount = document.getElementById('hist-count');
+  if (histCount) histCount.textContent = `${_filtered.length} операций`;
 
   _offset = 0;
   _destroyObserver();
@@ -595,11 +597,13 @@ function _refreshFromFilters() {
 
   _filtered = _applyFilters(_opsInMonth(rawOps), _filters, role);
 
-  document.getElementById('hist-count')!.textContent = `${_filtered.length} операций`;
+  const hc = document.getElementById('hist-count');
+  if (hc) hc.textContent = `${_filtered.length} операций`;
 
   _offset = 0;
   _destroyObserver();
-  document.getElementById('hist-list')!.innerHTML = '';
+  const list = document.getElementById('hist-list');
+  if (list) list.innerHTML = '';
   _renderPage(rawOps, fleet);
 
   _paintSaldo();
