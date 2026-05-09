@@ -4434,33 +4434,183 @@
   letter-spacing: 0.08em;
   margin: 6px 2px 10px;
 }
-.home-pill-counters { display: flex; gap: 6px; }
-.home-pill {
-  min-width: 22px; height: 22px; border-radius: 11px; display: inline-flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 700;
+.home-pill-counters { display: flex; gap: 6px; align-items: center; }
+.home-pill.home-pill--count {
+  min-width: 22px;
+  height: 22px;
+  border-radius: 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: ***REMOVED***fff;
 }
-.home-pill.red { background: ***REMOVED***fee2e2; color: ***REMOVED***ef4444; }
-.home-pill.purple { background: ***REMOVED***ede9fe; color: ***REMOVED***7c3aed; }
-.home-pill.orange { background: ***REMOVED***ffedd5; color: ***REMOVED***f97316; }
+.home-pill--count-red { background: ***REMOVED***ef4444; }
+.home-pill--count-purple { background: ***REMOVED***7c3aed; }
+.home-pill--count-orange { background: ***REMOVED***f97316; }
 
-.home-task-card {
-  display: flex; gap: 8px; align-items: stretch; background: ***REMOVED***fff; border-radius: 12px; margin-bottom: 8px; overflow: hidden;
+/* PaymentTaskCard — карточка задачи оплаты на главной */
+.payment-task-card {
+  display: flex;
+  align-items: stretch;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  overflow: hidden;
+  min-height: 0;
 }
-.home-task-card--red { background: ***REMOVED***fff5f5; }
-.home-task-card--orange { background: ***REMOVED***fff8f0; }
-.home-task-card--purple { background: ***REMOVED***f8f5ff; }
-.home-task-card--green { background: ***REMOVED***f0fdf4; }
-.home-task-card__stripe { width: 4px; flex-shrink: 0; }
-.home-task-card__main { flex: 1; padding: 10px 0 10px 2px; }
-.home-task-top { display: grid; grid-template-columns: 48px 1fr auto; gap: 8px; align-items: baseline; }
-.home-task-top strong { font-size: 15px; }
-.home-task-top span { color: ***REMOVED***52525b; font-size: 14px; }
-.home-task-top b { font-size: 16px; }
-.home-task-meta { font-size: 12px; color: ***REMOVED***71717a; margin-top: 2px; }
-.home-pay-cta { border: none; background: transparent; color: ***REMOVED***16a34a; font-weight: 700; padding: 0 10px; }
-.home-promise-box { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; padding-right: 8px; }
-.home-promise-box button {
-  border: 1px solid ***REMOVED***ddd; border-radius: 999px; padding: 6px 8px; background: ***REMOVED***fff; font-size: 12px;
+.payment-task-card--overdue,
+.payment-task-card--broke-promise { background: ***REMOVED***fff5f5; }
+.payment-task-card--promised { background: ***REMOVED***f8f5ff; }
+.payment-task-card--warning { background: ***REMOVED***fff8f0; }
+.payment-task-card--paid { background: ***REMOVED***f0fdf4; }
+.payment-task-card--neutral { background: ***REMOVED***ffffff; }
+
+.payment-task-card__status-stripe {
+  width: 3px;
+  flex-shrink: 0;
+  align-self: stretch;
+}
+.payment-task-card--overdue .payment-task-card__status-stripe,
+.payment-task-card--broke-promise .payment-task-card__status-stripe { background: ***REMOVED***ef4444; }
+.payment-task-card--promised .payment-task-card__status-stripe { background: ***REMOVED***7c3aed; }
+.payment-task-card--warning .payment-task-card__status-stripe { background: ***REMOVED***f97316; }
+.payment-task-card--paid .payment-task-card__status-stripe { background: ***REMOVED***22c55e; }
+.payment-task-card--neutral .payment-task-card__status-stripe { background: ***REMOVED***e5e7eb; }
+
+.payment-task-card__inner {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px 10px 10px;
+}
+.payment-task-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+.payment-task-card__identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 10px;
+  min-width: 0;
+}
+.payment-task-card__car { font-size: 15px; font-weight: 800; color: ***REMOVED***111111; letter-spacing: -0.02em; }
+.payment-task-card__driver { font-size: 14px; color: ***REMOVED***52525b; }
+
+.payment-task-card__sum-col {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+.payment-task-card__amount-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+.payment-task-card__sum {
+  font-size: 16px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: ***REMOVED***111111;
+}
+.payment-task-card__pay-btn {
+  background: ***REMOVED***ffd60a;
+  color: ***REMOVED***000;
+  font-weight: 800;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.payment-task-card__pay-btn:active {
+  opacity: 0.92;
+  transform: scale(0.98);
+}
+
+.payment-task-card__badge-wrap {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+}
+.payment-task-card__badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 5px;
+  color: ***REMOVED***fff;
+}
+.payment-task-card__badge--red { background: ***REMOVED***ef4444; }
+.payment-task-card__badge--purple { background: ***REMOVED***7c3aed; }
+.payment-task-card__badge--orange { background: ***REMOVED***f97316; }
+.payment-task-card__badge--green { background: ***REMOVED***22c55e; }
+
+.payment-task-card__meta-line {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.35;
+}
+.payment-task-card__tag {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: ***REMOVED***fff;
+}
+.payment-task-card__tag--promised { background: ***REMOVED***7c3aed; }
+.payment-task-card__tag--broke { background: ***REMOVED***ef4444; }
+.payment-task-card__tag--paid { background: ***REMOVED***22c55e; }
+.payment-task-card__meta-rest {
+  font-size: 12px;
+  color: ***REMOVED***71717a;
+}
+
+.payment-task-card__promise-section {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+.payment-task-card__promise-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: ***REMOVED***52525b;
+  margin-bottom: 8px;
+}
+.payment-task-card__promise-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.payment-task-card__promise-shortcut {
+  background: ***REMOVED***ede9fe;
+  color: ***REMOVED***7c3aed;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 7px 11px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.payment-task-card__promise-shortcut:hover,
+.payment-task-card__promise-shortcut:active {
+  background: ***REMOVED***7c3aed;
+  color: ***REMOVED***ffffff;
 }
 
 .home-due-list { margin-bottom: 12px; }

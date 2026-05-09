@@ -25,7 +25,11 @@ export function initHome() {
   document.addEventListener('payment:accepted', e => {
     const p = e.detail || {};
     if (!p.carId) return;
-    _sessionState.paidByCar.set(p.carId, { ...p, paidAt: _todayStart() });
+    _sessionState.paidByCar.set(p.carId, {
+      ...p,
+      acceptedAt:
+        p.acceptedAt instanceof Date ? p.acceptedAt : new Date(p.acceptedAt || Date.now()),
+    });
     _sessionState.promisedByCar.delete(p.carId);
     _sessionState.expandedCarId = null;
   });
@@ -100,9 +104,9 @@ function _render(body, allOps, fleet, drivers) {
     <div class="home-content-sheet">
       <div class="home-block-title">
         <span>ОПЛАТЫ</span>
-        <div class="home-pill-counters"><span class="home-pill red">${counters.red}</span><span class="home-pill purple">${counters.purple}</span><span class="home-pill orange">${counters.orange}</span></div>
+        <div class="home-pill-counters">${_counterPillsHtml(counters)}</div>
       </div>
-      <div id="home-task-list">${taskView.tasks.map(_taskCardHtml).join('') || '<div class="empty-state"><div class="empty-state__text">Нет задач по оплатам</div></div>'}</div>
+      <div id="home-task-list">${taskView.tasks.map(_paymentTaskCardHtml).join('') || '<div class="empty-state"><div class="empty-state__text">Нет задач по оплатам</div></div>'}</div>
 
       <div class="home-block-title"><span>БЛИЖАЙШИЕ 3 ДНЯ</span></div>
       <div class="white-card home-due-list">${dueSoon.map(_dueRowHtml).join('') || '<div class="card-row">Пусто</div>'}</div>
@@ -181,11 +185,11 @@ function _buildTasks(ops, rentCars, drivers) {
     const paidUntil = _parsePaidUntil(op?.comment || '');
     const amount = Math.round(Number(car.rateDay || 0) * 7);
     const overdue = paidUntil ? _daysDiff(_todayStart(), paidUntil) : 0;
-    const paid = _sessionState.paidByCar.get(carId);
+    const paidInfo = _sessionState.paidByCar.get(carId);
     const promiseDate = _sessionState.promisedByCar.get(carId);
 
     let status = 'neutral';
-    if (paid) status = 'paid';
+    if (paidInfo) status = 'paid';
     else if (promiseDate && overdue >= 0 && _daysDiff(_todayStart(), promiseDate) > 0) status = 'broke_promise';
     else if (promiseDate) status = 'promised';
     else if (overdue >= 2) status = 'overdue';
@@ -195,11 +199,13 @@ function _buildTasks(ops, rentCars, drivers) {
       carId,
       driverName: driver?.name || 'Без водителя',
       driverId: driver?.driverId || '',
+      rateDay: Number(car.rateDay || 0),
       amount,
       paidUntil,
       overdue,
       status,
       promiseDate,
+      paidInfo,
       expanded: _sessionState.expandedCarId === carId,
     };
   });
@@ -231,30 +237,92 @@ function _buildDueSoon(tasks) {
     .sort((a, b) => a.nextDate.getTime() - b.nextDate.getTime());
 }
 
-function _taskCardHtml(task) {
-  const tint = task.status === 'promised' ? 'purple' : task.status === 'warning' ? 'orange' : (task.status === 'overdue' || task.status === 'broke_promise') ? 'red' : task.status === 'paid' ? 'green' : 'white';
-  const left = task.status === 'paid' ? '***REMOVED***22c55e' : task.status === 'promised' ? '***REMOVED***7c3aed' : (task.status === 'warning' ? '***REMOVED***f97316' : (task.status === 'overdue' || task.status === 'broke_promise') ? '***REMOVED***ef4444' : '***REMOVED***d4d4d8');
-  const meta = task.status === 'paid'
-    ? 'оплачено'
-    : task.status === 'broke_promise'
-      ? `не сдержал · обещал ${_fmtDayMonth(task.promiseDate)}`
-      : task.status === 'promised'
-        ? `обещал · до ${_fmtDayMonth(task.promiseDate)}`
-        : task.overdue >= 2
-          ? `просрочка ${task.overdue}д`
-          : task.overdue >= 0
-            ? 'срок сегодня'
-            : `срок ${_fmtDayMonth(task.paidUntil)}`;
+/** Пилюли-счётчики в заголовке «ОПЛАТЫ» — только при count > 0 */
+function _counterPillsHtml(c) {
+  const parts = [];
+  if (c.red > 0) parts.push(`<span class="home-pill home-pill--count home-pill--count-red">${c.red}</span>`);
+  if (c.purple > 0) parts.push(`<span class="home-pill home-pill--count home-pill--count-purple">${c.purple}</span>`);
+  if (c.orange > 0) parts.push(`<span class="home-pill home-pill--count home-pill--count-orange">${c.orange}</span>`);
+  return parts.join('');
+}
+
+/**
+ * Карточка задачи оплаты (эквивалент PaymentTaskCard).
+ */
+function _paymentTaskCardHtml(task) {
+  const statusMod = task.status === 'broke_promise' ? 'broke-promise' : task.status;
+  const showPay = task.status !== 'paid';
+
+  const acceptedAt = task.paidInfo?.acceptedAt instanceof Date
+    ? task.paidInfo.acceptedAt
+    : (task.paidInfo?.acceptedAt ? new Date(task.paidInfo.acceptedAt) : null);
+
+  let metaLeft = '';
+  if (task.status === 'paid') {
+    const at = acceptedAt || new Date();
+    const timeStr = at.toLocaleTimeString('ru-RU', { hour: 'numeric', minute: '2-digit' });
+    const today0 = _todayStart().getTime();
+    const paidDay0 = new Date(at);
+    paidDay0.setHours(0, 0, 0, 0);
+    const dayLabel = paidDay0.getTime() === today0 ? 'сегодня' : _fmtDayMonthRu(paidDay0);
+    metaLeft = `<span class="payment-task-card__tag payment-task-card__tag--paid">оплачено</span><span class="payment-task-card__meta-rest">${_esc(dayLabel)}, ${_esc(timeStr)}</span>`;
+  } else if (task.status === 'promised' && task.promiseDate) {
+    metaLeft = `<span class="payment-task-card__tag payment-task-card__tag--promised">обещал</span><span class="payment-task-card__meta-rest">до ${_esc(_fmtDayMonth(task.promiseDate))}</span>`;
+  } else if (task.status === 'broke_promise' && task.promiseDate) {
+    metaLeft = `<span class="payment-task-card__tag payment-task-card__tag--broke">не сдержал</span><span class="payment-task-card__meta-rest">обещал ${_esc(_fmtDayMonth(task.promiseDate))}</span>`;
+  } else if (task.paidUntil) {
+    metaLeft = `<span class="payment-task-card__meta-rest">Срок ${_esc(_fmtDayMonth(task.paidUntil))}</span>`;
+  } else {
+    metaLeft = `<span class="payment-task-card__meta-rest">Без срока</span>`;
+  }
+
+  let badgeHtml = '';
+  if (task.status === 'overdue' || task.status === 'broke_promise') {
+    const d = Math.max(0, task.overdue);
+    badgeHtml = `<span class="payment-task-card__badge payment-task-card__badge--red">просрочка ${d}д</span>`;
+  } else if (task.status === 'promised') {
+    const d = Math.max(0, task.overdue);
+    badgeHtml = `<span class="payment-task-card__badge payment-task-card__badge--purple">просрочка ${d}д</span>`;
+  } else if (task.status === 'warning') {
+    badgeHtml = `<span class="payment-task-card__badge payment-task-card__badge--orange">завтра</span>`;
+  } else if (task.status === 'paid') {
+    const at = acceptedAt || new Date();
+    const d = new Date(at);
+    d.setHours(0, 0, 0, 0);
+    badgeHtml = `<span class="payment-task-card__badge payment-task-card__badge--green">${_esc(_fmtDayMonthRu(d))}</span>`;
+  }
+
+  const promiseBlock = task.expanded && task.status !== 'paid'
+    ? `<div class="payment-task-card__promise-section">
+        <div class="payment-task-card__promise-title">Когда обещал заплатить?</div>
+        <div class="payment-task-card__promise-grid">${PROMISE_PRESETS.map(p => `<button type="button" class="payment-task-card__promise-shortcut" data-promise="${p.days}" data-car-id="${_esc(task.carId)}">${_esc(p.label)}</button>`).join('')}</div>
+      </div>`
+    : '';
+
+  const payBtn = showPay
+    ? `<button type="button" class="payment-task-card__pay-btn" data-open-payment="1">Платёж</button>`
+    : '';
 
   return `
-    <article class="home-task-card home-task-card--${tint}" data-task-id="${_esc(task.carId)}">
-      <div class="home-task-card__stripe" style="background:${left}"></div>
-      <div class="home-task-card__main">
-        <div class="home-task-top"><strong>${_esc(task.carId)}</strong><span>${_esc(task.driverName)}</span><b>${_fmtInt(task.amount)} ₽</b></div>
-        <div class="home-task-meta">${_esc(meta)}</div>
-        ${task.expanded ? `<div class="home-promise-box">${PROMISE_PRESETS.map(p => `<button type="button" data-promise="${p.days}" data-car-id="${_esc(task.carId)}">${p.label}</button>`).join('')}</div>` : ''}
+    <article class="payment-task-card payment-task-card--${_esc(statusMod)}" data-task-id="${_esc(task.carId)}">
+      <div class="payment-task-card__status-stripe" aria-hidden="true"></div>
+      <div class="payment-task-card__inner">
+        <div class="payment-task-card__top">
+          <div class="payment-task-card__identity">
+            <span class="payment-task-card__car">${_esc(task.carId)}</span>
+            <span class="payment-task-card__driver">${_esc(task.driverName)}</span>
+          </div>
+          <div class="payment-task-card__sum-col">
+            <div class="payment-task-card__amount-line">
+              <span class="payment-task-card__sum">${_fmtInt(task.amount)} ₽</span>
+              ${payBtn}
+            </div>
+            ${badgeHtml ? `<div class="payment-task-card__badge-wrap">${badgeHtml}</div>` : ''}
+          </div>
+        </div>
+        <div class="payment-task-card__meta-line">${metaLeft}</div>
+        ${promiseBlock}
       </div>
-      <button class="home-pay-cta" data-open-payment="1">Платёж</button>
     </article>
   `;
 }
@@ -334,6 +402,11 @@ function _fmtInt(n) {
 function _fmtDayMonth(d) {
   if (!d) return '—';
   return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+/** «8 мая» */
+function _fmtDayMonthRu(d) {
+  if (!d) return '—';
+  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
 }
 function _monthShort(d) {
   return ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'][d.getMonth()];

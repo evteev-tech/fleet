@@ -184,6 +184,7 @@ async function _submit(root) {
       amount: _state.amount,
       paidUntil: nextPaidUntil,
       date: today,
+      acceptedAt: new Date(),
     },
   }));
 
