@@ -58,7 +58,7 @@ const NAVBAR_CONFIG = {
 
   [ROLES.OPERATIONS]: [
     { id: 'screen-home',      label: 'Главная',   iconSvg: NAV_ICONS.home },
-    { id: 'screen-add',       label: 'Операция',  iconSvg: NAV_ICONS.add },
+    { id: 'screen-home',      label: 'Операция',  iconSvg: NAV_ICONS.add },
     { id: 'screen-analytics', label: 'Аналитика', iconSvg: NAV_ICONS.analytics },
     { id: 'screen-fleet',     label: 'Парк',      iconSvg: NAV_ICONS.fleet },
     { id: 'screen-drivers',   label: 'Водители',  iconSvg: NAV_ICONS.drivers },
