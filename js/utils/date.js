@@ -29,6 +29,16 @@ export function parseSheetDate(raw) {
   const s = String(raw).trim();
   if (!s) return null;
 
+  // UNFORMATTED_VALUE иногда приходит как строка-число (Excel serial).
+  if (/^\d{5,}(\.\d+)?$/.test(s)) {
+    const n = Number(s);
+    if (!Number.isNaN(n)) {
+      const excelEpoch = new Date(1899, 11, 30);
+      const d = new Date(excelEpoch.getTime() + n * 86400000);
+      return isNaN(d.getTime()) ? null : d;
+    }
+  }
+
   if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
     const d = new Date(s);
     return isNaN(d.getTime()) ? null : d;
@@ -37,6 +47,13 @@ export function parseSheetDate(raw) {
   const parts = s.split('.');
   if (parts.length === 3) {
     const d = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  // Иногда встречается DD/MM/YYYY
+  const slash = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (slash) {
+    const d = new Date(Number(slash[3]), Number(slash[2]) - 1, Number(slash[1]));
     return isNaN(d.getTime()) ? null : d;
   }
 
