@@ -74,14 +74,15 @@ function _render(body, allOps, fleet, drivers) {
   const balance = _calcBalance(kassaOps);
   const deltaToday = _calcDeltaToday(kassaOps);
   const rentCars = fleet.filter(c => _bucketStatus(c.status) === 'rent');
-  const taskView = _buildTasks(allOps, rentCars, drivers);
-  const dueSoon = _buildDueSoon(taskView.tasks);
+  const allTasks = _buildTasks(allOps, rentCars, drivers);
+  const taskViewTasks = allTasks.tasks.filter(_isTaskVisibleInPayments);
+  const dueSoon = _buildDueSoonRows(allOps, rentCars, drivers);
   const park = _parkStats(fleet);
 
   const counters = {
-    red: taskView.tasks.filter(t => t.status === 'overdue' || t.status === 'broke_promise').length,
-    purple: taskView.tasks.filter(t => t.status === 'promised').length,
-    orange: taskView.tasks.filter(t => t.status === 'warning').length,
+    red: taskViewTasks.filter(t => t.status === 'overdue' || t.status === 'broke_promise').length,
+    purple: taskViewTasks.filter(t => t.status === 'promised').length,
+    orange: taskViewTasks.filter(t => t.status === 'warning').length,
   };
 
   body.innerHTML = `
@@ -106,7 +107,7 @@ function _render(body, allOps, fleet, drivers) {
         <span>ОПЛАТЫ</span>
         <div class="home-pill-counters">${_counterPillsHtml(counters)}</div>
       </div>
-      <div id="home-task-list">${taskView.tasks.map(_paymentTaskCardHtml).join('') || '<div class="empty-state"><div class="empty-state__text">Нет задач по оплатам</div></div>'}</div>
+      <div id="home-task-list">${taskViewTasks.map(_paymentTaskCardHtml).join('') || '<div class="empty-state"><div class="empty-state__text">Нет задач по оплатам</div></div>'}</div>
 
       <div class="home-block-title"><span>БЛИЖАЙШИЕ 3 ДНЯ</span></div>
       <div class="white-card home-due-list">${dueSoon.map(_dueRowHtml).join('') || '<div class="card-row">Пусто</div>'}</div>
@@ -133,10 +134,10 @@ function _render(body, allOps, fleet, drivers) {
   body.querySelector('***REMOVED***home-btn-transfer')?.addEventListener('click', () => showScreen('screen-transfer'));
 
   body.querySelectorAll('[data-task-id]').forEach(el => {
-    el.addEventListener('click', ev => _onTaskClick(ev, body, taskView.tasks));
+    el.addEventListener('click', ev => _onTaskClick(ev, body, taskViewTasks));
   });
   body.querySelectorAll('[data-promise]').forEach(el => {
-    el.addEventListener('click', ev => _applyPromise(ev, body, taskView.tasks));
+    el.addEventListener('click', ev => _applyPromise(ev, body, taskViewTasks));
   });
 }
 
@@ -169,6 +170,30 @@ function _applyPromise(event, _body, _tasks) {
   void renderHome();
 }
 
+/** В секции «Оплаты»: срок сегодня/просрочка, завтра (warning), обещание или оплачено в сессии */
+function _isTaskVisibleInPayments(t) {
+  if (t.status === 'paid') return true;
+  if (t.status === 'promised') return true;
+  if (t.paidUntil == null || t.overdue === null) return false;
+  if (t.overdue >= 0) return true;
+  if (t.overdue === -1) return true;
+  return false;
+}
+
+function _sameCalendarDay(d, refDayStart) {
+  const x = d instanceof Date ? new Date(d) : new Date(d);
+  if (Number.isNaN(x.getTime())) return false;
+  x.setHours(0, 0, 0, 0);
+  return x.getTime() === refDayStart.getTime();
+}
+
+function _paidAcceptedToday(paidInfo, todayStart) {
+  if (!paidInfo?.acceptedAt) return false;
+  const at =
+    paidInfo.acceptedAt instanceof Date ? paidInfo.acceptedAt : new Date(paidInfo.acceptedAt);
+  return _sameCalendarDay(at, todayStart);
+}
+
 function _buildTasks(ops, rentCars, drivers) {
   const byCarDriver = new Map();
   drivers.forEach(d => {
@@ -184,16 +209,23 @@ function _buildTasks(ops, rentCars, drivers) {
     const op = rentOps.find(x => String(x.carId || '').trim() === carId);
     const paidUntil = _parsePaidUntil(op?.comment || '');
     const amount = Math.round(Number(car.rateDay || 0) * 7);
-    const overdue = paidUntil ? _daysDiff(_todayStart(), paidUntil) : 0;
+    const overdue =
+      paidUntil != null ? _daysDiff(_todayStart(), paidUntil) : null;
     const paidInfo = _sessionState.paidByCar.get(carId);
     const promiseDate = _sessionState.promisedByCar.get(carId);
 
     let status = 'neutral';
     if (paidInfo) status = 'paid';
-    else if (promiseDate && overdue >= 0 && _daysDiff(_todayStart(), promiseDate) > 0) status = 'broke_promise';
+    else if (
+      promiseDate &&
+      overdue !== null &&
+      overdue >= 0 &&
+      _daysDiff(_todayStart(), promiseDate) > 0
+    )
+      status = 'broke_promise';
     else if (promiseDate) status = 'promised';
-    else if (overdue >= 2) status = 'overdue';
-    else if (overdue < 0 && overdue >= -1) status = 'warning';
+    else if (overdue !== null && overdue >= 1) status = 'overdue';
+    else if (overdue !== null && overdue < 0 && overdue >= -1) status = 'warning';
 
     return {
       carId,
@@ -210,7 +242,7 @@ function _buildTasks(ops, rentCars, drivers) {
     };
   });
 
-  tasks.sort((a, b) => _taskRank(a) - _taskRank(b) || b.overdue - a.overdue);
+  tasks.sort((a, b) => _taskRank(a) - _taskRank(b) || (b.overdue ?? -999) - (a.overdue ?? -999));
   return { tasks };
 }
 
@@ -224,26 +256,89 @@ function _taskRank(t) {
   return 9;
 }
 
-function _buildDueSoon(tasks) {
+function _buildDueSoonRows(allOps, rentCars, drivers) {
+  const byCarDriver = new Map();
+  drivers.forEach(d => {
+    if (d.currentCar) byCarDriver.set(String(d.currentCar).trim(), d);
+  });
+  const rentOps = allOps
+    .filter(op => op.type === 'аренда' && op.direction === 'приход')
+    .sort((a, b) => _toDate(b)?.getTime() - _toDate(a)?.getTime());
+
   const today = _todayStart();
-  const max = _addDays(today, 3);
-  return tasks
-    .filter(t => t.status !== 'paid')
-    .map(t => {
-      const nextDate = t.paidUntil && t.paidUntil >= today ? t.paidUntil : null;
-      return { ...t, nextDate };
-    })
-    .filter(t => t.nextDate && t.nextDate <= max)
-    .sort((a, b) => a.nextDate.getTime() - b.nextDate.getTime());
+  const windowEnd = _addDays(today, 3);
+  const rows = [];
+
+  rentCars.forEach(car => {
+    const carId = String(car.carId || '').trim();
+    const op = rentOps.find(x => String(x.carId || '').trim() === carId);
+    const paidUntil = _parsePaidUntil(op?.comment || '');
+    if (!paidUntil) return;
+    const pt = new Date(
+      paidUntil.getFullYear(),
+      paidUntil.getMonth(),
+      paidUntil.getDate(),
+    );
+    if (pt.getTime() < today.getTime() || pt.getTime() > windowEnd.getTime()) return;
+
+    const driver = byCarDriver.get(carId);
+    const amount = Math.round(Number(car.rateDay || 0) * 7);
+    const paidInfo = _sessionState.paidByCar.get(carId);
+    rows.push({
+      carId,
+      driverName: driver?.name || 'Без водителя',
+      amount,
+      paidUntil: pt,
+      paidToday: _paidAcceptedToday(paidInfo, today),
+    });
+  });
+
+  rows.sort((a, b) => a.paidUntil.getTime() - b.paidUntil.getTime());
+  return rows;
 }
 
 /** Пилюли-счётчики в заголовке «ОПЛАТЫ» — только при count > 0 */
 function _counterPillsHtml(c) {
   const parts = [];
-  if (c.red > 0) parts.push(`<span class="home-pill home-pill--count home-pill--count-red">${c.red}</span>`);
-  if (c.purple > 0) parts.push(`<span class="home-pill home-pill--count home-pill--count-purple">${c.purple}</span>`);
-  if (c.orange > 0) parts.push(`<span class="home-pill home-pill--count home-pill--count-orange">${c.orange}</span>`);
+  if (c.red > 0) parts.push(`<span class="home-pill--count home-pill--count-red">${c.red}</span>`);
+  if (c.purple > 0) parts.push(`<span class="home-pill--count home-pill--count-purple">${c.purple}</span>`);
+  if (c.orange > 0) parts.push(`<span class="home-pill--count home-pill--count-orange">${c.orange}</span>`);
   return parts.join('');
+}
+
+function _paymentBadgeHtml(task) {
+  const o = task.overdue;
+
+  const acceptedAt = task.paidInfo?.acceptedAt instanceof Date
+    ? task.paidInfo.acceptedAt
+    : (task.paidInfo?.acceptedAt ? new Date(task.paidInfo.acceptedAt) : null);
+
+  if (task.status === 'paid') {
+    const at = acceptedAt || new Date();
+    const d = new Date(at);
+    d.setHours(0, 0, 0, 0);
+    return `<span class="payment-task-card__badge payment-task-card__badge--green">${_esc(_fmtDayMonthRu(d))}</span>`;
+  }
+  if (task.status === 'warning') {
+    return `<span class="payment-task-card__badge payment-task-card__badge--orange">завтра</span>`;
+  }
+  if (task.status === 'promised') {
+    if (o === null) return '';
+    if (o >= 1) return `<span class="payment-task-card__badge payment-task-card__badge--purple">просрочка ${_esc(String(o))}д</span>`;
+    if (o === 0) return `<span class="payment-task-card__badge payment-task-card__badge--purple">сегодня</span>`;
+    if (o === -1) return `<span class="payment-task-card__badge payment-task-card__badge--purple">завтра</span>`;
+    return '';
+  }
+  if (task.status === 'broke_promise' || task.status === 'overdue') {
+    if (o === null || o < 0) return '';
+    if (o === 0) return `<span class="payment-task-card__badge payment-task-card__badge--dark">сегодня</span>`;
+    if (o === 1) return `<span class="payment-task-card__badge payment-task-card__badge--red">просрочка 1д</span>`;
+    return `<span class="payment-task-card__badge payment-task-card__badge--red">просрочка ${_esc(String(o))}д</span>`;
+  }
+  if (task.status === 'neutral' && o !== null) {
+    if (o === 0) return `<span class="payment-task-card__badge payment-task-card__badge--dark">сегодня</span>`;
+  }
+  return '';
 }
 
 /**
@@ -276,21 +371,7 @@ function _paymentTaskCardHtml(task) {
     metaLeft = `<span class="payment-task-card__meta-rest">Без срока</span>`;
   }
 
-  let badgeHtml = '';
-  if (task.status === 'overdue' || task.status === 'broke_promise') {
-    const d = Math.max(0, task.overdue);
-    badgeHtml = `<span class="payment-task-card__badge payment-task-card__badge--red">просрочка ${d}д</span>`;
-  } else if (task.status === 'promised') {
-    const d = Math.max(0, task.overdue);
-    badgeHtml = `<span class="payment-task-card__badge payment-task-card__badge--purple">просрочка ${d}д</span>`;
-  } else if (task.status === 'warning') {
-    badgeHtml = `<span class="payment-task-card__badge payment-task-card__badge--orange">завтра</span>`;
-  } else if (task.status === 'paid') {
-    const at = acceptedAt || new Date();
-    const d = new Date(at);
-    d.setHours(0, 0, 0, 0);
-    badgeHtml = `<span class="payment-task-card__badge payment-task-card__badge--green">${_esc(_fmtDayMonthRu(d))}</span>`;
-  }
+  let badgeHtml = _paymentBadgeHtml(task);
 
   const promiseBlock = task.expanded && task.status !== 'paid'
     ? `<div class="payment-task-card__promise-section">
@@ -327,13 +408,17 @@ function _paymentTaskCardHtml(task) {
   `;
 }
 
-function _dueRowHtml(t) {
-  const today = _todayStart().getTime();
-  const isToday = t.nextDate.getTime() === today;
+function _dueRowHtml(row) {
+  const today = _todayStart();
+  const isToday = row.paidUntil.getTime() === today.getTime();
+  const check = row.paidToday
+    ? ' <span class="home-due-check" aria-hidden="true">✓</span>'
+    : '';
+  const amtClass = row.paidToday ? 'home-due-amount home-due-amount--paid' : 'home-due-amount';
   return `<div class="card-row home-due-row ${isToday ? 'is-today' : ''}">
-    <div class="home-due-date">${t.nextDate.getDate()}<small>${_monthShort(t.nextDate)}</small></div>
-    <div class="home-due-main"><strong>${_esc(t.carId)}</strong><span>${_esc(t.driverName)}</span></div>
-    <div class="home-due-amount">${_fmtInt(t.amount)} ₽</div>
+    <div class="home-due-date">${row.paidUntil.getDate()}<small>${_monthShort(row.paidUntil)}</small></div>
+    <div class="home-due-main"><strong>${_esc(row.carId)}</strong><span class="home-due-driver">${_esc(row.driverName)}${check}</span></div>
+    <div class="${amtClass}">${_fmtInt(row.amount)} ₽</div>
   </div>`;
 }
 
