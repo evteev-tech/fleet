@@ -1376,16 +1376,31 @@
 }
 
 /* ─────────────────────────────────────────────
-   ЭКРАН: ИСТОРИЯ
+   ЭКРАН: ИСТОРИЯ (kassa two-axis)
 ───────────────────────────────────────────── */
 
-/* ── Хедер с фильтрами ── */
+.screen-history {
+  background: ***REMOVED***1a1a1a;
+}
+
+.hist-history-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  padding-bottom: 0;
+}
+
+.hist-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .hist-hdr {
-  background: var(--color-dark);
-  padding: max(48px, calc(env(safe-area-inset-top) + 36px)) var(--space-lg) var(--space-md);
-  position: sticky;
-  top: 0;
-  z-index: 50;
+  background: ***REMOVED***1a1a1a;
+  padding: max(48px, calc(env(safe-area-inset-top) + 32px)) 0 0;
+  flex-shrink: 0;
 }
 
 .hist-hdr--skeleton {
@@ -1396,7 +1411,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--space-md);
+  padding: 0 16px 8px;
 }
 
 .hist-count {
@@ -1405,75 +1420,486 @@
   color: rgba(255, 255, 255, 0.45);
 }
 
-/* ── Переключатель месяца ── */
-.hist-month-sw {
+/* Навигация месяца */
+.hist-nav-row {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
-  margin-bottom: var(--space-md);
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 16px 10px;
+}
+
+.hist-nav-row--hidden {
+  display: none !important;
+}
+
+.hist-month-sw {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 0;
+}
+
+.hist-nav-month {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  color: ***REMOVED***fff;
+  font-size: 17px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+
+.hist-nav-month svg {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.hist-nav-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.hist-nav-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  color: ***REMOVED***fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.hist-nav-btn:active {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.hist-nav-btn--ghost {
+  background: transparent;
+}
+
+.hist-nav-btn--disabled,
+.hist-nav-btn.hist-nav-btn--disabled {
+  opacity: 0.35;
+  pointer-events: none;
 }
 
 .hist-month-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  min-width: 32px;
+  min-height: 32px;
+  width: auto;
+  height: auto;
   border-radius: 50%;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.85);
   cursor: pointer;
-  transition: background var(--transition-fast);
+  border: none;
+  background: transparent;
+  padding: 0;
 }
-
-.hist-month-btn:active { background: rgba(255,255,255,0.1); }
 
 .hist-month-label {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--color-white);
-  flex: 1;
+  font-size: 17px;
+  font-weight: 500;
+  color: ***REMOVED***fff;
+  flex: none;
 }
 
-/* ── Чипы фильтров ── */
-.hist-chips {
+.hist-search-field {
+  flex: 1;
   display: flex;
-  gap: var(--space-xs);
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 8px 12px;
+  min-width: 0;
+}
+
+.hist-search-field__ico {
+  display: flex;
+  color: rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+}
+
+.hist-search-field__inp {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: ***REMOVED***fff;
+  font-size: 15px;
+  outline: none;
+}
+
+.hist-search-field__inp::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+/* Ось 1 — тип */
+.hist-axis1 {
+  display: flex;
+  gap: 6px;
   overflow-x: auto;
   scrollbar-width: none;
-  padding-bottom: 2px;
+  margin: 0 -16px;
+  padding: 2px 16px 6px;
 }
 
-.hist-chips::-webkit-scrollbar { display: none; }
+.hist-axis1::-webkit-scrollbar {
+  display: none;
+}
+
+.hist-pill {
+  flex-shrink: 0;
+  padding: 7px 14px;
+  border-radius: 16px;
+  font-size: 13px;
+  cursor: pointer;
+  border: none;
+  font-family: var(--font-family);
+}
+
+.hist-pill--active {
+  background: ***REMOVED***ffdd2d;
+  color: ***REMOVED***1a1a1a;
+  font-weight: 500;
+}
+
+.hist-pill--idle {
+  background: rgba(255, 255, 255, 0.08);
+  color: ***REMOVED***d4d4d4;
+}
+
+.hist-chips {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 0;
+}
+
+.hist-chips::-webkit-scrollbar {
+  display: none;
+}
 
 .hist-chip {
-  flex-shrink: 0;
-  padding: 6px 14px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.7);
-  font-family: var(--font-family);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  border: none;
 }
 
 .hist-chip--active {
-  background: var(--color-yellow);
-  color: var(--color-dark);
+  background: ***REMOVED***ffdd2d;
+  color: ***REMOVED***1a1a1a;
 }
 
-/* ── Список ── */
+/* Ось 2 — видна только при активных фильтрах машина/касса (JS: flex) */
+.hist-axis2 {
+  display: none;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 0 16px 8px;
+}
+
+.hist-chip-active {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px 6px 12px;
+  border-radius: 14px;
+  background: rgba(255, 221, 45, 0.16);
+  border: 0.5px solid rgba(255, 221, 45, 0.4);
+  color: ***REMOVED***ffdd2d;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.hist-chip-active__x {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 2px;
+  line-height: 0;
+}
+
+.hist-chip-active__x svg {
+  width: 14px;
+  height: 14px;
+}
+
+.hist-add-filter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 14px;
+  background: transparent;
+  border: 0.5px dashed rgba(255, 255, 255, 0.25);
+  color: ***REMOVED***888;
+  font-size: 12px;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* Сводка */
+.hist-saldo {
+  margin: 0 16px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+.hist-saldo__main {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.hist-saldo__label {
+  font-size: 11px;
+  color: ***REMOVED***888;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.hist-saldo__value {
+  font-size: 16px;
+  font-weight: 500;
+  color: ***REMOVED***fff;
+}
+
+.hist-saldo__value--pos {
+  color: ***REMOVED***4ade80;
+}
+
+.hist-saldo__value--neg {
+  color: ***REMOVED***ff5e5e;
+}
+
+.hist-saldo__grid {
+  display: none;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 0.5px solid rgba(255, 255, 255, 0.08);
+}
+
+.hist-saldo--expanded .hist-saldo__grid {
+  display: block;
+}
+
+.hist-saldo__grid-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.hist-saldo__sub-label {
+  font-size: 11px;
+  color: ***REMOVED***888;
+  margin-bottom: 2px;
+}
+
+.hist-saldo__sub-val {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+/* Тело — светлый блок */
+.hist-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: ***REMOVED***f4f4f0;
+  border-radius: 18px 18px 0 0;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+}
+
+.hist-body.hist-body--loading .hist-list {
+  padding-top: 16px;
+}
+
 .hist-list {
-  padding: var(--space-md) var(--space-lg) 0;
+  padding: var(--space-md) var(--space-lg) 24px;
 }
 
 .hist-list .op-row {
   cursor: pointer;
+  border-bottom-color: ***REMOVED***e5e5e0;
 }
 
-/* ── Bottomsheet: детали операции ── */
+.screen-history .hist-list .ops-day-label {
+  color: ***REMOVED***888;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 12px 0 6px;
+}
+
+.screen-history .hist-list .op-row__dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.screen-history .hist-list .op-row__dot--inc {
+  background: ***REMOVED***1c4b30;
+  color: ***REMOVED***4ade80;
+}
+
+.screen-history .hist-list .op-row__dot--exp {
+  background: ***REMOVED***4b1c1c;
+  color: ***REMOVED***ff5e5e;
+}
+
+.screen-history .hist-list .op-row__dot--xfer {
+  background: ***REMOVED***1c2e4b;
+  color: ***REMOVED***60a5fa;
+}
+
+.screen-history .hist-list .op-row__amount--inc {
+  color: ***REMOVED***16a34a;
+}
+
+.screen-history .hist-list .op-row__amount--exp {
+  color: ***REMOVED***ef4444;
+}
+
+.screen-history .hist-list .op-row__amount--xfer {
+  color: ***REMOVED***2563eb;
+}
+
+.op-row__rub {
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+/* Пустое состояние */
+.hist-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  text-align: center;
+  padding: 24px 16px;
+}
+
+.hist-empty__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1.5px solid ***REMOVED***c5c4be;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+  color: ***REMOVED***888;
+}
+
+.hist-empty__text {
+  font-size: 14px;
+  color: ***REMOVED***555;
+  margin-bottom: 4px;
+}
+
+.hist-empty__sub {
+  font-size: 12px;
+  color: ***REMOVED***999;
+  margin-bottom: 14px;
+}
+
+.hist-empty__reset {
+  padding: 8px 14px;
+  border-radius: 14px;
+  background: ***REMOVED***1a1a1a;
+  border: none;
+  color: ***REMOVED***fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* Bottomsheet выбора фильтра */
+.hist-filter-sheet__title {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--color-dark);
+}
+
+.hist-filter-section__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+
+.hist-filter-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.hist-filter-opt {
+  padding: 7px 14px;
+  border-radius: 16px;
+  background: ***REMOVED***f0f0f5;
+  color: ***REMOVED***0a0a0f;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+}
+
+.hist-filter-opt--active {
+  background: ***REMOVED***ffdd2d;
+  color: ***REMOVED***1a1a1a;
+}
+
+.hist-filter-empty {
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
+/* Bottomsheet: детали операции */
+.bs-op-hero--in {
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.bs-op-hero--out {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.bs-op-hero--xfer {
+  background: rgba(96, 165, 250, 0.12);
+}
+
 .bs-op-hero {
   display: flex;
   align-items: center;
@@ -1516,7 +1942,9 @@
   border-bottom: 0.5px solid var(--color-border);
 }
 
-.bs-op-field:last-child { border-bottom: none; }
+.bs-op-field:last-child {
+  border-bottom: none;
+}
 
 .bs-op-field__lbl {
   font-size: 13px;
