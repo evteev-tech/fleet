@@ -1740,10 +1740,10 @@
   background: var(--color-white);
   border: 0.5px solid var(--color-border);
   border-radius: 10px;
-  padding: 6px;
+  padding: 6px !important;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 2px !important;
   z-index: 50;
   min-width: 148px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.10);
@@ -1754,11 +1754,11 @@
 }
 
 .fleet-quick-item {
-  display: flex;
+  display: flex !important;
   align-items: center;
-  gap: 10px;
+  gap: 10px !important;
   width: 100%;
-  padding: 9px 10px;
+  padding: 9px 10px !important;
   border-radius: 7px;
   border: none;
   background: transparent;
