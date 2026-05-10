@@ -35,6 +35,7 @@ const BADGE = {
 let _pendingTab = null;
 let _lastFleet = [];
 let _activeTab = 'rent';
+let _quickPopoverDocBound = false;
 
 /** Нормализация статуса из таблицы → rent | idle | repair */
 function statusKey(raw) {
@@ -220,6 +221,7 @@ function _listHTML(cars, fleetWasEmpty) {
 function _cardHTML(car) {
   const sk = statusKey(car.status);
   const badge = BADGE[sk] ?? BADGE.idle;
+  const opts = ['rent', 'idle', 'repair'].filter(k => k !== sk);
   const title = [car.name, car.color].filter(Boolean).join(' · ');
   const toInfo = formatToMileage(car.mileage, car.toMileage);
   const toHex = TO_MILEAGE_COLOR_HEX[toInfo.color] ?? '***REMOVED***9E9E9E';
@@ -232,7 +234,35 @@ function _cardHTML(car) {
           <div class="fleet-car__plate">${escapeHtml(car.carId)}</div>
           ${title ? `<div class="fleet-car__subtitle">${escapeHtml(title)}</div>` : ''}
         </div>
-        <span class="fleet-car__badge ${badge.class}">${badge.label}</span>
+        <div class="fleet-quick-wrap" data-quick-car="${escapeAttr(car.carId)}">
+          <button type="button"
+                  class="fleet-car__badge ${badge.class} fleet-quick-trigger"
+                  data-car-id="${escapeAttr(car.carId)}"
+                  aria-label="Изменить статус ${escapeAttr(car.carId)}">
+            ${badge.label}
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="margin-left:4px;opacity:0.6">
+              <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.4"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="fleet-quick-popover" id="popover-${escapeAttr(car.carId)}" hidden>
+            ${opts.map(k => {
+              const api = _statusApiFromKey(k);
+              const lbl = BADGE[k].label;
+              const dotCls =
+                k === 'rent' ? 'fleet-quick-dot--green' :
+                k === 'repair' ? 'fleet-quick-dot--red' :
+                'fleet-quick-dot--gray';
+              return `<button type="button"
+                              class="fleet-quick-item"
+                              data-new-status="${escapeAttr(api)}"
+                              data-status-key="${k}">
+                <span class="fleet-quick-dot ${dotCls}"></span>
+                ${lbl}
+              </button>`;
+            }).join('')}
+          </div>
+        </div>
       </div>
       <div class="fleet-car__rule"></div>
       <div class="fleet-car__grid">
@@ -291,10 +321,63 @@ function _fmtDateForApi(d) {
 
 function _bindCardClicks(body, cars) {
   body.querySelectorAll('.fleet-car[data-car-id]').forEach(el => {
-    el.addEventListener('click', () => {
-      const car = cars.find(c => c.carId === el.dataset.carId);
-      if (car) _openCarSheet(car);
+    el.addEventListener('click', e => {
+
+      /* ── Тап по триггеру попапа ── */
+      const trigger = e.target.closest('.fleet-quick-trigger');
+      if (trigger) {
+        e.stopPropagation();
+        const carId = trigger.dataset.carId;
+        _toggleQuickPopover(carId);
+        return;
+      }
+
+      /* ── Тап по пункту попапа ── */
+      const item = e.target.closest('.fleet-quick-item');
+      if (item) {
+        e.stopPropagation();
+        const popover = item.closest('.fleet-quick-popover');
+        const carId = popover?.id?.replace('popover-', '');
+        const car = cars.find(c => c.carId === carId);
+        if (!car) return;
+        _closeAllPopovers();
+        const newStatus = item.dataset.newStatus;
+        const statusKey_ = item.dataset.statusKey;
+        if (statusKey_ === 'rent') {
+          void _openDriverSelectSheet(car);
+        } else {
+          void _changeStatus(car, newStatus);
+        }
+        return;
+      }
+
+      /* ── Обычный тап по карточке → bottomsheet ── */
+      const card = e.target.closest('.fleet-car[data-car-id]');
+      if (card && !e.target.closest('.fleet-quick-wrap')) {
+        const car = cars.find(c => c.carId === card.dataset.carId);
+        if (car) _openCarSheet(car);
+      }
     });
+  });
+
+  /* Закрыть все попапы при клике вне */
+  if (!_quickPopoverDocBound) {
+    _quickPopoverDocBound = true;
+    document.addEventListener('click', _closeAllPopovers, { once: false });
+  }
+}
+
+function _toggleQuickPopover(carId) {
+  const target = document.getElementById(`popover-${carId}`);
+  if (!target) return;
+  const isHidden = target.hidden;
+  _closeAllPopovers();
+  if (isHidden) target.hidden = false;
+}
+
+function _closeAllPopovers() {
+  document.querySelectorAll('.fleet-quick-popover').forEach(p => {
+    p.hidden = true;
   });
 }
 
