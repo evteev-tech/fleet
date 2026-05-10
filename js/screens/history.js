@@ -240,10 +240,26 @@ function _applyFilters(opsMonthUnsorted, filters, role) {
     result = result.filter(o => set.has(String(o.driverId || '').trim()));
   }
 
+  // Поиск по всем значимым полям
   if (filters.search) {
-    const q = filters.search.trim().toLowerCase();
-    if (q.length)
-      result = result.filter(o => String(o.comment || '').toLowerCase().includes(q));
+    const q = filters.search.toLowerCase().trim();
+    if (q) {
+      result = result.filter(op => {
+        const haystack = [
+          op.comment,
+          op.carId,
+          op.category,
+          op.type,
+          op.direction,
+          op.provel,
+          op.kassaId,
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        return haystack.includes(q);
+      });
+    }
   }
 
   return result.sort(compareOpsNewestFirst);
