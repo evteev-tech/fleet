@@ -1,0 +1,135 @@
+/* ═══════════════════════════════════════════════
+   screens/login.css — вынесено из screens.css (аудит п.8)
+════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────
+   ЭКРАН: ЛОГИН
+───────────────────────────────────────────── */
+.login-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: 32px var(--space-xl);
+  background: var(--color-white);
+}
+
+.login-logo {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--color-dark);
+  letter-spacing: -0.04em;
+}
+
+.login-hint {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-muted);
+  margin-top: 8px;
+}
+
+/* ─── Точки ─── */
+.pin-dots {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin: 32px 0;
+}
+
+.pin-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  background: transparent;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.pin-dot--filled {
+  background: var(--color-dark);
+  border-color: var(--color-dark);
+}
+
+.pin-dot--loading {
+  background: var(--color-border);
+  border-color: var(--color-border);
+}
+
+.pin-dot--error {
+  background: var(--color-red);
+  border-color: var(--color-red);
+}
+
+/* ─── Shake-анимация на контейнере точек ─── */
+.pin-dots--shake {
+  animation: pin-shake 400ms ease;
+}
+
+@keyframes pin-shake {
+  0%   { transform: translateX(0); }
+  20%  { transform: translateX(-8px); }
+  40%  { transform: translateX(8px); }
+  60%  { transform: translateX(-6px); }
+  80%  { transform: translateX(6px); }
+  100% { transform: translateX(0); }
+}
+
+.pin-error {
+  min-height: 18px;
+  font-size: 13px;
+  color: var(--color-red);
+  font-weight: 500;
+  text-align: center;
+}
+
+/* ─── Клавиатура ─── */
+.pin-keyboard {
+  display: grid;
+  grid-template-columns: repeat(3, 72px);
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.pin-key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--color-white);
+  border: none;
+  font-family: var(--font-family);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-dark);
+  cursor: pointer;
+  transition: background var(--transition-fast), transform var(--transition-fast);
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.pin-key:active:not(:disabled) {
+  background: var(--color-bg);
+  transform: scale(0.92);
+}
+
+.pin-key:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.pin-key--empty {
+  pointer-events: none;
+  background: transparent;
+}
+
+.pin-key--del {
+  background: transparent;
+  color: var(--color-dark);
+}
+
+.pin-key--del:active:not(:disabled) {
+  background: var(--color-bg);
+}

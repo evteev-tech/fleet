@@ -1,0 +1,907 @@
+/* ═══════════════════════════════════════════════
+   screens/drivers.css — вынесено из screens.css (аудит п.8)
+════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────
+   ЭКРАН: ВОДИТЕЛИ
+───────────────────────────────────────────── */
+.driver-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-dark);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.driver-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ─────────────────────────────────────────────
+   ЭКРАН: КАРТОЧКА ВОДИТЕЛЯ
+───────────────────────────────────────────── */
+.driver-profile-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-xl) 0 var(--space-lg);
+  gap: var(--space-md);
+}
+
+.driver-profile-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: 700;
+  overflow: hidden;
+}
+
+.driver-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.driver-profile-name {
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--color-dark);
+  letter-spacing: -0.03em;
+  text-align: center;
+}
+
+.driver-profile-car {
+  font-size: 14px;
+  color: var(--color-muted);
+  font-weight: 500;
+}
+
+/* ─────────────────────────────────────────────
+   ЭКРАН: ВОДИТЕЛИ
+───────────────────────────────────────────── */
+
+.drivers-page {
+  min-height: 100%;
+  background: ***REMOVED***f0f1f3;
+  padding-bottom: var(--space-lg);
+}
+
+.drivers-page--center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+.drivers-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: max(44px, calc(env(safe-area-inset-top) + 28px)) var(--space-lg) var(--space-md);
+  background: ***REMOVED***1a1a1a;
+}
+
+.drivers-page__header--skel {
+  align-items: flex-start;
+}
+
+.drivers-page__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: ***REMOVED***fff;
+  letter-spacing: -0.02em;
+}
+
+.drivers-page__count {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.drivers-add-btn {
+  padding: 6px 14px;
+  background: ***REMOVED***FFDD2D;
+  color: ***REMOVED***111;
+  border: none;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.drivers-page__tabs {
+  display: flex;
+  gap: 8px;
+  padding: var(--space-md) var(--space-lg);
+  background: ***REMOVED***f0f1f3;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.drivers-page__tabs--skel {
+  padding-top: var(--space-md);
+}
+
+.drivers-tab {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  background: rgba(0, 0, 0, 0.06);
+  color: ***REMOVED***8a8a8e;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.drivers-tab--active {
+  background: ***REMOVED***ffdd2d;
+  color: ***REMOVED***1a1a1a;
+}
+
+.drivers-tab:active {
+  opacity: 0.85;
+}
+
+.drivers-page__body {
+  padding: 0 var(--space-lg) var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.drivers-card {
+  background: ***REMOVED***fff;
+  border-radius: 12px;
+  padding: var(--space-md) var(--space-lg);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+
+.drivers-card:active {
+  transform: scale(0.992);
+}
+
+.drivers-card--skeleton {
+  cursor: default;
+  pointer-events: none;
+}
+
+.drivers-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.drivers-card__name {
+  font-size: 17px;
+  font-weight: 700;
+  color: ***REMOVED***1a1a1a;
+  line-height: 1.2;
+}
+
+.drivers-card__did {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: ***REMOVED***8a8a8e;
+}
+
+.drivers-card__badge {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 8px;
+}
+
+.drivers-card__badge--active {
+  background: ***REMOVED***e8f5e9;
+  color: ***REMOVED***2e7d32;
+}
+
+.drivers-card__badge--archive {
+  background: ***REMOVED***f5f5f5;
+  color: ***REMOVED***757575;
+}
+
+.drivers-card__rule {
+  height: 0.5px;
+  background: ***REMOVED***e8e8ed;
+  margin: var(--space-md) 0;
+}
+
+.drivers-card__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md) var(--space-lg);
+}
+
+.drivers-card__lbl {
+  font-size: 11px;
+  font-weight: 600;
+  color: ***REMOVED***8a8a8e;
+  margin-bottom: 4px;
+}
+
+.drivers-card__val {
+  font-size: 14px;
+  font-weight: 600;
+  color: ***REMOVED***1a1a1a;
+}
+
+.drivers-card__note {
+  margin-top: var(--space-md);
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: ***REMOVED***f0f1f3;
+  font-size: 13px;
+  color: ***REMOVED***5c5c61;
+  line-height: 1.35;
+}
+
+.drivers-empty {
+  text-align: center;
+  padding: var(--space-xl) var(--space-lg);
+  font-size: 14px;
+  font-weight: 500;
+  color: ***REMOVED***8a8a8e;
+}
+
+.drivers-error {
+  text-align: center;
+  padding: var(--space-xl);
+}
+
+.drivers-error__text {
+  font-size: 15px;
+  font-weight: 600;
+  color: ***REMOVED***1a1a1a;
+  margin-bottom: var(--space-lg);
+}
+
+/* Выдача машины после добавления водителя */
+.drv-assign-sheet { padding: 4px 0; }
+.drv-assign-title { font-size: 16px; font-weight: 700; color: ***REMOVED***111; margin-bottom: 4px; }
+.drv-assign-sub   { font-size: 12px; color: ***REMOVED***aaa; margin-bottom: 16px; }
+.drv-assign-empty { font-size: 13px; color: ***REMOVED***aaa; text-align: center; padding: 20px 0; }
+
+.drv-assign-cars { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; max-height: 300px; overflow-y: auto; }
+
+.drv-assign-car {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: ***REMOVED***f9f9f9;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+}
+.drv-assign-car--selected {
+  background: ***REMOVED***dcfce7;
+  border-color: ***REMOVED***16a34a;
+}
+.drv-assign-car-id   { font-size: 15px; font-weight: 700; color: ***REMOVED***111; min-width: 50px; }
+.drv-assign-car-meta { font-size: 12px; color: ***REMOVED***aaa; flex: 1; }
+.drv-assign-car-rate { font-size: 12px; font-weight: 600; color: ***REMOVED***111; white-space: nowrap; }
+
+.drv-assign-confirm {
+  width: 100%;
+  padding: 14px;
+  background: ***REMOVED***FFDD2D;
+  color: ***REMOVED***111;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+.drv-assign-confirm:disabled { background: ***REMOVED***f0f0f0; color: ***REMOVED***bbb; cursor: default; }
+
+.drv-assign-skip {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  color: ***REMOVED***aaa;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* ── Bottomsheet: детали машины ── */
+.fleet-bs-hero {
+  margin-bottom: 0;
+}
+
+.fleet-bs-drag {
+  width: 36px;
+  height: 4px;
+  background: ***REMOVED***e0e0e0;
+  border-radius: 2px;
+  margin: 0 auto 16px;
+}
+
+.fleet-bs-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.fleet-bs-plate {
+  font-size: 22px;
+  font-weight: 700;
+  color: ***REMOVED***111;
+  margin-bottom: 2px;
+  letter-spacing: 0.03em;
+}
+
+.fleet-bs-model {
+  font-size: 12px;
+  color: ***REMOVED***aaa;
+}
+
+.fleet-bs-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+  margin-top: 4px;
+}
+
+.fleet-bs-badge--rent {
+  background: ***REMOVED***dcfce7;
+  color: ***REMOVED***15803d;
+}
+
+.fleet-bs-badge--idle {
+  background: ***REMOVED***fef9c3;
+  color: ***REMOVED***854d0e;
+}
+
+.fleet-bs-badge--repair {
+  background: ***REMOVED***fee2e2;
+  color: ***REMOVED***991b1b;
+}
+
+.fleet-bs-divider {
+  height: 0.5px;
+  background: ***REMOVED***f0f0f0;
+  margin: 12px 0;
+}
+
+.fleet-bs-change-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: ***REMOVED***aaa;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.fleet-status-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fleet-status-btn {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  min-height: 48px;
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+}
+
+.fleet-status-btn--rent {
+  background: ***REMOVED***dcfce7;
+  color: ***REMOVED***15803d;
+}
+
+.fleet-status-btn--idle {
+  background: ***REMOVED***fef9c3;
+  color: ***REMOVED***854d0e;
+}
+
+.fleet-status-btn--repair {
+  background: ***REMOVED***fee2e2;
+  color: ***REMOVED***991b1b;
+}
+
+.fleet-status-btn:active {
+  opacity: 0.85;
+  transform: scale(0.99);
+}
+
+/* Контекст в bottomsheet: пробег, ТО, водитель, примечание */
+.fleet-bs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 0;
+}
+
+.fleet-bs-lbl {
+  font-size: 11px;
+  color: ***REMOVED***aaa;
+  margin-bottom: 2px;
+}
+
+.fleet-bs-val {
+  font-size: 14px;
+  font-weight: 600;
+  color: ***REMOVED***111;
+}
+
+.fleet-bs-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: ***REMOVED***aaa;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.fleet-bs-driver {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: ***REMOVED***f5f5f5;
+  border-radius: 10px;
+  margin-bottom: 0;
+}
+
+.fleet-bs-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: ***REMOVED***e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: ***REMOVED***555;
+  flex-shrink: 0;
+}
+
+.fleet-bs-driver-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: ***REMOVED***111;
+}
+
+.fleet-bs-driver-phone {
+  font-size: 11px;
+  color: ***REMOVED***aaa;
+}
+
+.fleet-bs-driver-empty {
+  padding: 10px 12px;
+  background: ***REMOVED***f5f5f5;
+  border-radius: 10px;
+  font-size: 13px;
+  color: ***REMOVED***aaa;
+  margin-bottom: 0;
+}
+
+.fleet-bs-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background: ***REMOVED***fef9c3;
+  border-radius: 8px;
+  font-size: 12px;
+  color: ***REMOVED***854d0e;
+  margin-bottom: 0;
+}
+
+/* Второй шит — выбор водителя */
+.fleet-bs-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  font-size: 12px;
+  color: ***REMOVED***aaa;
+}
+
+.fleet-bs-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: ***REMOVED***111;
+  margin-bottom: 14px;
+}
+
+.fleet-driver-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.fleet-driver-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 10px;
+  background: ***REMOVED***f9f9f9;
+  cursor: pointer;
+}
+
+.fleet-driver-item--selected {
+  background: ***REMOVED***dcfce7;
+}
+
+.fleet-driver-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: ***REMOVED***e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: ***REMOVED***555;
+  flex-shrink: 0;
+}
+
+.fleet-driver-info {
+  flex: 1;
+}
+
+.fleet-driver-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: ***REMOVED***111;
+}
+
+.fleet-driver-car {
+  font-size: 11px;
+  color: ***REMOVED***aaa;
+}
+
+.fleet-driver-check {
+  font-size: 14px;
+  color: ***REMOVED***16a34a;
+}
+
+.fleet-driver-check.hidden {
+  display: none;
+}
+
+.fleet-bs-confirm {
+  width: 100%;
+  padding: 15px;
+  background: ***REMOVED***ffdd2d;
+  color: ***REMOVED***111;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.fleet-bs-confirm:disabled {
+  background: ***REMOVED***f0f0f0;
+  color: ***REMOVED***bbb;
+  cursor: default;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ЭКРАН: СПИСОК ВОДИТЕЛЕЙ (screen-drivers)
+═══════════════════════════════════════════════════════════ */
+
+/* Хедер «Водители» + кнопка «+ Добавить» */
+.drvs-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-md) var(--space-sm);
+}
+
+.drvs-add-btn {
+  background: var(--color-yellow);
+  color: var(--color-dark);
+  border: none;
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+  white-space: nowrap;
+}
+.drvs-add-btn:active {
+  opacity: 0.8;
+  transform: scale(0.96);
+}
+
+/* Аватар в строке водителя */
+.drv-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-dark);
+}
+
+/* Итоговая строка депозитов */
+.drvs-total {
+  font-size: 13px;
+  color: var(--color-muted);
+  padding: var(--space-sm) var(--space-md) var(--space-md);
+  text-align: right;
+}
+.drvs-total strong {
+  color: var(--color-dark);
+  font-weight: 700;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ЭКРАН: КАРТОЧКА ВОДИТЕЛЯ (screen-driver)
+═══════════════════════════════════════════════════════════ */
+
+/* Карточка профиля */
+.drv-profile-card {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  margin: var(--space-sm) var(--space-md) var(--space-md);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+
+.drv-profile-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--color-yellow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--color-dark);
+  flex-shrink: 0;
+}
+
+.drv-profile-name {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--color-dark);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.drv-profile-phone {
+  font-size: 15px;
+  color: var(--color-yellow);
+  font-weight: 600;
+  text-decoration: none;
+}
+.drv-profile-phone:active { opacity: 0.7; }
+
+/* Мета-поля: машина, дата, комментарий */
+.drv-profile-meta {
+  width: 100%;
+  margin-top: var(--space-xs);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.drv-meta-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  font-size: 14px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--color-bg);
+}
+.drv-meta-row:last-child { border-bottom: none; }
+
+.drv-meta-lbl {
+  color: var(--color-muted);
+  flex-shrink: 0;
+}
+.drv-meta-val {
+  color: var(--color-dark);
+  font-weight: 600;
+  text-align: right;
+}
+
+/* Карточка депозита */
+.drv-deposit-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+}
+
+.drv-deposit-label {
+  font-size: 11px;
+  color: ***REMOVED***aaa;
+  margin-bottom: 3px;
+}
+
+.drv-deposit-amount {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.drv-deposit--pos  { color: ***REMOVED***16a34a; }
+.drv-deposit--neg  { color: ***REMOVED***ef4444; }
+.drv-deposit--zero { color: ***REMOVED***aaa; }
+
+.drv-deposit-return-btn {
+  padding: 8px 16px;
+  background: ***REMOVED***111;
+  color: ***REMOVED***fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Шит возврата депозита */
+.drv-return-sheet { padding: 4px 0; }
+.drv-return-title { font-size: 16px; font-weight: 700; color: ***REMOVED***111; margin-bottom: 4px; }
+.drv-return-sub   { font-size: 12px; color: ***REMOVED***aaa; margin-bottom: 16px; }
+
+.drv-return-field { margin-bottom: 12px; }
+.drv-return-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: ***REMOVED***aaa;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.drv-return-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid ***REMOVED***e0e0e0;
+  border-radius: 10px;
+  font-size: 15px;
+  color: ***REMOVED***111;
+  background: ***REMOVED***f9f9f9;
+  outline: none;
+}
+
+.drv-return-input:focus {
+  border-color: ***REMOVED***111;
+  background: ***REMOVED***fff;
+}
+
+.drv-return-remain {
+  font-size: 12px;
+  color: ***REMOVED***16a34a;
+  margin-top: 6px;
+}
+
+.drv-return-err {
+  font-size: 12px;
+  color: ***REMOVED***ef4444;
+  margin-top: 6px;
+}
+
+.drv-return-submit {
+  width: 100%;
+  padding: 15px;
+  background: ***REMOVED***FFDD2D;
+  color: ***REMOVED***111;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.drv-return-submit:disabled {
+  background: ***REMOVED***f0f0f0;
+  color: ***REMOVED***bbb;
+  cursor: default;
+}
+
+/* История депозитов */
+.drv-dep-history {
+  border-top: 1px solid var(--color-bg);
+}
+.drv-dep-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 10px var(--space-md);
+  border-bottom: 1px solid var(--color-bg);
+  font-size: 14px;
+}
+.drv-dep-row:last-child { border-bottom: none; }
+
+.drv-dep-date  { color: var(--color-muted); flex-shrink: 0; }
+.drv-dep-type  { flex: 1; font-weight: 600; }
+.drv-dep--income { color: var(--color-green); }
+.drv-dep--return { color: var(--color-red);   }
+.drv-dep-sum   { font-weight: 700; color: var(--color-dark); white-space: nowrap; }
+
+.drv-dep-empty {
+  padding: var(--space-md);
+  font-size: 13px;
+  color: var(--color-muted);
+  text-align: center;
+}
+
+/* Кнопки внизу */
+.drv-actions {
+  display: flex;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md) var(--space-lg);
+}
+.drv-actions > * { flex: 1; }
+
+.btn-primary--outline {
+  background: transparent;
+  border: 2px solid var(--color-yellow);
+  color: var(--color-dark);
+}
+.btn-danger {
+  background: var(--color-red);
+  color: ***REMOVED***fff;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+}
+.btn-danger:active { opacity: 0.8; }
+.btn-danger:disabled { opacity: 0.5; cursor: default; }

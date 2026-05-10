@@ -1,0 +1,274 @@
+/* ═══════════════════════════════════════════════
+   screens/dashboard.css — вынесено из screens.css (аудит п.8)
+════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────
+   ЭКРАН: ДАШБОРД
+───────────────────────────────────────────── */
+.dashboard-period {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.dashboard-period-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-muted);
+  flex: 1;
+}
+
+.dashboard-big-card {
+  background: var(--color-dark);
+  border-radius: var(--radius-xl);
+  padding: var(--space-xl);
+  margin-bottom: var(--space-md);
+}
+
+.dashboard-big-card__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dashboard-big-card__value {
+  font-size: 32px;
+  font-weight: 900;
+  color: var(--color-white);
+  letter-spacing: -0.04em;
+  margin: 6px 0 2px;
+}
+
+.dashboard-big-card__sub {
+  font-size: 13px;
+  color: rgba(255,255,255,0.45);
+}
+
+/* ─────────────────────────────────────────────
+   ЭКРАН: ДАШБОРД (новый макет)
+───────────────────────────────────────────── */
+
+***REMOVED***screen-dashboard {
+  overflow: hidden;
+}
+
+***REMOVED***screen-dashboard .dashboard-header {
+  flex-shrink: 0;
+  background: ***REMOVED***1A1A1A;
+  padding: max(16px, env(safe-area-inset-top)) 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+***REMOVED***screen-dashboard .header-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+***REMOVED***screen-dashboard .header-logo {
+  color: ***REMOVED***FFDD2D;
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: -0.3px;
+}
+
+***REMOVED***screen-dashboard .header-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: ***REMOVED***FFDD2D;
+  color: ***REMOVED***1A1A1A;
+  font-size: 12px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+***REMOVED***screen-dashboard .header-total-label {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+***REMOVED***screen-dashboard .header-total-amount {
+  color: ***REMOVED***FFFFFF;
+  font-size: 36px;
+  font-weight: 900;
+  letter-spacing: -1.5px;
+  line-height: 1;
+  margin-bottom: 14px;
+}
+
+***REMOVED***screen-dashboard .dash-total-skeleton {
+  display: inline-block;
+  width: min(220px, 70vw);
+  height: 36px;
+  border-radius: 8px;
+}
+
+***REMOVED***screen-dashboard .header-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+***REMOVED***screen-dashboard .header-stat-tile {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+***REMOVED***screen-dashboard .header-stat-value {
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+***REMOVED***screen-dashboard .header-stat-value.green { color: ***REMOVED***00A86B; }
+***REMOVED***screen-dashboard .header-stat-value.red   { color: ***REMOVED***E34234; }
+***REMOVED***screen-dashboard .header-stat-value.white { color: ***REMOVED***FFFFFF; }
+
+***REMOVED***screen-dashboard .header-stat-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+***REMOVED***screen-dashboard .month-switcher {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 10px 0 4px;
+}
+
+***REMOVED***screen-dashboard .month-chevron {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+}
+
+***REMOVED***screen-dashboard .month-text {
+  color: ***REMOVED***FFFFFF;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+}
+
+***REMOVED***screen-dashboard .dashboard-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: ***REMOVED***F0F1F3;
+  padding: 14px 16px;
+  padding-bottom: calc(var(--navbar-height) + var(--safe-bottom) + var(--space-lg));
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ── Строки касс ── */
+.dash-kassa {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  min-height: 56px;
+  padding: 14px 16px;
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.dash-kassa + .dash-kassa {
+  border-top: 0.5px solid var(--color-border);
+}
+
+.dash-kassa:active {
+  background: var(--color-bg);
+}
+
+.dash-kassa__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dash-kassa__name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-dark);
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-kassa__bal {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.dash-kassa__bal--pos { color: var(--color-green); }
+.dash-kassa__bal--neg { color: var(--color-red); }
+
+/* ── Строки парка ── */
+.dash-fleet-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: 14px var(--space-lg);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.dash-fleet-row + .dash-fleet-row {
+  border-top: 0.5px solid var(--color-border);
+}
+
+.dash-fleet-row:active {
+  background: var(--color-bg);
+}
+
+.dash-fleet-row__circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.dash-fleet-row__label {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-dark);
+}
+
+.dash-fleet-row__spacer { flex: 1; }
+
+.dash-fleet-row__count {
+  font-size: 17px;
+  font-weight: 900;
+  color: var(--color-dark);
+}
