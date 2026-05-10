@@ -8,6 +8,7 @@ import { getWithSWR, CACHE_KEYS, invalidateCache as invalidateLocalCache } from 
 import { showScreen } from '../router.js';
 import { showBottomSheet, hideBottomSheet, showToast } from '../ui.js';
 import { CAR_STATUSES, SHEETS } from '../config.js';
+import { fmtRub, fmtRuInt } from '../utils/format.js';
 
 const TABS = [
   { id: 'all', label: 'Все', match: () => true },
@@ -28,7 +29,6 @@ function isArchiveStatus(raw) {
   return String(raw || '').toLowerCase().includes('архив');
 }
 
-const nfRub = new Intl.NumberFormat('ru-RU');
 
 function formatPhoneRu(raw) {
   const d = String(raw || '').replace(/\D/g, '');
@@ -172,7 +172,7 @@ function _listHTML(list, driversWasEmpty) {
 function _cardHTML(d) {
   const badge = badgeFor(d);
   const dep = Number(d.deposit) || 0;
-  const depStr = `${nfRub.format(dep)} ₽`;
+  const depStr = fmtRub(dep);
   const depCol = depositStyle(d);
   const car = d.currentCar;
   const carStr = car ? escapeHtml(String(car)) : '—';
@@ -427,7 +427,7 @@ async function _openAssignCarSheet(driverId, driverName) {
             <div class="drv-assign-car" data-car-id="${escapeAttr(c.carId)}">
               <div class="drv-assign-car-id">${escapeHtml(c.carId)}</div>
               <div class="drv-assign-car-meta">${escapeHtml([c.name, c.color].filter(Boolean).join(' · '))}</div>
-              <div class="drv-assign-car-rate">${Math.round(c.rateDay || 0).toLocaleString('ru-RU')} ₽/день</div>
+              <div class="drv-assign-car-rate">${fmtRuInt(Math.round(c.rateDay || 0))} ₽/день</div>
             </div>
           `).join('')}
         </div>

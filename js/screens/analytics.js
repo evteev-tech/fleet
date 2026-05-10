@@ -15,6 +15,7 @@ import { getWithSWR, CACHE_KEYS } from '../cache.js';
 import { getCurrentUser } from '../auth.js';
 import { mountNavbarInContainer } from '../router.js';
 import { CAR_STATUSES, KASSA_NAMES } from '../config.js';
+import { fmtRub, fmtRuInt, parseDate } from '../utils/format.js';
 
 const PAGE_LABELS = ['Обзор', 'Расходы', 'CAPEX', 'По машинам', 'Кассы', 'Прогноз'];
 const CAPEX_MODE = {
@@ -35,9 +36,6 @@ const OPEX_COLORS = {
   связь_глонасс: 'var(--c-muted)',
   покупка_машины: 'var(--c-bar-100)',
 };
-
-const fmtRub = n =>
-  `${new Intl.NumberFormat('ru-RU').format(Math.round(Number(n) || 0))} ₽`;
 
 function getOpexColor(category) {
   const key = String(category || '').toLowerCase().trim();
@@ -84,19 +82,11 @@ function _opClass(op) {
 }
 
 function _toOpDate(op) {
+  if (op?.date instanceof Date && !Number.isNaN(op.date.getTime())) return op.date;
   const d = new Date(op?.date);
   if (!Number.isNaN(d.getTime())) return d;
   const raw = String(op?.dateRaw ?? '').trim();
-  if (!raw) return null;
-  const parts = raw.split('.');
-  if (parts.length === 3) {
-    const dd = Number(parts[0]);
-    const mm = Number(parts[1]) - 1;
-    const yyyy = Number(parts[2]);
-    const fromRu = new Date(yyyy, mm, dd);
-    if (!Number.isNaN(fromRu.getTime())) return fromRu;
-  }
-  return null;
+  return raw ? parseDate(raw) : null;
 }
 
 function _calcDash({ ops, cars, kassas, deposits, allTime, year, month }) {
@@ -1016,7 +1006,7 @@ function _forecastHtml(rentals) {
     return `
       <div class="fcst-nd${isToday ? ' fcst-nd--today' : ''}">
         <div class="fcst-nd__date">${dateLabel}</div>
-        <div class="fcst-nd__amt">${d.total > 0 ? new Intl.NumberFormat('ru-RU').format(d.total) : '—'}</div>
+        <div class="fcst-nd__amt">${d.total > 0 ? fmtRuInt(d.total) : '—'}</div>
         <div class="fcst-nd__cur">${d.total > 0 ? '₽' : ''}</div>
         <div class="fcst-nd__cars">${carsLabel}</div>
       </div>`;

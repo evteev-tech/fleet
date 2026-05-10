@@ -3,6 +3,8 @@
  * toast, skeleton, bottomsheet, форматирование.
  */
 
+import { fmtRuInt } from './utils/format.js';
+
 // ─── TOAST ────────────────────────────────────────────────────────────────────
 
 const TOAST_COLORS = {
@@ -236,12 +238,12 @@ export function showConfirm({ title, message, confirmLabel = 'Подтверди
  * @returns {string}
  */
 export function formatMoney(amount, currency = '₽') {
-  return `${Math.abs(amount).toLocaleString('ru-RU')} ${currency}`;
+  return `${fmtRuInt(Math.abs(Number(amount) || 0))} ${currency}`;
 }
 
 /**
  * Форматирует дату из строки «DD.MM.YYYY» или timestamp в «15 марта».
- * (Не путать с formatDate в utils/date.js — там DD.MM.yyyy для API.)
+ * (Не путать с fmtDate/formatDate в utils/format.js — DD.MM.yyyy для API.)
  * @param {string|number} raw
  * @returns {string}
  */

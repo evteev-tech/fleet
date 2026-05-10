@@ -12,6 +12,7 @@ import { SHEETS }                                                         from '
 import { showScreen }                                                       from '../router.js';
 import { showBottomSheet, hideBottomSheet, showToast }                     from '../ui.js';
 import { openDriverForm }                                                   from './drivers.js';
+import { fmtRub } from '../utils/format.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ИНИЦИАЛИЗАЦИЯ
@@ -271,7 +272,7 @@ function _errorHTML(msg) {
   </div>`;
 }
 
-function _fmt(n)        { return `${Math.round(n).toLocaleString('ru-RU')} ₽`; }
+function _fmt(n)        { return fmtRub(n); }
 function _esc(s)        { return String(s ?? '').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 function _initials(fio) { return (fio ?? '?').trim().split(/\s+/).slice(0,2).map(w => w[0]?.toUpperCase() ?? '').join(''); }
 function _cleanPhone(p) { return (p ?? '').replace(/[^\d+]/g, ''); }

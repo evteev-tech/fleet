@@ -16,6 +16,7 @@ import {
   monthYearLabel,
   MINUS,
 } from '../lib/kassa-money.js';
+import { fmtRuInt } from '../utils/format.js';
 import {
   EXPENSE_CATEGORY_PRESETS,
   normalizeType,
@@ -1238,7 +1239,7 @@ function _showOpDetail(op, fleet) {
       ? `<div class="bs-op-field"><span class="bs-op-field__lbl">${label}</span><span class="bs-op-field__val">${_escapeHtml(value)}</span></div>`
       : '';
 
-  const amt = `${Math.round(Math.abs(Number(op.amount) || 0)).toLocaleString('ru-RU')} ₽`;
+  const amt = `${fmtRuInt(Math.abs(Number(op.amount) || 0))} ₽`;
 
   showBottomSheet(`
     <div class="bs-op-hero ${heroCls}">

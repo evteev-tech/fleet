@@ -12,7 +12,8 @@ import {
   getWithSWR,
   invalidateCache as invalidateSwrCache,
 } from './cache.js';
-import { parseSheetDate, parseSheetDateTime, formatDate } from './utils/date.js';
+import { parseSheetDate, parseSheetDateTime } from './utils/date.js';
+import { parseDate, fmtDate } from './utils/format.js';
 import {
   getMockFleetNormalized,
   getMockDriversNormalized,
@@ -129,26 +130,6 @@ export function parseAmount(val) {
   const core = compact.replace(/[()]/g, '').replace(/,/g, '.');
   const n = parseFloat(parenNeg ? `-${core}` : core);
   return Number.isFinite(n) ? n : 0;
-}
-
-// ─── Парсинг даты: DD.MM.YYYY или Excel serial (UNFORMATTED_VALUE из Sheets) ─
-function parseDate(raw) {
-  if (raw === undefined || raw === null || raw === '') return null;
-  const str = typeof raw === 'number' ? raw : String(raw).trim();
-  if (str === '') return null;
-  if (!isNaN(str)) {
-    const excelEpoch = new Date(1899, 11, 30);
-    return new Date(excelEpoch.getTime() + Number(str) * 86400000);
-  }
-  const parts = String(str).split('.');
-  if (parts.length === 3) {
-    return new Date(
-      Number(parts[2]),
-      Number(parts[1]) - 1,
-      Number(parts[0]),
-    );
-  }
-  return null;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -418,7 +399,7 @@ export async function postAction(action, data) {
   if (typeof incomingData === 'object' && incomingData) delete incomingData.action;
   const payloadData =
     act === 'ADD_INCOME'
-      ? { ...incomingData, client_op_date: formatDate(new Date()) }
+      ? { ...incomingData, client_op_date: fmtDate(new Date()) }
       : incomingData;
   const payload = JSON.stringify({ action: act, ...payloadData });
 
@@ -521,7 +502,7 @@ export async function saveRentalPromise(carId, promisedUntil) {
     car_id: cid,
     promised_until:
       promisedUntil != null && promisedUntil instanceof Date && !Number.isNaN(promisedUntil.getTime())
-        ? formatDate(promisedUntil)
+        ? fmtDate(promisedUntil)
         : '',
   });
 }

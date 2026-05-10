@@ -8,7 +8,7 @@ import { getCurrentUser } from '../auth.js';
 import { showScreen } from '../router.js';
 import { showBottomSheet, hideBottomSheet, showToast } from '../ui.js';
 import { KASSA_ID, ROLES, SHEETS } from '../config.js';
-import { formatDate } from '../utils/date.js';
+import { fmtDate, fmtRub, fmtRuInt } from '../utils/format.js';
 
 const EXPENSE_CATEGORIES = [
   { key: 'ремонт', label: 'Ремонт' },
@@ -332,7 +332,7 @@ function _syncCarsPanel(root) {
 function _updateSumDisplay(root) {
   const el = root.querySelector('***REMOVED***expense-sum-display');
   if (el) {
-    el.textContent = `${Math.round(_state.amount).toLocaleString('ru-RU')} ₽`;
+    el.textContent = fmtRub(_state.amount);
     el.classList.toggle('expense-sum--warn', _state.amount <= 0);
   }
 }
@@ -348,7 +348,7 @@ function _syncExpenseNumpadDisplay(root) {
   const disp = scope?.querySelector('***REMOVED***expense-numpad-display');
   if (disp) {
     const n = _state.numpadBuf || '0';
-    disp.textContent = Number(n).toLocaleString('ru-RU') + ' ₽';
+    disp.textContent = `${fmtRuInt(Number(n))} ₽`;
   }
 }
 
@@ -445,7 +445,7 @@ async function _submit(root) {
 
   try {
     await postAction('ADD_OPERATION', {
-      date: formatDate(new Date()),
+      date: fmtDate(new Date()),
       kassa_id: _state.kassaId,
       direction: 'расход',
       amount: amt,

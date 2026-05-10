@@ -6,6 +6,7 @@ import { getFleet, getDrivers, postAction, invalidateCache } from '../api.js';
 import { getWithSWR, CACHE_KEYS, invalidateCache as invalidateLocalCache } from '../cache.js';
 import { showBottomSheet, hideBottomSheet, showToast } from '../ui.js';
 import { CAR_STATUSES, SHEETS } from '../config.js';
+import { fmtRuInt } from '../utils/format.js';
 
 const TABS = [
   { id: 'all', label: 'Все', match: () => true },
@@ -55,15 +56,12 @@ function pluralCars(n) {
   return `${n} машин`;
 }
 
-const nfInt = new Intl.NumberFormat('ru-RU');
-const nfMoney = new Intl.NumberFormat('ru-RU');
-
 function fmtKm(n) {
-  return `${nfInt.format(Math.max(0, Math.round(n)))} км`;
+  return `${fmtRuInt(Math.max(0, Math.round(n)))} км`;
 }
 
 function fmtRate(n) {
-  return `${nfMoney.format(Math.max(0, Number(n) || 0))} ₽/день`;
+  return `${fmtRuInt(Math.max(0, Number(n) || 0))} ₽/день`;
 }
 
 function fmtBuyDate(d) {
@@ -96,14 +94,14 @@ function formatToMileage(mileage, toMileage) {
   }
 
   if (diff < 1000) {
-    return { text: new Intl.NumberFormat('ru-RU').format(diff) + ' км', color: 'red' };
+    return { text: fmtRuInt(diff) + ' км', color: 'red' };
   }
 
   if (diff < 3000) {
-    return { text: new Intl.NumberFormat('ru-RU').format(diff) + ' км', color: 'yellow' };
+    return { text: fmtRuInt(diff) + ' км', color: 'yellow' };
   }
 
-  return { text: new Intl.NumberFormat('ru-RU').format(diff) + ' км', color: 'green' };
+  return { text: fmtRuInt(diff) + ' км', color: 'green' };
 }
 
 export function initFleet() {

@@ -3,7 +3,7 @@ import { getCurrentUser } from '../auth.js';
 import { KASSA_ID, KASSA_NAMES, ROLES, SHEETS } from '../config.js';
 import { showScreen } from '../router.js';
 import { showToast } from '../ui.js';
-import { formatDate } from '../utils/date.js';
+import { fmtDate, fmtRub, fmtRuInt } from '../utils/format.js';
 import { invalidateCache as invalidateLocalCache, CACHE_KEYS } from '../cache.js';
 
 /** Механик (Азамат) переводит только между операционными кассами, без инвест-счетов. */
@@ -124,7 +124,7 @@ function _renderTransfer() {
 function _updateSumDisplay(root) {
   const el = root.querySelector('***REMOVED***transfer-sum-display');
   if (!el) return;
-  el.textContent = `${Math.round(_state.amount).toLocaleString('ru-RU')} ₽`;
+  el.textContent = fmtRub(_state.amount);
 }
 
 function _updateSubmit(root) {
@@ -133,7 +133,7 @@ function _updateSubmit(root) {
   const ok = _state.amount > 0 && _state.toKassaId !== null;
   btn.disabled = !ok;
   btn.textContent = ok
-    ? `Перевести ${Math.round(_state.amount).toLocaleString('ru-RU')} ₽ → ${KASSA_NAMES[_state.toKassaId] || _state.toKassaId}`
+    ? `Перевести ${fmtRuInt(Math.round(_state.amount))} ₽ → ${KASSA_NAMES[_state.toKassaId] || _state.toKassaId}`
     : 'Перевести';
 }
 
@@ -141,7 +141,7 @@ function _syncNumpadDisplay(root) {
   const disp = root.querySelector('***REMOVED***transfer-numpad-display');
   if (!disp) return;
   const n = _state.numpadBuf || '0';
-  disp.textContent = Number(n).toLocaleString('ru-RU') + ' ₽';
+  disp.textContent = `${fmtRuInt(Number(n))} ₽`;
 }
 
 function _openNumpad(root) {
@@ -224,7 +224,7 @@ async function _submitTransfer(root) {
 
   const amt = Math.round(_state.amount);
   const comment = _state.comment.trim();
-  const today = formatDate(new Date());
+  const today = fmtDate(new Date());
   const user = getCurrentUser();
   const provel = user?.name ?? '';
 
@@ -262,7 +262,7 @@ async function _submitTransfer(root) {
     invalidateLocalCache(CACHE_KEYS.KASSAS);
     invalidateLocalCache(CACHE_KEYS.DASHBOARD);
 
-    showToast(`Перевод ${amt.toLocaleString('ru-RU')} ₽ → ${KASSA_NAMES[_state.toKassaId]} ✓`, 'success', 2500);
+    showToast(`Перевод ${fmtRuInt(amt)} ₽ → ${KASSA_NAMES[_state.toKassaId]} ✓`, 'success', 2500);
     showScreen('screen-home');
   } catch (err) {
     if (btn) btn.disabled = false;

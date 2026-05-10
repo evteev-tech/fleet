@@ -16,6 +16,7 @@ import { getCurrentUser } from '../auth.js';
 import { showScreen } from '../router.js';
 import { showToast } from '../ui.js';
 import { CAR_STATUSES, KASSA_ID, ROLES } from '../config.js';
+import { fmtRub, fmtRuInt } from '../utils/format.js';
 
 /** @type {{ cars: object[], selectedId: string|null, amount: number, period: '1w'|'2w'|'1m'|null, numpadOpen: boolean, numpadBuf: string, comment: string, mileage: string }} */
 let _state = {
@@ -262,15 +263,15 @@ function _cardHtml(c) {
       <div class="income-card__grid">
         <div class="income-cell">
           <div class="income-cell__label">Ставка</div>
-          <div class="income-cell__val">${Math.round(c.rate).toLocaleString('ru-RU')} ₽/день</div>
+          <div class="income-cell__val">${fmtRuInt(c.rate)} ₽/день</div>
         </div>
         <div class="income-cell">
           <div class="income-cell__label">До ТО</div>
-          <div class="income-cell__val ${kmCls}">${Math.round(c.kmLeft).toLocaleString('ru-RU')} км</div>
+          <div class="income-cell__val ${kmCls}">${fmtRuInt(c.kmLeft)} км</div>
         </div>
         <div class="income-cell">
           <div class="income-cell__label">Пробег</div>
-          <div class="income-cell__val">${Math.round(c.mileage).toLocaleString('ru-RU')} км</div>
+          <div class="income-cell__val">${fmtRuInt(c.mileage)} км</div>
         </div>
         <div class="income-cell">
           <div class="income-cell__label">Оплачено до</div>
@@ -314,15 +315,15 @@ function _updateBottom(root) {
     periods.innerHTML = `
       <button type="button" class="income-period ${_state.period === '1w' ? 'income-period--on' : ''}" data-period="1w">
         <span class="income-period__label">1 неделя</span>
-        <span class="income-period__sum">${p7.toLocaleString('ru-RU')} ₽</span>
+        <span class="income-period__sum">${fmtRuInt(p7)} ₽</span>
       </button>
       <button type="button" class="income-period ${_state.period === '2w' ? 'income-period--on' : ''}" data-period="2w">
         <span class="income-period__label">2 недели</span>
-        <span class="income-period__sum">${p14.toLocaleString('ru-RU')} ₽</span>
+        <span class="income-period__sum">${fmtRuInt(p14)} ₽</span>
       </button>
       <button type="button" class="income-period ${_state.period === '1m' ? 'income-period--on' : ''}" data-period="1m">
         <span class="income-period__label">1 месяц</span>
-        <span class="income-period__sum">${p30.toLocaleString('ru-RU')} ₽</span>
+        <span class="income-period__sum">${fmtRuInt(p30)} ₽</span>
       </button>
     `;
     periods.querySelectorAll('[data-period]').forEach(btn => {
@@ -352,7 +353,7 @@ function _updateMileageField(root, car) {
   const curMileage = Number(car.mileage) || 0;
   const toMileage = Number(car.toMileage) || 0;
   const placeholder = curMileage
-    ? Math.round(curMileage).toLocaleString('ru-RU')
+    ? fmtRuInt(curMileage)
     : 'текущий пробег';
 
   slot.innerHTML = `
@@ -373,7 +374,7 @@ function _updateMileageField(root, car) {
       />
       ${toMileage && curMileage
         ? `<div class="income-mileage__to">
-             До ТО: ${Math.max(0, Math.round(toMileage - curMileage)).toLocaleString('ru-RU')} км
+             До ТО: ${fmtRuInt(Math.max(0, Math.round(toMileage - curMileage)))} км
            </div>`
         : ''
       }
@@ -396,7 +397,7 @@ function _updatePeriodButtons(root) {
 function _updateSumDisplay(root) {
   const el = root.querySelector('***REMOVED***income-sum-display');
   if (el) {
-    el.textContent = `${Math.round(_state.amount).toLocaleString('ru-RU')} ₽`;
+    el.textContent = fmtRub(_state.amount);
     el.classList.toggle('income-sum--warn', _state.amount <= 0);
   }
 }
@@ -445,7 +446,7 @@ function _updateDatesRow(root) {
   if (remainder > 0.001 && fullDays >= 0) {
     warnEl.classList.remove('hidden');
     warnEl.innerHTML =
-      `Неполная оплата: остаток ${Math.round(remainder).toLocaleString('ru-RU')} ₽ — дата по последнему полному дню`;
+      `Неполная оплата: остаток ${fmtRuInt(Math.round(remainder))} ₽ — дата по последнему полному дню`;
   } else {
     warnEl.classList.add('hidden');
   }
@@ -512,7 +513,7 @@ function _numpadKey(root, k) {
   const el = root.querySelector('***REMOVED***income-sum-display');
   if (el) {
     const preview = _state.numpadBuf
-      ? `${parseInt(_state.numpadBuf, 10).toLocaleString('ru-RU')} ₽`
+      ? `${fmtRuInt(parseInt(_state.numpadBuf, 10))} ₽`
       : '0 ₽';
     el.textContent = preview;
     el.classList.toggle('income-sum--warn', !_state.numpadBuf);

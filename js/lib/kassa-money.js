@@ -2,12 +2,14 @@
  * Форматирование сумм и вспомогательные строки для экрана «Касса».
  */
 
+import { fmtRuInt } from '../utils/format.js';
+
 const NBSP = '\u00A0';
 const MINUS = '\u2212';
 
 /** @param {number} n */
 export function formatRubAmount(n) {
-  return `${Math.round(Math.abs(Number(n) || 0)).toLocaleString('ru-RU').replace(/\s/g, NBSP)}${NBSP}₽`;
+  return `${fmtRuInt(Math.abs(Number(n) || 0)).replace(/\s/g, NBSP)}${NBSP}₽`;
 }
 
 /**
@@ -16,7 +18,7 @@ export function formatRubAmount(n) {
  */
 export function formatRubWithSign(n, sign) {
   const abs = Math.round(Math.abs(Number(n) || 0));
-  const body = abs.toLocaleString('ru-RU').replace(/\s/g, NBSP);
+  const body = fmtRuInt(abs).replace(/\s/g, NBSP);
   return `${sign}${body}${NBSP}₽`;
 }
 

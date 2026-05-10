@@ -5,6 +5,7 @@ import { showScreen } from '../router.js';
 import { CAR_STATUSES, KASSA_ID, ROLES, USE_MOCK } from '../config.js';
 import { calcPaidUntil, parseRatePerDay, latestRentalByCarMap } from '../utils/rent.js';
 import { parseRuDate } from './history.js';
+import { fmtRuInt } from '../utils/format.js';
 
 const HOME_KASSA_ORDER = [KASSA_ID.AZAMAT, KASSA_ID.VLADIMIR, KASSA_ID.YULIA];
 
@@ -141,7 +142,7 @@ function _opsInCalendarMonth(ops, month, year) {
 function _formatSignedAmt(n) {
   const rounded = Math.round(Number(n) || 0);
   const sign = rounded < 0 ? '−' : '';
-  return `${sign}${Math.abs(rounded).toLocaleString('ru-RU')} ₽`;
+  return `${sign}${fmtRuInt(Math.abs(rounded))} ₽`;
 }
 
 function _operationsCashSummaryHtml(allOps) {
@@ -757,7 +758,7 @@ function _addDays(d, days) {
   return x;
 }
 function _fmtInt(n) {
-  return Math.round(n || 0).toLocaleString('ru-RU');
+  return fmtRuInt(n || 0);
 }
 function _fmtDayMonth(d) {
   if (!d) return '—';
