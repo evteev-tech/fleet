@@ -1,0 +1,235 @@
+/**
+ * desktop_patch_fix1.css — точечные фиксы после первого QA
+ *
+ * Добавить в конец desktop_patch.css (или подключить отдельным файлом после него).
+ *
+ * Фикс 1: screen-fleet   — карточки .fleet-car в сетку
+ * Фикс 2: screen-drivers — карточки .drivers-card в сетку
+ * Фикс 3: screen-home    — .home-header тёмная, 320px, кнопки внизу
+ */
+
+@media (min-width: 1024px) {
+
+  /* ══════════════════════════════════════════════
+     ФИК 1 — Парк: сетка карточек
+     Структура: ***REMOVED***fleet-body > .fleet-page > .fleet-page__body > .fleet-car
+  ══════════════════════════════════════════════ */
+
+  /* .fleet-page занимает всю высоту и становится flex-колонкой */
+  ***REMOVED***screen-fleet .fleet-page {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100dvh !important;
+    overflow: hidden !important;
+  }
+
+  /* Шапка и табы — фиксированная высота, не сжимаются */
+  ***REMOVED***screen-fleet .fleet-page__header {
+    flex-shrink: 0 !important;
+    padding: 24px 32px 0 !important;
+  }
+
+  ***REMOVED***screen-fleet .fleet-page__tabs {
+    flex-shrink: 0 !important;
+    padding: 12px 32px !important;
+    display: flex !important;
+    gap: 8px !important;
+  }
+
+  /* Табы: compact-вариант вместо растянутых кнопок */
+  ***REMOVED***screen-fleet .fleet-tab {
+    flex: 0 0 auto !important;
+    padding: 7px 16px !important;
+    font-size: 13px !important;
+    border-radius: 20px !important;
+    min-width: 0 !important;
+  }
+
+  /* Тело списка — скролл, grid */
+  ***REMOVED***screen-fleet .fleet-page__body {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    padding: 8px 32px 24px !important;
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
+    gap: 16px !important;
+    align-content: start !important;
+  }
+
+  /* Карточки не тянуть на всю высоту grid-ячейки */
+  ***REMOVED***screen-fleet .fleet-car {
+    align-self: start !important;
+  }
+
+  /* Состояние "пусто" — на всю ширину */
+  ***REMOVED***screen-fleet .fleet-empty {
+    grid-column: 1 / -1 !important;
+  }
+
+  /* ══════════════════════════════════════════════
+     ФИКС 2 — Водители: сетка карточек
+     Структура: ***REMOVED***drivers-body > .drivers-page > .drivers-page__body > .drivers-card
+  ══════════════════════════════════════════════ */
+
+  ***REMOVED***screen-drivers .drivers-page {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100dvh !important;
+    overflow: hidden !important;
+  }
+
+  ***REMOVED***screen-drivers .drivers-page__header {
+    flex-shrink: 0 !important;
+    padding: 24px 32px 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
+
+  ***REMOVED***screen-drivers .drivers-page__tabs {
+    flex-shrink: 0 !important;
+    padding: 12px 32px !important;
+    display: flex !important;
+    gap: 8px !important;
+  }
+
+  ***REMOVED***screen-drivers .drivers-tab {
+    flex: 0 0 auto !important;
+    padding: 7px 16px !important;
+    font-size: 13px !important;
+    border-radius: 20px !important;
+    min-width: 0 !important;
+  }
+
+  ***REMOVED***screen-drivers .drivers-page__body {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    padding: 8px 32px 24px !important;
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
+    gap: 16px !important;
+    align-content: start !important;
+  }
+
+  ***REMOVED***screen-drivers .drivers-card {
+    align-self: start !important;
+  }
+
+  ***REMOVED***screen-drivers .drivers-empty {
+    grid-column: 1 / -1 !important;
+  }
+
+  /* ══════════════════════════════════════════════
+     ФИКС 3 — Главная: левая тёмная панель
+     home.js рендерит в ***REMOVED***home-body:
+       .home-header        — тёмная левая колонка
+       .home-content-sheet — светлая правая колонка
+     Проблема: .home-header не тёмная и без 320px жёсткой ширины.
+  ══════════════════════════════════════════════ */
+
+  /* Контейнер — горизонтальный flex (уже в desktop.css, дублируем для надёжности) */
+  ***REMOVED***screen-home ***REMOVED***home-body {
+    display: flex !important;
+    flex-direction: row !important;
+    height: 100dvh !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+  }
+
+  /* Левая тёмная панель */
+  ***REMOVED***screen-home .home-header {
+    width: 320px !important;
+    min-width: 320px !important;
+    max-width: 320px !important;
+    flex-shrink: 0 !important;
+    height: 100dvh !important;
+    overflow-y: auto !important;
+    background: var(--color-dark) !important;  /* ***REMOVED***1A1A1A */
+    color: ***REMOVED***fff !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 28px 20px 20px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Скрыть строку «Матизы + аватар» — они в sidebar */
+  ***REMOVED***screen-home .home-hdr__brand-row {
+    display: none !important;
+  }
+
+  /* Карточка кассы — тёмный стиль */
+  ***REMOVED***screen-home .home-cash-card {
+    background: rgba(255, 255, 255, 0.07) !important;
+    border-radius: 14px !important;
+    padding: 16px !important;
+    color: ***REMOVED***fff !important;
+  }
+
+  ***REMOVED***screen-home .home-cash-card__label {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.06em !important;
+    color: rgba(255, 255, 255, 0.45) !important;
+    text-transform: uppercase !important;
+    margin-bottom: 6px !important;
+  }
+
+  ***REMOVED***screen-home .home-cash-card__amount {
+    font-size: 36px !important;
+    font-weight: 700 !important;
+    color: ***REMOVED***fff !important;
+    line-height: 1.1 !important;
+    letter-spacing: -0.02em !important;
+  }
+
+  ***REMOVED***screen-home .home-cash-card__delta {
+    font-size: 13px !important;
+    margin-top: 4px !important;
+  }
+
+  ***REMOVED***screen-home .home-cash-card__delta.is-pos { color: var(--color-green) !important; }
+  ***REMOVED***screen-home .home-cash-card__delta.is-neg { color: var(--color-red)   !important; }
+
+  /* Кнопки «Платёж / Расход / Перевод» — прижать к низу */
+  ***REMOVED***screen-home .home-action-row {
+    margin-top: auto !important;
+    padding-top: 20px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  /* На тёмном фоне: primary — жёлтый, secondary — полупрозрачный */
+  ***REMOVED***screen-home .home-action-row .btn-primary {
+    background: var(--color-yellow) !important;
+    color: var(--color-dark) !important;
+  }
+
+  ***REMOVED***screen-home .home-action-row .btn-secondary {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: ***REMOVED***fff !important;
+    border: none !important;
+  }
+
+  ***REMOVED***screen-home .home-action-row .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.17) !important;
+  }
+
+  /* Правая колонка */
+  ***REMOVED***screen-home .home-content-sheet {
+    flex: 1 !important;
+    min-width: 0 !important;
+    height: 100dvh !important;
+    overflow-y: auto !important;
+    padding: 28px 28px 24px !important;
+    background: var(--color-bg) !important;
+  }
+}
+
+/* На широких экранах — 3 колонки для парка и водителей */
+@media (min-width: 1440px) {
+  ***REMOVED***screen-fleet .fleet-page__body,
+  ***REMOVED***screen-drivers .drivers-page__body {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+  }
+}
