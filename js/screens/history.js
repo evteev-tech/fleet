@@ -8,6 +8,7 @@ import { getCurrentUser } from '../auth.js';
 import { showBottomSheet, hideBottomSheet } from '../ui.js';
 import { KASSA_ID, KASSA_NAMES, ROLES } from '../config.js';
 import { currentScreen } from '../router.js';
+import { openEditOperation } from './edit-operation.js';
 import {
   declOperations,
   formatRubWithSign,
@@ -1224,6 +1225,11 @@ function _showOpDetail(op, fleet) {
   const heroCls =
     kind === 'in' ? 'bs-op-hero--in' : kind === 'transfer' ? 'bs-op-hero--xfer' : 'bs-op-hero--out';
 
+  const user = getCurrentUser();
+  const provel = String(op.provel ?? '').trim().toLowerCase();
+  const userName = String(user?.name ?? '').trim().toLowerCase();
+  const canEdit = () => !!op?.opId && kind !== 'transfer' && (!provel || provel === userName);
+
   const car = fleet.find(c => String(c.carId).trim() === String(op.carId || '').trim());
   const carLbl = car ? `${car.carId}${car.name ? ' · ' + car.name : ''}` : op.carId || '—';
 
@@ -1249,7 +1255,18 @@ function _showOpDetail(op, fleet) {
       ${field('Провёл', op.provel)}
       ${field('Комментарий', op.comment)}
     </div>
+    ${canEdit() ? `
+      <button class="btn-secondary" id="bs-op-edit" style="margin-top:12px">
+        Редактировать
+      </button>
+    ` : ''}
   `);
+
+  setTimeout(() => {
+    document.getElementById('bs-op-edit')?.addEventListener('click', () => {
+      hideBottomSheet(() => openEditOperation(op, fleet));
+    });
+  }, 0);
 }
 
 function _escapeHtml(s) {
