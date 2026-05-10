@@ -1782,7 +1782,8 @@
 }
 
 .fleet-quick-dot--green { background: ***REMOVED***16a34a; }
-.fleet-quick-dot--red   { background: ***REMOVED***dc2626; }
+.fleet-quick-dot--amber { background: ***REMOVED***F59E0B; }
+.fleet-quick-dot--red   { background: ***REMOVED***EF4444; }
 .fleet-quick-dot--gray  { background: ***REMOVED***9ca3af; }
 
 .fleet-empty {
