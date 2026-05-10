@@ -17,7 +17,7 @@ import { showScreen } from '../router.js?v=7';
 import { showToast } from '../ui.js';
 import { CAR_STATUSES, KASSA_ID, ROLES } from '../config.js';
 
-/** @type {{ cars: object[], selectedId: string|null, amount: number, period: '1w'|'2w'|'1m'|null, numpadOpen: boolean, numpadBuf: string }} */
+/** @type {{ cars: object[], selectedId: string|null, amount: number, period: '1w'|'2w'|'1m'|null, numpadOpen: boolean, numpadBuf: string, comment: string, mileage: string }} */
 let _state = {
   cars: [],
   selectedId: null,
@@ -26,6 +26,7 @@ let _state = {
   numpadOpen: false,
   numpadBuf: '',
   comment: '',
+  mileage: '',
 };
 
 const STATUS_RENT = CAR_STATUSES.RENT;
@@ -48,6 +49,7 @@ export function renderIncome() {
     numpadOpen: false,
     numpadBuf: '',
     comment: '',
+    mileage: '',
   };
 
   root.innerHTML = `
@@ -194,6 +196,7 @@ function _renderIncomeShell(root) {
         </div>
         <div class="income-dates hidden" id="income-dates-row"></div>
         <div class="income-warn hidden" id="income-warn"></div>
+        <div id="income-mileage-slot"></div>
         <div class="income-comment-wrap" id="income-comment-wrap">
           <textarea
             id="income-comment"
@@ -218,6 +221,7 @@ function _renderIncomeShell(root) {
     el.addEventListener('click', () => {
       const id = el.dataset.carId;
       _state.selectedId = id;
+      _state.mileage = '';
       root.querySelectorAll('.income-card').forEach(c => {
         c.classList.toggle('income-card--selected', c.dataset.carId === id);
       });
@@ -337,7 +341,49 @@ function _updateBottom(root) {
   _updateSumDisplay(root);
   _updatePeriodButtons(root);
   _updateDatesRow(root);
+  _updateMileageField(root, car);
   _updateSubmit(root);
+}
+
+function _updateMileageField(root, car) {
+  const slot = root.querySelector('***REMOVED***income-mileage-slot');
+  if (!slot || !car) return;
+
+  const curMileage = Number(car.mileage) || 0;
+  const toMileage = Number(car.toMileage) || 0;
+  const placeholder = curMileage
+    ? Math.round(curMileage).toLocaleString('ru-RU')
+    : 'текущий пробег';
+
+  slot.innerHTML = `
+    <div class="income-mileage-wrap" id="income-mileage-wrap">
+      <label class="income-mileage__label">
+        Пробег, км
+        <span class="income-mileage__hint">необязательно</span>
+      </label>
+      <input
+        type="number"
+        inputmode="numeric"
+        id="income-mileage-input"
+        class="income-mileage__input field-input"
+        placeholder="${placeholder}"
+        min="0"
+        step="1"
+        value="${escapeAttr(_state.mileage)}"
+      />
+      ${toMileage && curMileage
+        ? `<div class="income-mileage__to">
+             До ТО: ${Math.max(0, Math.round(toMileage - curMileage)).toLocaleString('ru-RU')} км
+           </div>`
+        : ''
+      }
+    </div>
+  `;
+
+  document.getElementById('income-mileage-input')
+    ?.addEventListener('input', e => {
+      _state.mileage = e.target.value.trim();
+    });
 }
 
 function _updatePeriodButtons(root) {
@@ -538,6 +584,7 @@ async function _submit(root) {
         : `оплатил до ${_fmtShortDate(end)}`,
       kassa_id: kassa,
       provel: provelShort,
+      mileage: _state.mileage ? Math.round(Number(_state.mileage)) : '',
     });
 
     invalidateCache(SHEETS.CARS);
