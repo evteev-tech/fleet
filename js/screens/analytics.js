@@ -21,13 +21,18 @@ const CAPEX_MODE = {
   PERIOD: 'period',
 };
 const OPEX_COLORS = {
-  ремонт: '***REMOVED***E08000',
-  запчасти: '***REMOVED***6366F1',
-  доставка: '***REMOVED***0EA5E9',
-  зп: '***REMOVED***00A86B',
-  страховка: '***REMOVED***E34234',
-  реклама: '***REMOVED***F59E0B',
-  прочее: '***REMOVED***CCCCD8',
+  ремонт:    '***REMOVED***C2501A',
+  запчасти:  '***REMOVED***8B5E3C',
+  доставка:  '***REMOVED***A8845A',
+  зп:        '***REMOVED***6B3F20',
+  страховка: '***REMOVED***B83820',
+  реклама:   '***REMOVED***C4AA8A',
+  прочее:    '***REMOVED***DDD0BE',
+  то:        '***REMOVED***A8845A',
+  штраф_гибдд: '***REMOVED***B83820',
+  дтп:       '***REMOVED***8B2200',
+  связь_глонасс: '***REMOVED***7A6040',
+  покупка_машины: '***REMOVED***1C1410',
 };
 
 const fmtRub = n =>
@@ -35,7 +40,7 @@ const fmtRub = n =>
 
 function getOpexColor(category) {
   const key = String(category || '').toLowerCase().trim();
-  return OPEX_COLORS[key] ?? '***REMOVED***CCCCD8';
+  return OPEX_COLORS[key] ?? '***REMOVED***DDD0BE';
 }
 
 /** 4 месяца: три предыдущих + текущий (от «сегодня»). */
@@ -358,7 +363,7 @@ function _overviewHtml(dash) {
 
   return `
     <div class="ovw-hero">
-      <div class="ovw-hero__stripe" style="background:${profit >= 0 ? '***REMOVED***00C97A' : '***REMOVED***FF5252'}"></div>
+      <div class="ovw-hero__stripe" style="background:${profit >= 0 ? '***REMOVED***C2501A' : '***REMOVED***B83820'}"></div>
       <div class="ovw-hero__body">
       <div class="ovw-hero__label">ЧИСТАЯ ПРИБЫЛЬ · ${periodLabel}</div>
       <div class="ovw-hero__amount ovw-hero__amount--${profit >= 0 ? 'pos' : 'neg'}">${withSign(profit)}</div>
@@ -368,7 +373,7 @@ function _overviewHtml(dash) {
     <div class="ovw-sheet">
       <div class="ovw-tiles">
         <div class="ovw-tile">
-          <div class="ovw-tile__stripe" style="background:***REMOVED***00A86B"></div>
+          <div class="ovw-tile__stripe" style="background:***REMOVED***C2501A"></div>
           <div class="ovw-tile__content">
             <div class="ovw-tile__lbl">Выручка</div>
             <div class="ovw-tile__val">${fmtRub(revenue)}</div>
@@ -376,7 +381,7 @@ function _overviewHtml(dash) {
           </div>
         </div>
         <div class="ovw-tile">
-          <div class="ovw-tile__stripe" style="background:***REMOVED***E34234"></div>
+          <div class="ovw-tile__stripe" style="background:***REMOVED***B83820"></div>
           <div class="ovw-tile__content">
             <div class="ovw-tile__lbl">Опер. расходы</div>
             <div class="ovw-tile__val">${fmtRub(opex)}</div>
@@ -384,7 +389,7 @@ function _overviewHtml(dash) {
           </div>
         </div>
         <div class="ovw-tile">
-          <div class="ovw-tile__stripe" style="background:***REMOVED***E08000"></div>
+          <div class="ovw-tile__stripe" style="background:***REMOVED***A8845A"></div>
           <div class="ovw-tile__content">
             <div class="ovw-tile__lbl">CAPEX</div>
             <div class="ovw-tile__val">${fmtRub(capex)}</div>
@@ -392,7 +397,7 @@ function _overviewHtml(dash) {
           </div>
         </div>
         <div class="ovw-tile">
-          <div class="ovw-tile__stripe" style="background:${profit >= 0 ? '***REMOVED***00A86B' : '***REMOVED***E34234'}"></div>
+          <div class="ovw-tile__stripe" style="background:${profit >= 0 ? '***REMOVED***C2501A' : '***REMOVED***B83820'}"></div>
           <div class="ovw-tile__content">
             <div class="ovw-tile__lbl">Прибыль</div>
             <div class="ovw-tile__val ${profit >= 0 ? 'ovw-val--pos' : 'ovw-val--neg'}">${withSign(profit)}</div>
@@ -587,15 +592,15 @@ function _pnlHeatBg(revenue, result) {
   const res = Number(result) || 0;
   if (res > 0) {
     const margin = rev > 0 ? (res / rev) * 100 : 0;
-    if (margin > 60) return '***REMOVED***1B6B47';
-    if (margin >= 30) return '***REMOVED***1A5C3A';
-    return '***REMOVED***2A7A50';
+    if (margin > 60) return '***REMOVED***7A3D10';
+    if (margin >= 30) return '***REMOVED***6B3218';
+    return '***REMOVED***8B4520';
   }
   if (res < 0) {
     const abs = Math.abs(res);
-    if (abs > 30000) return '***REMOVED***3D0A0A';
-    if (abs > 10000) return '***REMOVED***5C1010';
-    return '***REMOVED***7A2020';
+    if (abs > 30000) return '***REMOVED***4A1505';
+    if (abs > 10000) return '***REMOVED***6B2010';
+    return '***REMOVED***8B2810';
   }
   return '***REMOVED***2A2A2A';
 }
@@ -620,7 +625,7 @@ function _pnlHtml(pnl) {
       <span>Итого</span>
       <div>
         <div style="font-size:9px;color:***REMOVED***8a8a8e">↑${fmtRub(total.revenue)} &nbsp; ↓${fmtRub(total.expense)}</div>
-        <div class="pnl-heat3-total__val" style="color:${Number(total.profit) >= 0 ? '***REMOVED***00A86B' : '***REMOVED***E34234'}">${Number(total.profit) >= 0 ? '+' : ''}${fmtRub(total.profit)}</div>
+        <div class="pnl-heat3-total__val" style="color:${Number(total.profit) >= 0 ? '***REMOVED***C2501A' : '***REMOVED***B83820'}">${Number(total.profit) >= 0 ? '+' : ''}${fmtRub(total.profit)}</div>
       </div>
     </div>`
     : '';
@@ -730,9 +735,9 @@ function _capexPageHtml(dash, capexMode) {
   });
   const donutRows = [
     { key: 'Покупки', color: '***REMOVED***1A1A1A', amount: grouped.get('Покупки') || 0 },
-    { key: 'Ремонты', color: '***REMOVED***6366F1', amount: grouped.get('Ремонты') || 0 },
-    { key: 'Запчасти', color: '***REMOVED***E08000', amount: grouped.get('Запчасти') || 0 },
-    { key: 'Прочее', color: '***REMOVED***CCCCD8', amount: grouped.get('Прочее') || 0 },
+    { key: 'Ремонты', color: '***REMOVED***8B5E3C', amount: grouped.get('Ремонты') || 0 },
+    { key: 'Запчасти', color: '***REMOVED***A8845A', amount: grouped.get('Запчасти') || 0 },
+    { key: 'Прочее', color: '***REMOVED***DDD0BE', amount: grouped.get('Прочее') || 0 },
   ];
   const total = Number(s.current) || 0;
   const CIRC = 87.96;
@@ -823,11 +828,11 @@ function _capexPageHtml(dash, capexMode) {
       <div class="roi-grid">
         <div class="roi-cell">
           <div class="roi-c-lbl">Вложено</div>
-          <div class="roi-c-val" style="color:***REMOVED***E08000">${fmtRub(total)}</div>
+          <div class="roi-c-val" style="color:***REMOVED***A8845A">${fmtRub(total)}</div>
         </div>
         <div class="roi-cell">
           <div class="roi-c-lbl">Заработано</div>
-          <div class="roi-c-val" style="color:***REMOVED***00A86B">${fmtRub(revenueAcc)}</div>
+          <div class="roi-c-val" style="color:***REMOVED***C2501A">${fmtRub(revenueAcc)}</div>
         </div>
       </div>
     </div>
@@ -1178,7 +1183,7 @@ function _dtDelta(key, cur, prev) {
   const diff = c - p;
   if (Math.abs(diff) < 1) return '';
   let better = (key === 'revenue' || key === 'profit') ? diff > 0 : diff < 0;
-  const color = better ? '***REMOVED***00A86B' : '***REMOVED***E34234';
+  const color = better ? '***REMOVED***C2501A' : '***REMOVED***B83820';
   const sign = diff > 0 ? '+' : '−';
   return '<span style="font-size:12px;color:' + color + ';font-weight:500">' + sign + fmtRub(Math.abs(diff)) + '</span>';
 }
@@ -1235,12 +1240,12 @@ function _desktopShellHTML(dash) {
 
   const capexCatsAll = dash.capexByCategoryAll || [];
   const capexSlices = [
-    { color:'***REMOVED***E08000', amount: capexCatsAll.filter(function(r){ return r.name.toLowerCase().includes('запч'); }).reduce(function(s,r){ return s+(Number(r.amount)||0); }, 0) },
-    { color:'***REMOVED***6366F1', amount: capexCatsAll.filter(function(r){ return r.name.toLowerCase().includes('ремонт'); }).reduce(function(s,r){ return s+(Number(r.amount)||0); }, 0) },
+    { color:'***REMOVED***A8845A', amount: capexCatsAll.filter(function(r){ return r.name.toLowerCase().includes('запч'); }).reduce(function(s,r){ return s+(Number(r.amount)||0); }, 0) },
+    { color:'***REMOVED***8B5E3C', amount: capexCatsAll.filter(function(r){ return r.name.toLowerCase().includes('ремонт'); }).reduce(function(s,r){ return s+(Number(r.amount)||0); }, 0) },
     { color:'***REMOVED***1A1A1A', amount: capexCatsAll.filter(function(r){ return r.name.toLowerCase().includes('покуп'); }).reduce(function(s,r){ return s+(Number(r.amount)||0); }, 0) },
   ];
   const capexKnown = capexSlices.reduce(function(s,x){ return s+x.amount; }, 0);
-  capexSlices.push({ color:'***REMOVED***CCCCD8', amount: Math.max(0, capexAll - capexKnown) });
+  capexSlices.push({ color:'***REMOVED***DDD0BE', amount: Math.max(0, capexAll - capexKnown) });
   const capexLabels = ['Запчасти','Ремонты','Покупки','Прочее'];
 
   const pnlRows = (dash.pnl || []).slice(0, 6);
@@ -1248,7 +1253,7 @@ function _desktopShellHTML(dash) {
   const pnlHtml = pnlRows.map(function(r, i) {
     const p = Number(r.profit) || 0;
     const pct = (Math.abs(p) / pnlMax) * 100;
-    const color = p > 0 ? '***REMOVED***00A86B' : p < 0 ? '***REMOVED***E34234' : '***REMOVED***8A8A8E';
+    const color = p > 0 ? '***REMOVED***C2501A' : p < 0 ? '***REMOVED***B83820' : '***REMOVED***8A8A8E';
     return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
       + '<span style="font-size:12px;font-weight:600;width:36px;flex-shrink:0;color:var(--dt-text)">' + r.car + '</span>'
       + '<div style="flex:1;height:18px;background:rgba(0,0,0,.05);border-radius:3px;overflow:hidden;position:relative">'
@@ -1273,8 +1278,8 @@ function _desktopShellHTML(dash) {
   };
   const kassaDefs = [
     { id:'K_AZAMAT',   label:'Азамат',   color:'***REMOVED***FFDD2D' },
-    { id:'K_VLADIMIR', label:'Владимир', color:'***REMOVED***378ADD' },
-    { id:'K_YULIA',    label:'Юлия',     color:'***REMOVED***00A86B' },
+    { id:'K_VLADIMIR', label:'Владимир', color:'***REMOVED***A8845A' },
+    { id:'K_YULIA',    label:'Юлия',     color:'***REMOVED***C2501A' },
   ];
   const kassaRowsHtml = kassaDefs.map(function(k) {
     const bal = _calcKassaBal(k.id);
@@ -1283,7 +1288,7 @@ function _desktopShellHTML(dash) {
       + '<span style="width:8px;height:8px;border-radius:50%;background:' + k.color + ';flex-shrink:0"></span>'
       + '<span style="font-size:13px;color:var(--dt-text)">' + k.label + '</span>'
       + '</div>'
-      + '<span style="font-size:14px;font-weight:600;color:' + (bal>=0?'***REMOVED***00A86B':'***REMOVED***E34234') + '">' + (bal<0?'−':'') + fmtRub(Math.abs(bal)) + '</span>'
+      + '<span style="font-size:14px;font-weight:600;color:' + (bal>=0?'***REMOVED***C2501A':'***REMOVED***B83820') + '">' + (bal<0?'−':'') + fmtRub(Math.abs(bal)) + '</span>'
       + '</div>';
   }).join('');
 
@@ -1335,13 +1340,13 @@ function _desktopShellHTML(dash) {
     + '<div class="dt-hero">'
     + '<div class="dt-hero-main">'
     + '<div class="dt-hero-lbl">Чистая прибыль · ' + (dash.allTime ? 'всё время' : _monthLabelFull(dash.year, dash.month)) + '</div>'
-    + '<div class="dt-hero-num" style="color:' + (profit>=0?'***REMOVED***4ADE80':'***REMOVED***FF5252') + '">' + (profit>=0?'+':'') + fmtRub(profit) + '</div>'
+    + '<div class="dt-hero-num" style="color:' + (profit>=0?'***REMOVED***C2501A':'***REMOVED***B83820') + '">' + (profit>=0?'+':'') + fmtRub(profit) + '</div>'
     + '<div class="dt-hero-sub">Выручка ' + fmtRub(revenue) + ' · Расходы ' + fmtRub(opex) + '</div>'
     + '</div>'
     + '<div class="dt-kpis">'
-    + '<div class="dt-kpi" style="animation-delay:.05s"><div class="dt-kpi-lbl">Выручка</div><div class="dt-kpi-val" style="color:***REMOVED***4ADE80">' + fmtRub(revenue) + '</div>' + _dtDelta('revenue',revenue,byKey('revenue').previous) + '</div>'
-    + '<div class="dt-kpi" style="animation-delay:.1s"><div class="dt-kpi-lbl">Расходы</div><div class="dt-kpi-val" style="color:***REMOVED***FF5252">' + fmtRub(opex) + '</div>' + _dtDelta('opex',opex,byKey('opex').previous) + '</div>'
-    + '<div class="dt-kpi" style="animation-delay:.15s"><div class="dt-kpi-lbl">CAPEX всего</div><div class="dt-kpi-val" style="color:***REMOVED***F59E0B">' + fmtRub(capexAll) + '</div></div>'
+    + '<div class="dt-kpi" style="animation-delay:.05s"><div class="dt-kpi-lbl">Выручка</div><div class="dt-kpi-val" style="color:***REMOVED***C2501A">' + fmtRub(revenue) + '</div>' + _dtDelta('revenue',revenue,byKey('revenue').previous) + '</div>'
+    + '<div class="dt-kpi" style="animation-delay:.1s"><div class="dt-kpi-lbl">Расходы</div><div class="dt-kpi-val" style="color:***REMOVED***B83820">' + fmtRub(opex) + '</div>' + _dtDelta('opex',opex,byKey('opex').previous) + '</div>'
+    + '<div class="dt-kpi" style="animation-delay:.15s"><div class="dt-kpi-lbl">CAPEX всего</div><div class="dt-kpi-val" style="color:***REMOVED***A8845A">' + fmtRub(capexAll) + '</div></div>'
     + '<div class="dt-kpi" style="animation-delay:.2s"><div class="dt-kpi-lbl">Загрузка</div><div class="dt-kpi-val" style="color:***REMOVED***60A5FA">' + rentPct + '%</div></div>'
     + '</div></div></div>'
 
@@ -1358,23 +1363,23 @@ function _desktopShellHTML(dash) {
     + '<div class="dt-card" style="animation-delay:.12s">'
     + '<div class="dt-card-title">Выручка · 5 месяцев</div>'
     + '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px">'
-    + '<span class="dt-big" style="color:***REMOVED***00A86B">' + fmtRub(revenue) + '</span>'
+    + '<span class="dt-big" style="color:***REMOVED***C2501A">' + fmtRub(revenue) + '</span>'
     + _dtDelta('revenue',revenue,byKey('revenue').previous)
     + '</div>'
-    + '<div style="margin-top:10px">' + _sparklineSvg(revSeries,'***REMOVED***00A86B',52) + '</div>'
+    + '<div style="margin-top:10px">' + _sparklineSvg(revSeries,'***REMOVED***C2501A',52) + '</div>'
     + '</div>'
 
     + '<div class="dt-card" style="animation-delay:.16s">'
     + '<div class="dt-card-title">Парк · ' + fTotal + ' машин</div>'
     + '<div class="dt-fleet-grid">'
-    + '<div class="dt-fleet-tile" style="background:***REMOVED***e3f9f0;color:***REMOVED***00A86B"><div class="dt-fleet-tile-n">' + fRent + '</div><div class="dt-fleet-tile-l">Аренда</div></div>'
-    + '<div class="dt-fleet-tile" style="background:***REMOVED***fff3e0;color:***REMOVED***E08000"><div class="dt-fleet-tile-n">' + fIdle + '</div><div class="dt-fleet-tile-l">Простой</div></div>'
-    + '<div class="dt-fleet-tile" style="background:***REMOVED***fff0ee;color:***REMOVED***E34234"><div class="dt-fleet-tile-n">' + fRepair + '</div><div class="dt-fleet-tile-l">Ремонт</div></div>'
+    + '<div class="dt-fleet-tile" style="background:***REMOVED***e3f9f0;color:***REMOVED***C2501A"><div class="dt-fleet-tile-n">' + fRent + '</div><div class="dt-fleet-tile-l">Аренда</div></div>'
+    + '<div class="dt-fleet-tile" style="background:***REMOVED***fff3e0;color:***REMOVED***A8845A"><div class="dt-fleet-tile-n">' + fIdle + '</div><div class="dt-fleet-tile-l">Простой</div></div>'
+    + '<div class="dt-fleet-tile" style="background:***REMOVED***fff0ee;color:***REMOVED***B83820"><div class="dt-fleet-tile-n">' + fRepair + '</div><div class="dt-fleet-tile-l">Ремонт</div></div>'
     + '</div>'
     + '<div class="dt-fleet-bar">'
-    + '<div class="dt-fleet-seg" style="width:' + (fRent/fTotal*100).toFixed(1) + '%;background:***REMOVED***00A86B"></div>'
-    + '<div class="dt-fleet-seg" style="width:' + (fIdle/fTotal*100).toFixed(1) + '%;background:***REMOVED***E08000"></div>'
-    + '<div class="dt-fleet-seg" style="width:' + (fRepair/fTotal*100).toFixed(1) + '%;background:***REMOVED***E34234"></div>'
+    + '<div class="dt-fleet-seg" style="width:' + (fRent/fTotal*100).toFixed(1) + '%;background:***REMOVED***C2501A"></div>'
+    + '<div class="dt-fleet-seg" style="width:' + (fIdle/fTotal*100).toFixed(1) + '%;background:***REMOVED***A8845A"></div>'
+    + '<div class="dt-fleet-seg" style="width:' + (fRepair/fTotal*100).toFixed(1) + '%;background:***REMOVED***B83820"></div>'
     + '</div>'
     + '<div class="dt-fleet-pct">Загрузка ' + rentPct + '%</div>'
     + '</div>'
@@ -1405,7 +1410,7 @@ function _desktopShellHTML(dash) {
     + kassaRowsHtml
     + '<div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;margin-top:6px">'
     + '<span style="font-size:12px;color:var(--dt-muted)">Активные залоги</span>'
-    + '<span style="font-size:14px;font-weight:600;color:***REMOVED***378ADD">' + fmtRub(activeDeposits) + '</span>'
+    + '<span style="font-size:14px;font-weight:600;color:***REMOVED***A8845A">' + fmtRub(activeDeposits) + '</span>'
     + '</div></div>'
 
     + '</div></div>';
