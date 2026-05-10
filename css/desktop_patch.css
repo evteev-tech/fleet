@@ -1,0 +1,536 @@
+/**
+ * desktop_patch.css — этапы 3–7
+ *
+ * Подключать ПОСЛЕ desktop.css:
+ *   <link rel="stylesheet" href="css/desktop_patch.css" />
+ *
+ * Или вставить в конец desktop.css.
+ * Мобильный вид (<1024px) не затрагивается.
+ */
+
+/* ══════════════════════════════════════════════════════════════
+   ЭТАП 3 — остальные экраны
+══════════════════════════════════════════════════════════════ */
+
+@media (min-width: 1024px) {
+
+  /* ─── screen-fleet ──────────────────────────────────────────
+   *
+   * fleet.js рендерит в ***REMOVED***fleet-body (.home-scroll.pb-navbar):
+   *   .app-header  — sticky-шапка
+   *   .fleet-list / .cars-grid — карточки машин
+   */
+
+  ***REMOVED***screen-fleet {
+    overflow: hidden !important;
+  }
+
+  ***REMOVED***screen-fleet ***REMOVED***fleet-body {
+    height: 100dvh !important;
+    overflow-y: auto !important;
+    padding: 0 !important;
+    padding-bottom: 24px !important;
+  }
+
+  ***REMOVED***screen-fleet .app-header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+  }
+
+  /* Карточки → сетка */
+  ***REMOVED***screen-fleet .fleet-list,
+  ***REMOVED***screen-fleet .cars-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+    gap: 16px !important;
+    padding: 24px 32px !important;
+  }
+
+  /* Фильтры/табы */
+  ***REMOVED***screen-fleet .filter-tabs,
+  ***REMOVED***screen-fleet .fleet-tabs {
+    display: flex !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+    padding: 0 32px 16px !important;
+  }
+
+  /* ─── screen-drivers ─────────────────────────────────────── */
+
+  ***REMOVED***screen-drivers {
+    overflow: hidden !important;
+  }
+
+  ***REMOVED***screen-drivers ***REMOVED***drivers-body {
+    height: 100dvh !important;
+    overflow-y: auto !important;
+    padding: 0 !important;
+    padding-bottom: 24px !important;
+  }
+
+  ***REMOVED***screen-drivers .app-header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+  }
+
+  /* Карточки водителей → сетка */
+  ***REMOVED***screen-drivers .drivers-list,
+  ***REMOVED***screen-drivers .driver-cards {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
+    gap: 16px !important;
+    padding: 24px 32px !important;
+  }
+
+  /* ─── screen-driver (карточка одного водителя) ───────────── */
+
+  ***REMOVED***screen-driver {
+    overflow: hidden !important;
+  }
+
+  ***REMOVED***screen-driver .app-header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+  }
+
+  ***REMOVED***screen-driver .screen-body {
+    max-width: 720px !important;
+    margin: 0 auto !important;
+    padding: 32px !important;
+    width: 100% !important;
+    overflow-y: auto !important;
+    height: calc(100dvh - var(--header-height)) !important;
+    box-sizing: border-box !important;
+  }
+
+  /* ─── screen-analytics ───────────────────────────────────── */
+
+  ***REMOVED***screen-analytics {
+    overflow: hidden !important;
+  }
+
+  ***REMOVED***screen-analytics .analytics-root,
+  ***REMOVED***screen-analytics ***REMOVED***analytics-root {
+    height: 100dvh !important;
+    overflow-y: auto !important;
+    padding: 32px !important;
+    padding-bottom: 24px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Внутренний navbar аналитики не нужен — есть sidebar */
+  ***REMOVED***screen-analytics .analytics-navbar,
+  ***REMOVED***analytics-root .analytics-nav,
+  ***REMOVED***analytics-root nav {
+    display: none !important;
+  }
+
+  /* Графики — два в ряд если влезают */
+  ***REMOVED***screen-analytics .charts-grid,
+  ***REMOVED***screen-analytics .analytics-charts {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)) !important;
+    gap: 24px !important;
+  }
+
+  /* ─── screen-history ─────────────────────────────────────── */
+
+  ***REMOVED***screen-history {
+    overflow: hidden !important;
+  }
+
+  ***REMOVED***screen-history ***REMOVED***history-body {
+    height: 100dvh !important;
+    overflow-y: auto !important;
+    padding: 0 !important;
+    padding-bottom: 24px !important;
+  }
+
+  ***REMOVED***screen-history .app-header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+  }
+
+  /*
+   * Если history.js рендерит .history-layout (фильтры + список) —
+   * двухколоночный layout.
+   */
+  ***REMOVED***screen-history .history-layout {
+    display: flex !important;
+    align-items: flex-start !important;
+    height: calc(100dvh - var(--header-height)) !important;
+    overflow: hidden !important;
+  }
+
+  ***REMOVED***screen-history .history-filters,
+  ***REMOVED***screen-history .hist-filters {
+    width: 260px !important;
+    flex-shrink: 0 !important;
+    height: 100% !important;
+    overflow-y: auto !important;
+    padding: 24px 20px !important;
+    border-right: 1px solid var(--color-border) !important;
+    box-sizing: border-box !important;
+  }
+
+  ***REMOVED***screen-history .history-list,
+  ***REMOVED***screen-history .hist-list {
+    flex: 1 !important;
+    height: 100% !important;
+    overflow-y: auto !important;
+    padding: 24px 32px !important;
+    box-sizing: border-box !important;
+  }
+
+  /*
+   * Если history.js рендерит без .history-layout (плоский список) —
+   * просто добавляем горизонтальный padding.
+   */
+  ***REMOVED***screen-history .hist-history-root {
+    padding: 0 !important;
+  }
+
+  ***REMOVED***screen-history .hist-history-root > *:not(.app-header):not(header) {
+    padding-left: 32px !important;
+    padding-right: 32px !important;
+  }
+
+  /* ─── screen-add ─────────────────────────────────────────── */
+
+  ***REMOVED***screen-add {
+    overflow: hidden !important;
+  }
+
+  ***REMOVED***screen-add .app-header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+  }
+
+  ***REMOVED***screen-add ***REMOVED***add-body {
+    max-width: 560px !important;
+    margin: 0 auto !important;
+    padding: 32px !important;
+    padding-bottom: 24px !important;
+    width: 100% !important;
+    overflow-y: auto !important;
+    height: calc(100dvh - var(--header-height)) !important;
+    box-sizing: border-box !important;
+  }
+
+  /* ─── screen-settings ────────────────────────────────────── */
+
+  ***REMOVED***screen-settings {
+    overflow: hidden !important;
+  }
+
+  ***REMOVED***screen-settings ***REMOVED***settings-body {
+    height: 100dvh !important;
+    overflow-y: auto !important;
+    padding: 0 !important;
+    padding-bottom: 24px !important;
+  }
+
+  ***REMOVED***screen-settings .app-header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+  }
+
+  /* Контент настроек — центрируем */
+  ***REMOVED***screen-settings .settings-content,
+  ***REMOVED***screen-settings .settings-section {
+    max-width: 600px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 32px !important;
+    padding-right: 32px !important;
+  }
+
+  /* ─── screen-income / screen-expense / screen-transfer ────── */
+
+  ***REMOVED***screen-income,
+  ***REMOVED***screen-expense,
+  ***REMOVED***screen-transfer {
+    overflow: hidden !important;
+  }
+
+  ***REMOVED***screen-income .income-root,
+  ***REMOVED***screen-expense .expense-root,
+  ***REMOVED***screen-transfer .transfer-root {
+    height: 100dvh !important;
+    overflow-y: auto !important;
+    box-sizing: border-box !important;
+  }
+
+  ***REMOVED***screen-income .app-header,
+  ***REMOVED***screen-expense .app-header,
+  ***REMOVED***screen-transfer .app-header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+  }
+
+  /* Центрируем форму */
+  ***REMOVED***screen-income .income-form,
+  ***REMOVED***screen-income .income-inner,
+  ***REMOVED***screen-expense .expense-form,
+  ***REMOVED***screen-expense .expense-inner,
+  ***REMOVED***screen-transfer .transfer-form,
+  ***REMOVED***screen-transfer .transfer-inner {
+    max-width: 560px !important;
+    margin: 0 auto !important;
+  }
+
+  /* Fixed-кнопки «Подтвердить» → static */
+  .income-submit-wrap,
+  .expense-submit-wrap,
+  .transfer-submit-wrap,
+  .income-bottom,
+  .transfer-bottom {
+    position: static !important;
+    padding: 16px 0 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   ЭТАП 4 — BottomSheet → Modal
+══════════════════════════════════════════════════════════════ */
+
+@media (min-width: 1024px) {
+
+  /* Overlay */
+  ***REMOVED***bs-overlay {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(0, 0, 0, 0.5) !important;
+    z-index: 400 !important;
+    opacity: 0 !important;
+    transition: opacity 220ms ease !important;
+    backdrop-filter: blur(2px) !important;
+    -webkit-backdrop-filter: blur(2px) !important;
+  }
+
+  ***REMOVED***bs-overlay.visible {
+    opacity: 1 !important;
+  }
+
+  /* Bottomsheet → центрированный modal */
+  ***REMOVED***bottomsheet {
+    /* Сбрасываем мобильное позиционирование снизу */
+    bottom: auto !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -44%) !important; /* start — чуть выше центра */
+
+    width: 480px !important;
+    max-width: calc(100vw - 64px) !important;
+    max-height: calc(100dvh - 96px) !important;
+
+    border-radius: 20px !important;
+    padding: 32px !important;
+    box-sizing: border-box !important;
+    overflow-y: auto !important;
+
+    z-index: 500 !important;
+
+    /* Анимация */
+    opacity: 0 !important;
+    transition: opacity 220ms ease, transform 220ms ease !important;
+  }
+
+  /* Drag-handle скрыть */
+  ***REMOVED***bottomsheet .bottomsheet-handle {
+    display: none !important;
+  }
+
+  /* Открытое состояние */
+  ***REMOVED***bottomsheet.open {
+    opacity: 1 !important;
+    transform: translate(-50%, -50%) !important;
+  }
+
+  /* Контент */
+  ***REMOVED***bottomsheet ***REMOVED***bs-content {
+    padding: 0 !important;
+  }
+
+  ***REMOVED***bottomsheet .bottomsheet-title {
+    font-size: 20px !important;
+    font-weight: 700 !important;
+    margin-bottom: 16px !important;
+  }
+
+  ***REMOVED***bottomsheet .btn-primary,
+  ***REMOVED***bottomsheet .btn-secondary,
+  ***REMOVED***bottomsheet .btn-danger {
+    width: 100% !important;
+  }
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   ЭТАП 5 — Toast: позиция на десктопе
+══════════════════════════════════════════════════════════════ */
+
+@media (min-width: 1024px) {
+
+  /* Статичный ***REMOVED***toast из DOM */
+  ***REMOVED***toast {
+    bottom: 24px !important;
+    top: auto !important;
+    right: 24px !important;
+    left: auto !important;
+    transform: none !important;
+    border-radius: 12px !important;
+    max-width: 360px !important;
+  }
+
+  /*
+   * Динамические .toast-dynamic создаются в showToast() через JS:
+   *   el.style.cssText = '... bottom:88px; left:50%; transform:translateX(-50%) ...'
+   *
+   * Inline-стили имеют высокий приоритет, поэтому переопределяем
+   * через !important в медиа-запросе.
+   * JS-код при этом менять не обязательно — CSS перекроет.
+   */
+  .toast-dynamic {
+    bottom: 24px !important;
+    top: auto !important;
+    right: 24px !important;
+    left: auto !important;
+    /* Сбрасываем горизонтальное центрирование */
+    transform: translateY(12px) !important;
+    max-width: 360px !important;
+  }
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   ЭТАП 6 — Типографика и отступы на десктопе
+══════════════════════════════════════════════════════════════ */
+
+@media (min-width: 1024px) {
+
+  :root {
+    --header-height: 60px; /* чуть выше мобильного 56px */
+  }
+
+  /* Горизонтальный padding шапок экранов */
+  .app-header {
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+
+  /* Секционные заголовки — немного плотнее */
+  .section-title,
+  .section-label {
+    font-size: 11px !important;
+    letter-spacing: 0.06em !important;
+  }
+
+  /* Карточки */
+  .dashboard-card,
+  .white-card {
+    padding: 20px !important;
+  }
+
+  /* Кнопки */
+  .btn-primary,
+  .btn-secondary {
+    height: 48px !important;
+    font-size: 15px !important;
+    border-radius: 12px !important;
+  }
+
+  /* Пустые состояния */
+  .empty-state {
+    padding: 64px 40px !important;
+  }
+
+  /* Аккуратный скроллбар */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, .12) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, .12);
+    border-radius: 99px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, .22);
+  }
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   ЭТАП 7 — QA-фиксы по ролям
+══════════════════════════════════════════════════════════════ */
+
+@media (min-width: 1024px) {
+
+  /* ── Общее: убрать FAB и fixed-bottom-bar на всех экранах ── */
+  .fab-add,
+  .btn-fixed-bottom,
+  .action-bottom-bar {
+    display: none !important;
+  }
+
+  /* ── Логин: центрировать на широком экране ── */
+  ***REMOVED***screen-login .login-wrap {
+    max-width: 360px !important;
+    margin: 0 auto !important;
+    padding-top: 80px !important;
+  }
+
+  /* ── Overflow guard ── */
+  ***REMOVED***app-content {
+    min-width: 0 !important;
+    overflow-x: hidden !important;
+  }
+
+  /* ── Механик (screen-home):
+        FAB «+» в правой колонке не нужен — есть кнопки слева ── */
+  ***REMOVED***screen-home .home-content-sheet .fab,
+  ***REMOVED***screen-home .home-content-sheet .btn-fab {
+    display: none !important;
+  }
+
+  /* ── Инвестор (screen-dashboard):
+        Правая колонка — убрать мобильное скругление и фон ── */
+  ***REMOVED***screen-dashboard .dashboard-body {
+    border-radius: 0 !important;
+    background: var(--color-bg) !important;
+  }
+
+  /* Month-switcher не прилипает к цифрам */
+  ***REMOVED***screen-dashboard .month-switcher {
+    margin-top: 20px !important;
+  }
+
+  /* ── Карточка водителя: кнопка «Назад» ──
+        Увеличить зону клика иконки */
+  ***REMOVED***screen-driver ***REMOVED***driver-back svg,
+  ***REMOVED***screen-add    ***REMOVED***add-back    svg {
+    width: 22px !important;
+    height: 22px !important;
+  }
+}
