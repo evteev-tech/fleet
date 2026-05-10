@@ -22,18 +22,18 @@ const CAPEX_MODE = {
   PERIOD: 'period',
 };
 const OPEX_COLORS = {
-  ремонт:    '***REMOVED***C2501A',
-  запчасти:  '***REMOVED***8B5E3C',
-  доставка:  '***REMOVED***A8845A',
-  зп:        '***REMOVED***6B3F20',
-  страховка: '***REMOVED***B83820',
-  реклама:   '***REMOVED***C4AA8A',
-  прочее:    '***REMOVED***DDD0BE',
-  то:        '***REMOVED***A8845A',
-  штраф_гибдд: '***REMOVED***B83820',
-  дтп:       '***REMOVED***8B2200',
-  связь_глонасс: '***REMOVED***7A6040',
-  покупка_машины: '***REMOVED***1C1410',
+  ремонт:    '***REMOVED***111111',
+  запчасти:  '***REMOVED***444444',
+  доставка:  '***REMOVED***666666',
+  зп:        '***REMOVED***333333',
+  страховка: '***REMOVED***888888',
+  реклама:   '***REMOVED***AAAAAA',
+  прочее:    '***REMOVED***CCCCCC',
+  то:        '***REMOVED***555555',
+  штраф_гибдд: '***REMOVED***777777',
+  дтп:       '***REMOVED***222222',
+  связь_глонасс: '***REMOVED***999999',
+  покупка_машины: '***REMOVED***111111',
 };
 
 const fmtRub = n =>
@@ -41,7 +41,7 @@ const fmtRub = n =>
 
 function getOpexColor(category) {
   const key = String(category || '').toLowerCase().trim();
-  return OPEX_COLORS[key] ?? '***REMOVED***DDD0BE';
+  return OPEX_COLORS[key] ?? '***REMOVED***CCCCCC';
 }
 
 /** 4 месяца: три предыдущих + текущий (от «сегодня»). */
@@ -364,7 +364,7 @@ function _overviewHtml(dash) {
 
   return `
     <div class="ovw-hero">
-      <div class="ovw-hero__stripe" style="background:${profit >= 0 ? '***REMOVED***C2501A' : '***REMOVED***B83820'}"></div>
+      <div class="ovw-hero__stripe" style="background:${profit >= 0 ? '***REMOVED***2E8B6F' : '***REMOVED***D14848'}"></div>
       <div class="ovw-hero__body">
       <div class="ovw-hero__label">ЧИСТАЯ ПРИБЫЛЬ · ${periodLabel}</div>
       <div class="ovw-hero__amount ovw-hero__amount--${profit >= 0 ? 'pos' : 'neg'}">${withSign(profit)}</div>
@@ -374,7 +374,7 @@ function _overviewHtml(dash) {
     <div class="ovw-sheet">
       <div class="ovw-tiles">
         <div class="ovw-tile">
-          <div class="ovw-tile__stripe" style="background:***REMOVED***C2501A"></div>
+          <div class="ovw-tile__stripe" style="background:***REMOVED***2E8B6F"></div>
           <div class="ovw-tile__content">
             <div class="ovw-tile__lbl">Выручка</div>
             <div class="ovw-tile__val">${fmtRub(revenue)}</div>
@@ -382,7 +382,7 @@ function _overviewHtml(dash) {
           </div>
         </div>
         <div class="ovw-tile">
-          <div class="ovw-tile__stripe" style="background:***REMOVED***B83820"></div>
+          <div class="ovw-tile__stripe" style="background:***REMOVED***D14848"></div>
           <div class="ovw-tile__content">
             <div class="ovw-tile__lbl">Опер. расходы</div>
             <div class="ovw-tile__val">${fmtRub(opex)}</div>
@@ -390,7 +390,7 @@ function _overviewHtml(dash) {
           </div>
         </div>
         <div class="ovw-tile">
-          <div class="ovw-tile__stripe" style="background:***REMOVED***A8845A"></div>
+          <div class="ovw-tile__stripe" style="background:***REMOVED***8A8A8E"></div>
           <div class="ovw-tile__content">
             <div class="ovw-tile__lbl">CAPEX</div>
             <div class="ovw-tile__val">${fmtRub(capex)}</div>
@@ -398,7 +398,7 @@ function _overviewHtml(dash) {
           </div>
         </div>
         <div class="ovw-tile">
-          <div class="ovw-tile__stripe" style="background:${profit >= 0 ? '***REMOVED***C2501A' : '***REMOVED***B83820'}"></div>
+          <div class="ovw-tile__stripe" style="background:${profit >= 0 ? '***REMOVED***2E8B6F' : '***REMOVED***D14848'}"></div>
           <div class="ovw-tile__content">
             <div class="ovw-tile__lbl">Прибыль</div>
             <div class="ovw-tile__val ${profit >= 0 ? 'ovw-val--pos' : 'ovw-val--neg'}">${withSign(profit)}</div>
@@ -626,7 +626,7 @@ function _pnlHtml(pnl) {
       <span>Итого</span>
       <div>
         <div style="font-size:9px;color:***REMOVED***8a8a8e">↑${fmtRub(total.revenue)} &nbsp; ↓${fmtRub(total.expense)}</div>
-        <div class="pnl-heat3-total__val" style="color:${Number(total.profit) >= 0 ? '***REMOVED***C2501A' : '***REMOVED***B83820'}">${Number(total.profit) >= 0 ? '+' : ''}${fmtRub(total.profit)}</div>
+        <div class="pnl-heat3-total__val" style="color:${Number(total.profit) >= 0 ? '***REMOVED***2E8B6F' : '***REMOVED***D14848'}">${Number(total.profit) >= 0 ? '+' : ''}${fmtRub(total.profit)}</div>
       </div>
     </div>`
     : '';
@@ -735,10 +735,10 @@ function _capexPageHtml(dash, capexMode) {
     grouped.set(b, (grouped.get(b) || 0) + (Number(row.amount) || 0));
   });
   const donutRows = [
-    { key: 'Покупки', color: '***REMOVED***1A1A1A', amount: grouped.get('Покупки') || 0 },
-    { key: 'Ремонты', color: '***REMOVED***8B5E3C', amount: grouped.get('Ремонты') || 0 },
-    { key: 'Запчасти', color: '***REMOVED***A8845A', amount: grouped.get('Запчасти') || 0 },
-    { key: 'Прочее', color: '***REMOVED***DDD0BE', amount: grouped.get('Прочее') || 0 },
+    { key: 'Покупки', color: '***REMOVED***111111', amount: grouped.get('Покупки') || 0 },
+    { key: 'Ремонты', color: '***REMOVED***555555', amount: grouped.get('Ремонты') || 0 },
+    { key: 'Запчасти', color: '***REMOVED***888888', amount: grouped.get('Запчасти') || 0 },
+    { key: 'Прочее', color: '***REMOVED***CCCCCC', amount: grouped.get('Прочее') || 0 },
   ];
   const total = Number(s.current) || 0;
   const CIRC = 87.96;
@@ -829,11 +829,11 @@ function _capexPageHtml(dash, capexMode) {
       <div class="roi-grid">
         <div class="roi-cell">
           <div class="roi-c-lbl">Вложено</div>
-          <div class="roi-c-val" style="color:***REMOVED***A8845A">${fmtRub(total)}</div>
+          <div class="roi-c-val" style="color:***REMOVED***111111">${fmtRub(total)}</div>
         </div>
         <div class="roi-cell">
           <div class="roi-c-lbl">Заработано</div>
-          <div class="roi-c-val" style="color:***REMOVED***C2501A">${fmtRub(revenueAcc)}</div>
+          <div class="roi-c-val" style="color:***REMOVED***2E8B6F">${fmtRub(revenueAcc)}</div>
         </div>
       </div>
     </div>
@@ -975,11 +975,11 @@ function _forecastHtml(rentals) {
       const isToday = weekIdx === 0 && i === 0;
       const heightPx = globalMax > 0 ? Math.round((d.total / globalMax) * 44) : 3;
       const safeH = Math.max(3, heightPx);
-      let color = '***REMOVED***7A6040';
-      if (d.total >= globalMax * 0.9) color = '***REMOVED***C2501A';
-      else if (d.total >= globalMax * 0.6) color = '***REMOVED***A8845A';
-      else if (d.total >= globalMax * 0.3) color = '***REMOVED***8A6840';
-      else if (d.total === 0) color = '***REMOVED***3A3A3A';
+      let color = '***REMOVED***999999';
+      if (d.total >= globalMax * 0.9) color = '***REMOVED***111111';
+      else if (d.total >= globalMax * 0.6) color = '***REMOVED***444444';
+      else if (d.total >= globalMax * 0.3) color = '***REMOVED***777777';
+      else if (d.total === 0) color = '***REMOVED***DDDDDD';
       return `
         <div class="fcst-wk__col${isToday ? ' fcst-wk__col--today' : ''}">
           <div class="fcst-wk__fill" style="height:${safeH}px;background:${color}"></div>
@@ -992,7 +992,7 @@ function _forecastHtml(rentals) {
     const total = wDays.reduce((s, d) => s + d.total, 0);
     const maxCars = Math.max(...wDays.map(d => d.cars.length));
     const metaText = maxCars > 0 ? `до ${maxCars} маш. в день` : 'нет аренд';
-    const amtColor = total >= totalPeriod * 0.6 ? '***REMOVED***C2501A' : total > 0 ? '***REMOVED***A8845A' : '***REMOVED***666';
+    const amtColor = total >= totalPeriod * 0.6 ? '***REMOVED***2E8B6F' : total > 0 ? '***REMOVED***444444' : '***REMOVED***999';
     return `
       <div class="white-card fcst-wk">
         <div class="fcst-wk__head">
@@ -1401,7 +1401,7 @@ function _dtDelta(key, cur, prev) {
   const diff = c - p;
   if (Math.abs(diff) < 1) return '';
   let better = (key === 'revenue' || key === 'profit') ? diff > 0 : diff < 0;
-  const color = better ? '***REMOVED***C2501A' : '***REMOVED***B83820';
+  const color = better ? '***REMOVED***2E8B6F' : '***REMOVED***D14848';
   const sign = diff > 0 ? '+' : '−';
   return '<span style="font-size:12px;color:' + color + ';font-weight:500">' + sign + fmtRub(Math.abs(diff)) + '</span>';
 }
@@ -1458,12 +1458,12 @@ function _desktopShellHTML(dash) {
 
   const capexCatsAll = dash.capexByCategoryAll || [];
   const capexSlices = [
-    { color:'***REMOVED***A8845A', amount: capexCatsAll.filter(function(r){ return r.name.toLowerCase().includes('запч'); }).reduce(function(s,r){ return s+(Number(r.amount)||0); }, 0) },
-    { color:'***REMOVED***8B5E3C', amount: capexCatsAll.filter(function(r){ return r.name.toLowerCase().includes('ремонт'); }).reduce(function(s,r){ return s+(Number(r.amount)||0); }, 0) },
-    { color:'***REMOVED***1A1A1A', amount: capexCatsAll.filter(function(r){ return r.name.toLowerCase().includes('покуп'); }).reduce(function(s,r){ return s+(Number(r.amount)||0); }, 0) },
+    { color:'***REMOVED***555555', amount: capexCatsAll.filter(function(r){ return r.name.toLowerCase().includes('запч'); }).reduce(function(s,r){ return s+(Number(r.amount)||0); }, 0) },
+    { color:'***REMOVED***444444', amount: capexCatsAll.filter(function(r){ return r.name.toLowerCase().includes('ремонт'); }).reduce(function(s,r){ return s+(Number(r.amount)||0); }, 0) },
+    { color:'***REMOVED***111111', amount: capexCatsAll.filter(function(r){ return r.name.toLowerCase().includes('покуп'); }).reduce(function(s,r){ return s+(Number(r.amount)||0); }, 0) },
   ];
   const capexKnown = capexSlices.reduce(function(s,x){ return s+x.amount; }, 0);
-  capexSlices.push({ color:'***REMOVED***DDD0BE', amount: Math.max(0, capexAll - capexKnown) });
+  capexSlices.push({ color:'***REMOVED***CCCCCC', amount: Math.max(0, capexAll - capexKnown) });
   const capexLabels = ['Запчасти','Ремонты','Покупки','Прочее'];
 
   const pnlRows = (dash.pnl || []).slice(0, 6);
@@ -1471,7 +1471,7 @@ function _desktopShellHTML(dash) {
   const pnlHtml = pnlRows.map(function(r, i) {
     const p = Number(r.profit) || 0;
     const pct = (Math.abs(p) / pnlMax) * 100;
-    const color = p > 0 ? '***REMOVED***C2501A' : p < 0 ? '***REMOVED***B83820' : '***REMOVED***8A8A8E';
+    const color = p > 0 ? '***REMOVED***2E8B6F' : p < 0 ? '***REMOVED***D14848' : '***REMOVED***8A8A8E';
     return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
       + '<span style="font-size:12px;font-weight:600;width:36px;flex-shrink:0;color:var(--dt-text)">' + r.car + '</span>'
       + '<div style="flex:1;height:18px;background:rgba(0,0,0,.05);border-radius:3px;overflow:hidden;position:relative">'
@@ -1496,8 +1496,8 @@ function _desktopShellHTML(dash) {
   };
   const kassaDefs = [
     { id:'K_AZAMAT',   label:'Азамат',   color:'***REMOVED***FFDD2D' },
-    { id:'K_VLADIMIR', label:'Владимир', color:'***REMOVED***A8845A' },
-    { id:'K_YULIA',    label:'Юлия',     color:'***REMOVED***C2501A' },
+    { id:'K_VLADIMIR', label:'Владимир', color:'***REMOVED***378ADD' },
+    { id:'K_YULIA',    label:'Юлия',     color:'***REMOVED***2E8B6F' },
   ];
   const kassaRowsHtml = kassaDefs.map(function(k) {
     const bal = _calcKassaBal(k.id);
@@ -1506,7 +1506,7 @@ function _desktopShellHTML(dash) {
       + '<span style="width:8px;height:8px;border-radius:50%;background:' + k.color + ';flex-shrink:0"></span>'
       + '<span style="font-size:13px;color:var(--dt-text)">' + k.label + '</span>'
       + '</div>'
-      + '<span style="font-size:14px;font-weight:600;color:' + (bal>=0?'***REMOVED***C2501A':'***REMOVED***B83820') + '">' + (bal<0?'−':'') + fmtRub(Math.abs(bal)) + '</span>'
+      + '<span style="font-size:14px;font-weight:600;color:' + (bal>=0?'***REMOVED***2E8B6F':'***REMOVED***D14848') + '">' + (bal<0?'−':'') + fmtRub(Math.abs(bal)) + '</span>'
       + '</div>';
   }).join('');
 
@@ -1558,13 +1558,13 @@ function _desktopShellHTML(dash) {
     + '<div class="dt-hero">'
     + '<div class="dt-hero-main">'
     + '<div class="dt-hero-lbl">Чистая прибыль · ' + (dash.allTime ? 'всё время' : _monthLabelFull(dash.year, dash.month)) + '</div>'
-    + '<div class="dt-hero-num" style="color:' + (profit>=0?'***REMOVED***C2501A':'***REMOVED***B83820') + '">' + (profit>=0?'+':'') + fmtRub(profit) + '</div>'
+    + '<div class="dt-hero-num" style="color:' + (profit>=0?'***REMOVED***2E8B6F':'***REMOVED***D14848') + '">' + (profit>=0?'+':'') + fmtRub(profit) + '</div>'
     + '<div class="dt-hero-sub">Выручка ' + fmtRub(revenue) + ' · Расходы ' + fmtRub(opex) + '</div>'
     + '</div>'
     + '<div class="dt-kpis">'
-    + '<div class="dt-kpi" style="animation-delay:.05s"><div class="dt-kpi-lbl">Выручка</div><div class="dt-kpi-val" style="color:***REMOVED***C2501A">' + fmtRub(revenue) + '</div>' + _dtDelta('revenue',revenue,byKey('revenue').previous) + '</div>'
-    + '<div class="dt-kpi" style="animation-delay:.1s"><div class="dt-kpi-lbl">Расходы</div><div class="dt-kpi-val" style="color:***REMOVED***B83820">' + fmtRub(opex) + '</div>' + _dtDelta('opex',opex,byKey('opex').previous) + '</div>'
-    + '<div class="dt-kpi" style="animation-delay:.15s"><div class="dt-kpi-lbl">CAPEX всего</div><div class="dt-kpi-val" style="color:***REMOVED***A8845A">' + fmtRub(capexAll) + '</div></div>'
+    + '<div class="dt-kpi" style="animation-delay:.05s"><div class="dt-kpi-lbl">Выручка</div><div class="dt-kpi-val" style="color:***REMOVED***2E8B6F">' + fmtRub(revenue) + '</div>' + _dtDelta('revenue',revenue,byKey('revenue').previous) + '</div>'
+    + '<div class="dt-kpi" style="animation-delay:.1s"><div class="dt-kpi-lbl">Расходы</div><div class="dt-kpi-val" style="color:***REMOVED***D14848">' + fmtRub(opex) + '</div>' + _dtDelta('opex',opex,byKey('opex').previous) + '</div>'
+    + '<div class="dt-kpi" style="animation-delay:.15s"><div class="dt-kpi-lbl">CAPEX всего</div><div class="dt-kpi-val" style="color:***REMOVED***8A8A8E">' + fmtRub(capexAll) + '</div></div>'
     + '<div class="dt-kpi" style="animation-delay:.2s"><div class="dt-kpi-lbl">Загрузка</div><div class="dt-kpi-val" style="color:***REMOVED***60A5FA">' + rentPct + '%</div></div>'
     + '</div></div></div>'
 
@@ -1581,23 +1581,23 @@ function _desktopShellHTML(dash) {
     + '<div class="dt-card" style="animation-delay:.12s">'
     + '<div class="dt-card-title">Выручка · 5 месяцев</div>'
     + '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px">'
-    + '<span class="dt-big" style="color:***REMOVED***C2501A">' + fmtRub(revenue) + '</span>'
+    + '<span class="dt-big" style="color:***REMOVED***2E8B6F">' + fmtRub(revenue) + '</span>'
     + _dtDelta('revenue',revenue,byKey('revenue').previous)
     + '</div>'
-    + '<div style="margin-top:10px">' + _sparklineSvg(revSeries,'***REMOVED***C2501A',52) + '</div>'
+    + '<div style="margin-top:10px">' + _sparklineSvg(revSeries,'***REMOVED***2E8B6F',52) + '</div>'
     + '</div>'
 
     + '<div class="dt-card" style="animation-delay:.16s">'
     + '<div class="dt-card-title">Парк · ' + fTotal + ' машин</div>'
     + '<div class="dt-fleet-grid">'
-    + '<div class="dt-fleet-tile" style="background:***REMOVED***e3f9f0;color:***REMOVED***C2501A"><div class="dt-fleet-tile-n">' + fRent + '</div><div class="dt-fleet-tile-l">Аренда</div></div>'
-    + '<div class="dt-fleet-tile" style="background:***REMOVED***fff3e0;color:***REMOVED***A8845A"><div class="dt-fleet-tile-n">' + fIdle + '</div><div class="dt-fleet-tile-l">Простой</div></div>'
-    + '<div class="dt-fleet-tile" style="background:***REMOVED***fff0ee;color:***REMOVED***B83820"><div class="dt-fleet-tile-n">' + fRepair + '</div><div class="dt-fleet-tile-l">Ремонт</div></div>'
+    + '<div class="dt-fleet-tile" style="background:***REMOVED***E8F2EC;color:***REMOVED***2E8B6F"><div class="dt-fleet-tile-n">' + fRent + '</div><div class="dt-fleet-tile-l">Аренда</div></div>'
+    + '<div class="dt-fleet-tile" style="background:***REMOVED***FEF9C3;color:***REMOVED***D97706"><div class="dt-fleet-tile-n">' + fIdle + '</div><div class="dt-fleet-tile-l">Простой</div></div>'
+    + '<div class="dt-fleet-tile" style="background:***REMOVED***FBE9E9;color:***REMOVED***D14848"><div class="dt-fleet-tile-n">' + fRepair + '</div><div class="dt-fleet-tile-l">Ремонт</div></div>'
     + '</div>'
     + '<div class="dt-fleet-bar">'
-    + '<div class="dt-fleet-seg" style="width:' + (fRent/fTotal*100).toFixed(1) + '%;background:***REMOVED***C2501A"></div>'
-    + '<div class="dt-fleet-seg" style="width:' + (fIdle/fTotal*100).toFixed(1) + '%;background:***REMOVED***A8845A"></div>'
-    + '<div class="dt-fleet-seg" style="width:' + (fRepair/fTotal*100).toFixed(1) + '%;background:***REMOVED***B83820"></div>'
+    + '<div class="dt-fleet-seg" style="width:' + (fRent/fTotal*100).toFixed(1) + '%;background:***REMOVED***2E8B6F"></div>'
+    + '<div class="dt-fleet-seg" style="width:' + (fIdle/fTotal*100).toFixed(1) + '%;background:***REMOVED***D97706"></div>'
+    + '<div class="dt-fleet-seg" style="width:' + (fRepair/fTotal*100).toFixed(1) + '%;background:***REMOVED***D14848"></div>'
     + '</div>'
     + '<div class="dt-fleet-pct">Загрузка ' + rentPct + '%</div>'
     + '</div>'
@@ -1628,7 +1628,7 @@ function _desktopShellHTML(dash) {
     + kassaRowsHtml
     + '<div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;margin-top:6px">'
     + '<span style="font-size:12px;color:var(--dt-muted)">Активные залоги</span>'
-    + '<span style="font-size:14px;font-weight:600;color:***REMOVED***A8845A">' + fmtRub(activeDeposits) + '</span>'
+    + '<span style="font-size:14px;font-weight:600;color:***REMOVED***111111">' + fmtRub(activeDeposits) + '</span>'
     + '</div></div>'
 
     + '</div></div>';
