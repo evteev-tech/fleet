@@ -25,6 +25,7 @@ let _state = {
   period: null,
   numpadOpen: false,
   numpadBuf: '',
+  comment: '',
 };
 
 const STATUS_RENT = CAR_STATUSES.RENT;
@@ -46,6 +47,7 @@ export function renderIncome() {
     period: null,
     numpadOpen: false,
     numpadBuf: '',
+    comment: '',
   };
 
   root.innerHTML = `
@@ -192,6 +194,15 @@ function _renderIncomeShell(root) {
         </div>
         <div class="income-dates hidden" id="income-dates-row"></div>
         <div class="income-warn hidden" id="income-warn"></div>
+        <div class="income-comment-wrap" id="income-comment-wrap">
+          <textarea
+            id="income-comment"
+            class="income-comment"
+            placeholder="Комментарий (необязательно)"
+            maxlength="200"
+            rows="2"
+          ></textarea>
+        </div>
         <button type="button" class="income-submit btn-income-submit" id="income-submit" disabled>Записать</button>
       </div>
     </div>
@@ -218,6 +229,10 @@ function _renderIncomeShell(root) {
   document.getElementById('income-sum-btn')?.addEventListener('click', () => _openNumpad(root));
 
   document.getElementById('income-submit')?.addEventListener('click', () => _submit(root));
+
+  document.getElementById('income-comment')?.addEventListener('input', e => {
+    _state.comment = e.target.value.trim();
+  });
 
   _updateBottom(root);
 }
@@ -509,7 +524,9 @@ async function _submit(root) {
       date_to: dateTo,
       days: fullDays,
       rate: rate,
-      comment: `оплатил до ${_fmtShortDate(end)}`,
+      comment: _state.comment
+        ? `оплатил до ${_fmtShortDate(end)} · ${_state.comment}`
+        : `оплатил до ${_fmtShortDate(end)}`,
       kassa_id: kassa,
       provel: provelShort,
     });

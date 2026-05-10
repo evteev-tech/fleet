@@ -3777,6 +3777,35 @@
   margin-bottom: 10px;
 }
 
+.income-comment-wrap {
+  margin-bottom: 10px;
+}
+
+.income-comment {
+  width: 100%;
+  min-height: 60px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-family);
+  font-size: 14px;
+  color: var(--color-dark);
+  background: var(--color-white);
+  resize: none;
+  line-height: 1.5;
+  transition: border-color var(--transition-fast);
+  -webkit-appearance: none;
+}
+
+.income-comment:focus {
+  outline: none;
+  border-color: var(--color-dark);
+}
+
+.income-comment::placeholder {
+  color: var(--color-muted);
+}
+
 .btn-income-submit {
   width: 100%;
   padding: 14px 16px;
