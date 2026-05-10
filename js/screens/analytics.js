@@ -953,67 +953,86 @@ function _buildForecast(rentals) {
 function _forecastHtml(rentals) {
   const days = _buildForecast(rentals || []);
   const totalPeriod = days.reduce((s, d) => s + d.total, 0);
-  const maxDay = Math.max(1, ...days.map(d => d.total));
+  const activeCount = (rentals || []).length;
+  const avgDay = totalPeriod > 0 ? Math.round(totalPeriod / 14) : 0;
 
-  const dayNames = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+  const DAY_NAMES = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+  const MON_SHORT = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
 
-  const bars = days.map((d, i) => {
-    const heightPct = Math.round((d.total / maxDay) * 100);
-    const isToday = i === 0;
-    const label = `${d.day.getDate()}.${String(d.day.getMonth() + 1).padStart(2, '0')}`;
-    const dayName = dayNames[d.day.getDay()];
-    const isWeekend = d.day.getDay() === 0 || d.day.getDay() === 6;
+  const week1 = days.slice(0, 7);
+  const week2 = days.slice(7, 14);
+
+  function _weekLabel(wDays) {
+    const first = wDays[0].day;
+    const last = wDays[wDays.length - 1].day;
+    const f = `${first.getDate()} ${MON_SHORT[first.getMonth()]}`;
+    const l = `${last.getDate()} ${MON_SHORT[last.getMonth()]}`;
+    return `${f} — ${l}`;
+  }
+
+  function _weekBars(wDays, globalMax, weekIdx) {
+    return wDays.map((d, i) => {
+      const isToday = weekIdx === 0 && i === 0;
+      const heightPx = globalMax > 0 ? Math.round((d.total / globalMax) * 44) : 3;
+      const safeH = Math.max(3, heightPx);
+      let color = '***REMOVED***7A6040';
+      if (d.total >= globalMax * 0.9) color = '***REMOVED***C2501A';
+      else if (d.total >= globalMax * 0.6) color = '***REMOVED***A8845A';
+      else if (d.total >= globalMax * 0.3) color = '***REMOVED***8A6840';
+      else if (d.total === 0) color = '***REMOVED***3A3A3A';
+      return `
+        <div class="fcst-wk__col${isToday ? ' fcst-wk__col--today' : ''}">
+          <div class="fcst-wk__fill" style="height:${safeH}px;background:${color}"></div>
+          <div class="fcst-wk__day">${DAY_NAMES[d.day.getDay()]}</div>
+        </div>`;
+    }).join('');
+  }
+
+  function _weekBlock(wDays, globalMax, weekIdx) {
+    const total = wDays.reduce((s, d) => s + d.total, 0);
+    const maxCars = Math.max(...wDays.map(d => d.cars.length));
+    const metaText = maxCars > 0 ? `до ${maxCars} маш. в день` : 'нет аренд';
+    const amtColor = total >= totalPeriod * 0.6 ? '***REMOVED***C2501A' : total > 0 ? '***REMOVED***A8845A' : '***REMOVED***666';
     return `
-      <div class="fcst-bar-col${isToday ? ' fcst-bar-col--today' : ''}${isWeekend ? ' fcst-bar-col--weekend' : ''}">
-        <div class="fcst-bar-val">${d.total > 0 ? fmtRub(d.total).replace(' ₽', '') : ''}</div>
-        <div class="fcst-bar-track">
-          <div class="fcst-bar-fill" style="height:${heightPct}%"></div>
+      <div class="white-card fcst-wk">
+        <div class="fcst-wk__head">
+          <div class="sec">${_weekLabel(wDays)}</div>
+          <div class="fcst-wk__meta">${metaText}</div>
         </div>
-        <div class="fcst-bar-date">${label}</div>
-        <div class="fcst-bar-day">${dayName}</div>
+        <div class="fcst-wk__amt" style="color:${amtColor}">${fmtRub(total)}</div>
+        <div class="fcst-wk__bars">
+          ${_weekBars(wDays, globalMax, weekIdx)}
+        </div>
       </div>`;
-  }).join('');
+  }
 
-  const tableRows = days.map((d, i) => {
-    const label = `${String(d.day.getDate()).padStart(2, '0')}.${String(d.day.getMonth() + 1).padStart(2, '0')}`;
-    const dayName = dayNames[d.day.getDay()];
+  const globalMax = Math.max(1, ...days.map(d => d.total));
+
+  // Ближайшие 3 дня
+  const nearest3 = days.slice(0, 3).map((d, i) => {
     const isToday = i === 0;
-    const isWeekend = d.day.getDay() === 0 || d.day.getDay() === 6;
+    const dateLabel = `${d.day.getDate()} ${DAY_NAMES[d.day.getDay()]}`;
     const carsLabel = d.cars.length > 0 ? `${d.cars.length} маш.` : '—';
     return `
-      <tr class="${isToday ? 'fcst-row--today' : ''}${isWeekend ? ' fcst-row--weekend' : ''}">
-        <td class="fcst-td fcst-td--date">${label} <span class="fcst-dayname">${dayName}</span></td>
-        <td class="fcst-td fcst-td--cars">${carsLabel}</td>
-        <td class="fcst-td fcst-td--sum${d.total === 0 ? ' fcst-td--zero' : ''}">${d.total > 0 ? fmtRub(d.total) : '—'}</td>
-      </tr>`;
+      <div class="fcst-nd${isToday ? ' fcst-nd--today' : ''}">
+        <div class="fcst-nd__date">${dateLabel}</div>
+        <div class="fcst-nd__amt">${d.total > 0 ? new Intl.NumberFormat('ru-RU').format(d.total) : '—'}</div>
+        <div class="fcst-nd__cur">${d.total > 0 ? '₽' : ''}</div>
+        <div class="fcst-nd__cars">${carsLabel}</div>
+      </div>`;
   }).join('');
-
-  const activeCount = (rentals || []).length;
 
   return `
     <div class="fcst-hero">
       <div class="fcst-hero__label">ПРОГНОЗ · 14 ДНЕЙ</div>
       <div class="fcst-hero__amount">${fmtRub(totalPeriod)}</div>
-      <div class="fcst-hero__sub">${activeCount} активных аренд · ${fmtRub(Math.round(totalPeriod / 14))}/день в среднем</div>
+      <div class="fcst-hero__sub">${activeCount} активных аренд · ${fmtRub(avgDay)}/день в среднем</div>
     </div>
-    <div class="white-card analytics-card-pad">
-      <div class="sec">По дням</div>
-      <div class="fcst-chart">
-        ${bars}
-      </div>
-    </div>
-    <div class="white-card analytics-card-pad fcst-table-wrap">
-      <div class="sec">Детализация</div>
-      <table class="fcst-table">
-        <thead>
-          <tr>
-            <th class="fcst-th">Дата</th>
-            <th class="fcst-th">Машин</th>
-            <th class="fcst-th">Сумма</th>
-          </tr>
-        </thead>
-        <tbody>${tableRows}</tbody>
-      </table>
+    ${_weekBlock(week1, globalMax, 0)}
+    ${_weekBlock(week2, globalMax, 1)}
+    <div class="white-card fcst-nearest">
+      <div class="sec">Ближайшие 3 дня</div>
+      <div class="fcst-nd__grid">${nearest3}</div>
     </div>`;
 }
 
@@ -1046,13 +1065,22 @@ async function _hydrateForecast(root) {
 }
 
 function _animateForecast(container) {
-  const fills = container.querySelectorAll('.fcst-bar-fill');
-  fills.forEach((fill, i) => {
-    fill.style.transform = 'scaleY(0)';
-    fill.style.transformOrigin = 'bottom';
-    fill.style.animation = 'none';
+  container.querySelectorAll('.fcst-wk__fill').forEach((fill, i) => {
+    const finalH = fill.style.height;
+    fill.style.height = '0px';
+    fill.style.transition = 'none';
     fill.getBoundingClientRect();
-    fill.style.animation = `fcst-bar-in 0.5s cubic-bezier(.4,0,.2,1) ${(0.05 + i * 0.04).toFixed(2)}s forwards`;
+    fill.style.transition = `height 0.45s cubic-bezier(.4,0,.2,1) ${(0.04 + i * 0.04).toFixed(2)}s`;
+    fill.style.height = finalH;
+  });
+  container.querySelectorAll('.fcst-nd').forEach((nd, i) => {
+    nd.style.opacity = '0';
+    nd.style.transform = 'translateY(8px)';
+    nd.style.transition = 'none';
+    nd.getBoundingClientRect();
+    nd.style.transition = `opacity 0.3s ${(0.3 + i * 0.08).toFixed(2)}s ease, transform 0.3s ${(0.3 + i * 0.08).toFixed(2)}s ease`;
+    nd.style.opacity = '1';
+    nd.style.transform = 'translateY(0)';
   });
 }
 
