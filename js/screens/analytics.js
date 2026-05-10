@@ -9,13 +9,14 @@ import {
   getOperations,
   getKassas,
   getDeposits,
+  getActiveRentals,
 } from '../api.js';
 import { getWithSWR, CACHE_KEYS } from '../cache.js';
 import { getCurrentUser } from '../auth.js';
 import { mountNavbarInContainer } from '../router.js?v=7';
 import { CAR_STATUSES, KASSA_NAMES } from '../config.js';
 
-const PAGE_LABELS = ['Обзор', 'Расходы', 'CAPEX', 'По машинам', 'Кассы'];
+const PAGE_LABELS = ['Обзор', 'Расходы', 'CAPEX', 'По машинам', 'Кассы', 'Прогноз'];
 const CAPEX_MODE = {
   ALL: 'all',
   PERIOD: 'period',
@@ -910,6 +911,151 @@ function _headerPillsHtml(dash) {
     </div>`;
 }
 
+// -----------------------------------------------------------------------------
+// ПРОГНОЗ ДЕНЕЖНОГО ПОТОКА — 14 дней
+// -----------------------------------------------------------------------------
+
+let _forecastRentals = null; // кэш активных аренд для текущей сессии
+
+function _parseDDMMYYYY(str) {
+  if (!str) return null;
+  const s = String(str).trim();
+  const parts = s.split('.');
+  if (parts.length !== 3) return null;
+  const d = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function _buildForecast(rentals) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const days = [];
+  for (let i = 0; i < 14; i++) {
+    const day = new Date(today);
+    day.setDate(today.getDate() + i);
+    day.setHours(0, 0, 0, 0);
+    let total = 0;
+    const cars = [];
+    (rentals || []).forEach(r => {
+      const end = _parseDDMMYYYY(r.date_end);
+      const start = _parseDDMMYYYY(r.date_start);
+      if (!end || !start) return;
+      if (day >= start && day <= end) {
+        total += Number(r.rate_day) || 0;
+        cars.push(r.car_id);
+      }
+    });
+    days.push({ day, total, cars });
+  }
+  return days;
+}
+
+function _forecastHtml(rentals) {
+  const days = _buildForecast(rentals || []);
+  const totalPeriod = days.reduce((s, d) => s + d.total, 0);
+  const maxDay = Math.max(1, ...days.map(d => d.total));
+
+  const dayNames = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+
+  const bars = days.map((d, i) => {
+    const heightPct = Math.round((d.total / maxDay) * 100);
+    const isToday = i === 0;
+    const label = `${d.day.getDate()}.${String(d.day.getMonth() + 1).padStart(2, '0')}`;
+    const dayName = dayNames[d.day.getDay()];
+    const isWeekend = d.day.getDay() === 0 || d.day.getDay() === 6;
+    return `
+      <div class="fcst-bar-col${isToday ? ' fcst-bar-col--today' : ''}${isWeekend ? ' fcst-bar-col--weekend' : ''}">
+        <div class="fcst-bar-val">${d.total > 0 ? fmtRub(d.total).replace(' ₽', '') : ''}</div>
+        <div class="fcst-bar-track">
+          <div class="fcst-bar-fill" style="height:${heightPct}%"></div>
+        </div>
+        <div class="fcst-bar-date">${label}</div>
+        <div class="fcst-bar-day">${dayName}</div>
+      </div>`;
+  }).join('');
+
+  const tableRows = days.map((d, i) => {
+    const label = `${String(d.day.getDate()).padStart(2, '0')}.${String(d.day.getMonth() + 1).padStart(2, '0')}`;
+    const dayName = dayNames[d.day.getDay()];
+    const isToday = i === 0;
+    const isWeekend = d.day.getDay() === 0 || d.day.getDay() === 6;
+    const carsLabel = d.cars.length > 0 ? `${d.cars.length} маш.` : '—';
+    return `
+      <tr class="${isToday ? 'fcst-row--today' : ''}${isWeekend ? ' fcst-row--weekend' : ''}">
+        <td class="fcst-td fcst-td--date">${label} <span class="fcst-dayname">${dayName}</span></td>
+        <td class="fcst-td fcst-td--cars">${carsLabel}</td>
+        <td class="fcst-td fcst-td--sum${d.total === 0 ? ' fcst-td--zero' : ''}">${d.total > 0 ? fmtRub(d.total) : '—'}</td>
+      </tr>`;
+  }).join('');
+
+  const activeCount = (rentals || []).length;
+
+  return `
+    <div class="fcst-hero">
+      <div class="fcst-hero__label">ПРОГНОЗ · 14 ДНЕЙ</div>
+      <div class="fcst-hero__amount">${fmtRub(totalPeriod)}</div>
+      <div class="fcst-hero__sub">${activeCount} активных аренд · ${fmtRub(Math.round(totalPeriod / 14))}/день в среднем</div>
+    </div>
+    <div class="white-card analytics-card-pad">
+      <div class="sec">По дням</div>
+      <div class="fcst-chart">
+        ${bars}
+      </div>
+    </div>
+    <div class="white-card analytics-card-pad fcst-table-wrap">
+      <div class="sec">Детализация</div>
+      <table class="fcst-table">
+        <thead>
+          <tr>
+            <th class="fcst-th">Дата</th>
+            <th class="fcst-th">Машин</th>
+            <th class="fcst-th">Сумма</th>
+          </tr>
+        </thead>
+        <tbody>${tableRows}</tbody>
+      </table>
+    </div>`;
+}
+
+function _forecastLoadingHtml() {
+  return `
+    <div class="fcst-loading">
+      <div class="skeleton" style="height:88px;border-radius:14px;margin-bottom:10px"></div>
+      <div class="skeleton" style="height:160px;border-radius:14px;margin-bottom:10px"></div>
+      <div class="skeleton" style="height:240px;border-radius:14px"></div>
+    </div>`;
+}
+
+async function _hydrateForecast(root) {
+  const mount = root.querySelector('***REMOVED***analytics-forecast-mount');
+  if (!mount) return;
+  if (_forecastRentals !== null) {
+    mount.innerHTML = _forecastHtml(_forecastRentals);
+    _animateForecast(mount);
+    return;
+  }
+  mount.innerHTML = _forecastLoadingHtml();
+  try {
+    const res = await getActiveRentals();
+    _forecastRentals = res?.rentals || [];
+    mount.innerHTML = _forecastHtml(_forecastRentals);
+    _animateForecast(mount);
+  } catch (e) {
+    mount.innerHTML = `<div class="white-card analytics-card-pad analytics-muted">Не удалось загрузить прогноз</div>`;
+  }
+}
+
+function _animateForecast(container) {
+  const fills = container.querySelectorAll('.fcst-bar-fill');
+  fills.forEach((fill, i) => {
+    fill.style.transform = 'scaleY(0)';
+    fill.style.transformOrigin = 'bottom';
+    fill.style.animation = 'none';
+    fill.getBoundingClientRect();
+    fill.style.animation = `fcst-bar-in 0.5s cubic-bezier(.4,0,.2,1) ${(0.05 + i * 0.04).toFixed(2)}s forwards`;
+  });
+}
+
 function _pagesHtml(dash, emptyMsg, capexMode) {
   const banner =
     emptyMsg && `<div class="analytics-empty-banner">${emptyMsg}</div>`;
@@ -947,6 +1093,12 @@ function _pagesHtml(dash, emptyMsg, capexMode) {
       <div class="analytics-page-inner">
         <div class="section-label">Балансы касс</div>
         <div class="white-card analytics-card-pad" id="analytics-kassas-mount">Загрузка…</div>
+      </div>
+    </div>
+    <div class="analytics-page" data-page="5">
+      <div class="analytics-page-inner">
+        <div class="section-label">Прогноз поступлений</div>
+        <div id="analytics-forecast-mount">${_forecastLoadingHtml()}</div>
       </div>
     </div>`;
 }
@@ -1092,6 +1244,9 @@ function _animatePage(root, idx) {
       card.getBoundingClientRect();
       card.style.animation = `heat-in 0.4s cubic-bezier(.34,1.56,.64,1) ${(0.05 + i * 0.07).toFixed(2)}s forwards`;
     });
+  } else if (idx === 5) {
+    const root = document.getElementById('analytics-root');
+    if (root) void _hydrateForecast(root);
   }
 }
 
@@ -1138,6 +1293,20 @@ function _afterShellMounted(root, dash) {
     const safe = Math.max(0, Math.min(PAGE_LABELS.length - 1, _currentPage));
     car.scrollLeft = safe * (car.offsetWidth || 1);
     _updateCarouselChrome(root, safe);
+    // Загружаем прогноз сразу если открыта вкладка 5, иначе по скроллу
+    if (safe === 5) {
+      void _hydrateForecast(root);
+    } else {
+      // Ленивая загрузка — при скролле к вкладке 5
+      car.addEventListener('scroll', function _lazyForecast() {
+        const w = car.offsetWidth || 1;
+        const idx = Math.round(car.scrollLeft / w);
+        if (idx === 5) {
+          car.removeEventListener('scroll', _lazyForecast);
+          void _hydrateForecast(root);
+        }
+      }, { passive: true });
+    }
   }
 }
 
@@ -1741,6 +1910,9 @@ export function initAnalytics() {
   }
 
   document.addEventListener('screen:activated', e => {
-    if (e.detail.screenId === 'screen-analytics') _refreshViewOnly();
+    if (e.detail.screenId === 'screen-analytics') {
+      _forecastRentals = null; // сброс кэша — данные свежие при каждом открытии
+      _refreshViewOnly();
+    }
   });
 }

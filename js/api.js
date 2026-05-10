@@ -407,17 +407,20 @@ export async function getDeposits() {
  * Отправляет action в Apps Script webhook и возвращает тело ответа.
  * После успешного ответа инвалидирует кэш затронутых листов.
  *
- * @param {string} action  — например ADD_OPERATION, GET_DASHBOARD, UPDATE_PERIOD
+ * @param {string|{action:string}} action  — например ADD_OPERATION, GET_DASHBOARD, UPDATE_PERIOD
  * @param {object} data    — поля для action
  * @returns {Promise<object>}
  */
 export async function postAction(action, data) {
   const webhookUrl = localStorage.getItem('matizi_webhook') || WEBHOOK_URL;
+  const act = typeof action === 'object' && action ? action.action : action;
+  const incomingData = typeof action === 'object' && action ? { ...(action || {}) } : data;
+  if (typeof incomingData === 'object' && incomingData) delete incomingData.action;
   const payloadData =
-    action === 'ADD_INCOME'
-      ? { ...data, client_op_date: formatDate(new Date()) }
-      : data;
-  const payload = JSON.stringify({ action, ...payloadData });
+    act === 'ADD_INCOME'
+      ? { ...incomingData, client_op_date: formatDate(new Date()) }
+      : incomingData;
+  const payload = JSON.stringify({ action: act, ...payloadData });
 
   // URLSearchParams → Content-Type: application/x-www-form-urlencoded
   // браузер не шлёт preflight, Apps Script читает через e.parameter.data
@@ -443,7 +446,7 @@ export async function postAction(action, data) {
   }
 
   // Инвалидируем кэш листов, которые могли измениться
-  _invalidateByAction(action);
+  _invalidateByAction(act);
 
   return body;
 }
@@ -566,6 +569,10 @@ function _parseFlexDate(raw) {
     return new Date(excelEpoch.getTime() + num * 86400000);
   }
   return null;
+}
+
+export async function getActiveRentals() {
+  return postAction({ action: 'GET_ACTIVE_RENTALS' });
 }
 
 
