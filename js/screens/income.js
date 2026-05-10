@@ -462,6 +462,15 @@ function _numpadKey(root, k) {
   } else if (_state.numpadBuf.length < 9) {
     _state.numpadBuf += k;
   }
+  // Показываем набираемые цифры прямо во время ввода
+  const el = root.querySelector('***REMOVED***income-sum-display');
+  if (el) {
+    const preview = _state.numpadBuf
+      ? `${parseInt(_state.numpadBuf, 10).toLocaleString('ru-RU')} ₽`
+      : '0 ₽';
+    el.textContent = preview;
+    el.classList.toggle('income-sum--warn', !_state.numpadBuf);
+  }
 }
 
 function _closeNumpad(root) {
