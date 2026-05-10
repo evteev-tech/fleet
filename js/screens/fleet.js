@@ -252,7 +252,7 @@ function _cardHTML(car) {
               const dotCls =
                 k === 'rent' ? 'fleet-quick-dot--green' :
                 k === 'repair' ? 'fleet-quick-dot--red' :
-                'fleet-quick-dot--gray';
+                'fleet-quick-dot--amber';
               return `<button type="button"
                               class="fleet-quick-item"
                               data-new-status="${escapeAttr(api)}"
