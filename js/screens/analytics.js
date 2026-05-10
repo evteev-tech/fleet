@@ -840,7 +840,28 @@ function _capexPageHtml(dash, capexMode) {
 }
 
 function _kassasRowsHtml(dash) {
-  const map = new Map((dash.kassas || []).map(k => [String(k.kassaId || '').trim(), Number(k.balanceCurrent) || 0]));
+  // Приоритет: balanceCurrent из API → баланс_текущий → расчёт из операций
+  const _buildBal = (kassas, ops) => {
+    const fromApi = new Map((kassas || []).map(k => {
+      const bal = Number(k.balanceCurrent ?? k['баланс_текущий'] ?? k.balance ?? NaN);
+      return [String(k.kassaId || k['касса_id'] || '').trim(), isNaN(bal) ? null : bal];
+    }));
+    return (id) => {
+      const v = fromApi.get(id);
+      if (v !== null && v !== undefined) return v;
+      return (ops || []).reduce((acc, op) => {
+        if (String(op.kassaId ?? '').trim() !== id) return acc;
+        const amt = Number(op.amount) || 0;
+        return acc + (op.direction === 'приход' ? amt : -amt);
+      }, 0);
+    };
+  };
+  const _getBal = _buildBal(dash.kassas, _ops);
+  const map = new Map([
+    ['K_AZAMAT',   _getBal('K_AZAMAT')],
+    ['K_VLADIMIR', _getBal('K_VLADIMIR')],
+    ['K_YULIA',    _getBal('K_YULIA')],
+  ]);
   const rows = [
     { id: 'K_AZAMAT', label: 'Azamat', cls: 'analytics-kassa-row--azamat' },
     { id: 'K_VLADIMIR', label: 'Vladimir', cls: 'analytics-kassa-row--vladimir' },

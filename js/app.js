@@ -55,13 +55,25 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   let _desktopResizeTimer = 0;
+  let _lastBreakpoint = window.innerWidth >= 1024 ? 'desktop' : 'mobile';
+
   window.addEventListener('resize', () => {
     clearTimeout(_desktopResizeTimer);
     _desktopResizeTimer = setTimeout(() => {
       const user = getCurrentUser();
       const w = typeof window !== 'undefined' ? window.innerWidth : 0;
       if (!user) return;
-      if (w >= 1024) {
+
+      const breakpoint = w >= 1024 ? 'desktop' : 'mobile';
+      const crossed = breakpoint !== _lastBreakpoint;
+      _lastBreakpoint = breakpoint;
+
+      const navbar = document.getElementById('navbar');
+
+      if (breakpoint === 'desktop') {
+        // Скрыть navbar при переходе на десктоп
+        if (crossed && navbar) navbar.classList.add('hidden');
+
         if (!document.getElementById('sidebar')) {
           renderSidebar(user.role);
         }
@@ -71,7 +83,18 @@ document.addEventListener('DOMContentLoaded', () => {
           '';
         if (sid) updateSidebarActive(sid);
       } else {
+        // Показать navbar при переходе на мобиле
         removeSidebar();
+        if (crossed && navbar) {
+          const currentSid =
+            currentScreen() ||
+            document.querySelector('***REMOVED***app-content .screen--active')?.id ||
+            '';
+          // Показываем navbar только не на экране логина и аналитики
+          if (currentSid && currentSid !== 'screen-login' && currentSid !== 'screen-analytics') {
+            navbar.classList.remove('hidden');
+          }
+        }
       }
     }, 150);
   });

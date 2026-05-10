@@ -227,9 +227,12 @@ export async function getKassas() {
   const rows = await readSheet(SHEETS.KASSAS);
   return rows
     .map(row => ({
-      kassaId: cell(row, 0),
-      name: cell(row, 1),
-      balanceCurrent: parseAmount(row[2]),
+      kassaId:        cell(row, 0),           // A — касса_id
+      name:           cell(row, 1),           // B — название
+      owner:          cell(row, 2),           // C — владелец
+      type:           cell(row, 3),           // D — тип
+      balanceCurrent: parseAmount(row[4]),    // E — баланс_текущий  ← было row[2]
+      note:           cell(row, 5),           // F — примечание
     }))
     .filter(k => k.kassaId);
 }
