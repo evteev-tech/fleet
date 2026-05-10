@@ -1,7 +1,7 @@
 import { postAction, invalidateCache } from '../api.js';
 import { getCurrentUser } from '../auth.js';
 import { KASSA_ID, KASSA_NAMES, ROLES, SHEETS } from '../config.js';
-import { showScreen } from '../router.js?v=7';
+import { showScreen } from '../router.js';
 import { showToast } from '../ui.js';
 import { formatDate } from '../utils/date.js';
 import { invalidateCache as invalidateLocalCache, CACHE_KEYS } from '../cache.js';

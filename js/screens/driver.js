@@ -9,7 +9,7 @@
 import { getDrivers, getFleet, getDeposits, postAction, invalidateCache } from '../api.js';
 import { getWithSWR, CACHE_KEYS, invalidateCache as invalidateLocalCache } from '../cache.js';
 import { SHEETS }                                                         from '../config.js';
-import { showScreen }                                                       from '../router.js?v=7';
+import { showScreen }                                                       from '../router.js';
 import { showBottomSheet, hideBottomSheet, showToast }                     from '../ui.js';
 import { openDriverForm }                                                   from './drivers.js';
 

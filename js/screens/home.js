@@ -1,7 +1,7 @@
 import { getOperations, getFleet, getDrivers, getRentals, saveRentalPromise } from '../api.js';
 import { getWithSWR, CACHE_KEYS } from '../cache.js';
 import { getCurrentUser } from '../auth.js';
-import { showScreen } from '../router.js?v=7';
+import { showScreen } from '../router.js';
 import { CAR_STATUSES, KASSA_ID, ROLES, USE_MOCK } from '../config.js';
 import { calcPaidUntil, parseRatePerDay, latestRentalByCarMap } from '../utils/rent.js';
 import { parseRuDate } from './history.js';

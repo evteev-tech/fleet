@@ -3,7 +3,7 @@
  */
 import { getCurrentUser } from './auth.js';
 import { ROLES } from './config.js';
-import { currentScreen, showScreen } from './router.js?v=7';
+import { currentScreen, showScreen } from './router.js';
 
 /**
  * @typedef {{ screen: string, label: string, icon: string }} SidebarItem

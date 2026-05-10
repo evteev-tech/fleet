@@ -3,7 +3,7 @@
  * Инициализирует авторизацию и все экраны приложения.
  */
 
-import { currentScreen } from './router.js?v=7';
+import { currentScreen } from './router.js';
 
 import { initAuth, getCurrentUser, clearCurrentUser } from './auth.js';
 import { renderSidebar, updateSidebarActive, removeSidebar } from './sidebar.js';

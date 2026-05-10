@@ -13,7 +13,7 @@ import {
 } from '../api.js';
 import { getWithSWR, CACHE_KEYS } from '../cache.js';
 import { getCurrentUser } from '../auth.js';
-import { mountNavbarInContainer } from '../router.js?v=7';
+import { mountNavbarInContainer } from '../router.js';
 import { CAR_STATUSES, KASSA_NAMES } from '../config.js';
 
 const PAGE_LABELS = ['Обзор', 'Расходы', 'CAPEX', 'По машинам', 'Кассы', 'Прогноз'];
@@ -22,18 +22,18 @@ const CAPEX_MODE = {
   PERIOD: 'period',
 };
 const OPEX_COLORS = {
-  ремонт:    '***REMOVED***111111',
-  запчасти:  '***REMOVED***444444',
-  доставка:  '***REMOVED***666666',
-  зп:        '***REMOVED***333333',
-  страховка: '***REMOVED***888888',
-  реклама:   '***REMOVED***AAAAAA',
-  прочее:    '***REMOVED***CCCCCC',
-  то:        '***REMOVED***555555',
-  штраф_гибдд: '***REMOVED***777777',
-  дтп:       '***REMOVED***222222',
-  связь_глонасс: '***REMOVED***999999',
-  покупка_машины: '***REMOVED***111111',
+  ремонт:    'var(--c-bar-100)',
+  запчасти:  'var(--c-bar-75)',
+  доставка:  'var(--c-bar-50)',
+  зп:        'var(--c-bar-100)',
+  страховка: 'var(--c-bar-50)',
+  реклама:   'var(--c-bar-25)',
+  прочее:    'var(--c-bar-10)',
+  то:        'var(--c-bar-75)',
+  штраф_гибдд: 'var(--c-bar-50)',
+  дтп:       'var(--c-bar-100)',
+  связь_глонасс: 'var(--c-muted)',
+  покупка_машины: 'var(--c-bar-100)',
 };
 
 const fmtRub = n =>
@@ -41,7 +41,7 @@ const fmtRub = n =>
 
 function getOpexColor(category) {
   const key = String(category || '').toLowerCase().trim();
-  return OPEX_COLORS[key] ?? '***REMOVED***CCCCCC';
+  return OPEX_COLORS[key] ?? 'var(--c-bar-10)';
 }
 
 /** 4 месяца: три предыдущих + текущий (от «сегодня»). */
@@ -364,7 +364,7 @@ function _overviewHtml(dash) {
 
   return `
     <div class="ovw-hero">
-      <div class="ovw-hero__stripe" style="background:${profit >= 0 ? '***REMOVED***2E8B6F' : '***REMOVED***D14848'}"></div>
+      <div class="ovw-hero__stripe" style="background:${profit >= 0 ? 'var(--c-profit)' : 'var(--c-loss)'}"></div>
       <div class="ovw-hero__body">
       <div class="ovw-hero__label">ЧИСТАЯ ПРИБЫЛЬ · ${periodLabel}</div>
       <div class="ovw-hero__amount ovw-hero__amount--${profit >= 0 ? 'pos' : 'neg'}">${withSign(profit)}</div>
@@ -374,7 +374,7 @@ function _overviewHtml(dash) {
     <div class="ovw-sheet">
       <div class="ovw-tiles">
         <div class="ovw-tile">
-          <div class="ovw-tile__stripe" style="background:***REMOVED***2E8B6F"></div>
+          <div class="ovw-tile__stripe" style="background:var(--c-profit)"></div>
           <div class="ovw-tile__content">
             <div class="ovw-tile__lbl">Выручка</div>
             <div class="ovw-tile__val">${fmtRub(revenue)}</div>
@@ -382,7 +382,7 @@ function _overviewHtml(dash) {
           </div>
         </div>
         <div class="ovw-tile">
-          <div class="ovw-tile__stripe" style="background:***REMOVED***D14848"></div>
+          <div class="ovw-tile__stripe" style="background:var(--c-loss)"></div>
           <div class="ovw-tile__content">
             <div class="ovw-tile__lbl">Опер. расходы</div>
             <div class="ovw-tile__val">${fmtRub(opex)}</div>
@@ -390,7 +390,7 @@ function _overviewHtml(dash) {
           </div>
         </div>
         <div class="ovw-tile">
-          <div class="ovw-tile__stripe" style="background:***REMOVED***8A8A8E"></div>
+          <div class="ovw-tile__stripe" style="background:var(--c-muted)"></div>
           <div class="ovw-tile__content">
             <div class="ovw-tile__lbl">CAPEX</div>
             <div class="ovw-tile__val">${fmtRub(capex)}</div>
@@ -398,7 +398,7 @@ function _overviewHtml(dash) {
           </div>
         </div>
         <div class="ovw-tile">
-          <div class="ovw-tile__stripe" style="background:${profit >= 0 ? '***REMOVED***2E8B6F' : '***REMOVED***D14848'}"></div>
+          <div class="ovw-tile__stripe" style="background:${profit >= 0 ? 'var(--c-profit)' : 'var(--c-loss)'}"></div>
           <div class="ovw-tile__content">
             <div class="ovw-tile__lbl">Прибыль</div>
             <div class="ovw-tile__val ${profit >= 0 ? 'ovw-val--pos' : 'ovw-val--neg'}">${withSign(profit)}</div>
@@ -593,17 +593,17 @@ function _pnlHeatBg(revenue, result) {
   const res = Number(result) || 0;
   if (res > 0) {
     const margin = rev > 0 ? (res / rev) * 100 : 0;
-    if (margin > 60) return '***REMOVED***7A3D10';
-    if (margin >= 30) return '***REMOVED***6B3218';
-    return '***REMOVED***8B4520';
+    if (margin > 60) return 'var(--c-pnl-profit-dark)';
+    if (margin >= 30) return 'var(--c-pnl-profit-mid)';
+    return 'var(--c-pnl-profit-light)';
   }
   if (res < 0) {
     const abs = Math.abs(res);
-    if (abs > 30000) return '***REMOVED***4A1505';
-    if (abs > 10000) return '***REMOVED***6B2010';
-    return '***REMOVED***8B2810';
+    if (abs > 30000) return 'var(--c-pnl-loss-dark)';
+    if (abs > 10000) return 'var(--c-pnl-loss-mid)';
+    return 'var(--c-pnl-loss-light)';
   }
-  return '***REMOVED***2A2A2A';
+  return 'var(--c-desktop-bg-2)';
 }
 
 function _pnlHtml(pnl) {
@@ -625,8 +625,8 @@ function _pnlHtml(pnl) {
     <div class="pnl-heat3-total">
       <span>Итого</span>
       <div>
-        <div style="font-size:9px;color:***REMOVED***8a8a8e">↑${fmtRub(total.revenue)} &nbsp; ↓${fmtRub(total.expense)}</div>
-        <div class="pnl-heat3-total__val" style="color:${Number(total.profit) >= 0 ? '***REMOVED***2E8B6F' : '***REMOVED***D14848'}">${Number(total.profit) >= 0 ? '+' : ''}${fmtRub(total.profit)}</div>
+        <div style="font-size:9px;color:var(--c-muted)">↑${fmtRub(total.revenue)} &nbsp; ↓${fmtRub(total.expense)}</div>
+        <div class="pnl-heat3-total__val" style="color:${Number(total.profit) >= 0 ? 'var(--c-profit)' : 'var(--c-loss)'}">${Number(total.profit) >= 0 ? '+' : ''}${fmtRub(total.profit)}</div>
       </div>
     </div>`
     : '';
@@ -735,10 +735,10 @@ function _capexPageHtml(dash, capexMode) {
     grouped.set(b, (grouped.get(b) || 0) + (Number(row.amount) || 0));
   });
   const donutRows = [
-    { key: 'Покупки', color: '***REMOVED***111111', amount: grouped.get('Покупки') || 0 },
-    { key: 'Ремонты', color: '***REMOVED***555555', amount: grouped.get('Ремонты') || 0 },
-    { key: 'Запчасти', color: '***REMOVED***888888', amount: grouped.get('Запчасти') || 0 },
-    { key: 'Прочее', color: '***REMOVED***CCCCCC', amount: grouped.get('Прочее') || 0 },
+    { key: 'Покупки', color: 'var(--c-bar-100)', amount: grouped.get('Покупки') || 0 },
+    { key: 'Ремонты', color: 'var(--c-bar-75)', amount: grouped.get('Ремонты') || 0 },
+    { key: 'Запчасти', color: 'var(--c-bar-50)', amount: grouped.get('Запчасти') || 0 },
+    { key: 'Прочее', color: 'var(--c-bar-10)', amount: grouped.get('Прочее') || 0 },
   ];
   const total = Number(s.current) || 0;
   const CIRC = 87.96;
@@ -803,7 +803,7 @@ function _capexPageHtml(dash, capexMode) {
       <div class="analytics-donut-wrap">
         <div class="analytics-donut">
           <svg class="analytics-donut-svg" viewBox="0 0 36 36" style="transform:rotate(-90deg)">
-            <circle cx="18" cy="18" r="14" fill="none" stroke="***REMOVED***F0F1F3" stroke-width="4.5" />
+            <circle cx="18" cy="18" r="14" fill="none" stroke='var(--c-bg-page)' stroke-width="4.5" />
             ${rings}
           </svg>
           <div class="analytics-donut-center">
@@ -829,11 +829,11 @@ function _capexPageHtml(dash, capexMode) {
       <div class="roi-grid">
         <div class="roi-cell">
           <div class="roi-c-lbl">Вложено</div>
-          <div class="roi-c-val" style="color:***REMOVED***111111">${fmtRub(total)}</div>
+          <div class="roi-c-val" style="color:var(--c-neutral)">${fmtRub(total)}</div>
         </div>
         <div class="roi-cell">
           <div class="roi-c-lbl">Заработано</div>
-          <div class="roi-c-val" style="color:***REMOVED***2E8B6F">${fmtRub(revenueAcc)}</div>
+          <div class="roi-c-val" style="color:var(--c-profit)">${fmtRub(revenueAcc)}</div>
         </div>
       </div>
     </div>
@@ -975,11 +975,11 @@ function _forecastHtml(rentals) {
       const isToday = weekIdx === 0 && i === 0;
       const heightPx = globalMax > 0 ? Math.round((d.total / globalMax) * 44) : 3;
       const safeH = Math.max(3, heightPx);
-      let color = '***REMOVED***999999';
-      if (d.total >= globalMax * 0.9) color = '***REMOVED***111111';
-      else if (d.total >= globalMax * 0.6) color = '***REMOVED***444444';
-      else if (d.total >= globalMax * 0.3) color = '***REMOVED***777777';
-      else if (d.total === 0) color = '***REMOVED***DDDDDD';
+      let color = 'var(--c-muted)';
+      if (d.total >= globalMax * 0.9) color = 'var(--c-bar-100)';
+      else if (d.total >= globalMax * 0.6) color = 'var(--c-bar-75)';
+      else if (d.total >= globalMax * 0.3) color = 'var(--c-bar-50)';
+      else if (d.total === 0) color = 'var(--c-bar-empty)';
       return `
         <div class="fcst-wk__col${isToday ? ' fcst-wk__col--today' : ''}">
           <div class="fcst-wk__fill" style="height:${safeH}px;background:${color}"></div>
@@ -992,7 +992,7 @@ function _forecastHtml(rentals) {
     const total = wDays.reduce((s, d) => s + d.total, 0);
     const maxCars = Math.max(...wDays.map(d => d.cars.length));
     const metaText = maxCars > 0 ? `до ${maxCars} маш. в день` : 'нет аренд';
-    const amtColor = total >= totalPeriod * 0.6 ? '***REMOVED***2E8B6F' : total > 0 ? '***REMOVED***444444' : '***REMOVED***999';
+    const amtColor = total >= totalPeriod * 0.6 ? 'var(--c-profit)' : total > 0 ? 'var(--c-bar-75)' : 'var(--c-muted)';
     return `
       <div class="white-card fcst-wk">
         <div class="fcst-wk__head">
@@ -1401,7 +1401,7 @@ function _dtDelta(key, cur, prev) {
   const diff = c - p;
   if (Math.abs(diff) < 1) return '';
   let better = (key === 'revenue' || key === 'profit') ? diff > 0 : diff < 0;
-  const color = better ? '***REMOVED***2E8B6F' : '***REMOVED***D14848';
+  const color = better ? 'var(--c-profit)' : 'var(--c-loss)';
   const sign = diff > 0 ? '+' : '−';
   return '<span style="font-size:12px;color:' + color + ';font-weight:500">' + sign + fmtRub(Math.abs(diff)) + '</span>';
 }
@@ -1458,12 +1458,12 @@ function _desktopShellHTML(dash) {
 
   const capexCatsAll = dash.capexByCategoryAll || [];
   const capexSlices = [
-    { color:'***REMOVED***555555', amount: capexCatsAll.filter(function(r){ return r.name.toLowerCase().includes('запч'); }).reduce(function(s,r){ return s+(Number(r.amount)||0); }, 0) },
-    { color:'***REMOVED***444444', amount: capexCatsAll.filter(function(r){ return r.name.toLowerCase().includes('ремонт'); }).reduce(function(s,r){ return s+(Number(r.amount)||0); }, 0) },
-    { color:'***REMOVED***111111', amount: capexCatsAll.filter(function(r){ return r.name.toLowerCase().includes('покуп'); }).reduce(function(s,r){ return s+(Number(r.amount)||0); }, 0) },
+    { color:'var(--c-bar-75)', amount: capexCatsAll.filter(function(r){ return r.name.toLowerCase().includes('запч'); }).reduce(function(s,r){ return s+(Number(r.amount)||0); }, 0) },
+    { color:'var(--c-bar-75)', amount: capexCatsAll.filter(function(r){ return r.name.toLowerCase().includes('ремонт'); }).reduce(function(s,r){ return s+(Number(r.amount)||0); }, 0) },
+    { color:'var(--c-bar-100)', amount: capexCatsAll.filter(function(r){ return r.name.toLowerCase().includes('покуп'); }).reduce(function(s,r){ return s+(Number(r.amount)||0); }, 0) },
   ];
   const capexKnown = capexSlices.reduce(function(s,x){ return s+x.amount; }, 0);
-  capexSlices.push({ color:'***REMOVED***CCCCCC', amount: Math.max(0, capexAll - capexKnown) });
+  capexSlices.push({ color:'var(--c-bar-10)', amount: Math.max(0, capexAll - capexKnown) });
   const capexLabels = ['Запчасти','Ремонты','Покупки','Прочее'];
 
   const pnlRows = (dash.pnl || []).slice(0, 6);
@@ -1471,7 +1471,7 @@ function _desktopShellHTML(dash) {
   const pnlHtml = pnlRows.map(function(r, i) {
     const p = Number(r.profit) || 0;
     const pct = (Math.abs(p) / pnlMax) * 100;
-    const color = p > 0 ? '***REMOVED***2E8B6F' : p < 0 ? '***REMOVED***D14848' : '***REMOVED***8A8A8E';
+    const color = p > 0 ? 'var(--c-profit)' : p < 0 ? 'var(--c-loss)' : 'var(--c-muted)';
     return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
       + '<span style="font-size:12px;font-weight:600;width:36px;flex-shrink:0;color:var(--dt-text)">' + r.car + '</span>'
       + '<div style="flex:1;height:18px;background:rgba(0,0,0,.05);border-radius:3px;overflow:hidden;position:relative">'
@@ -1495,9 +1495,9 @@ function _desktopShellHTML(dash) {
     }, 0);
   };
   const kassaDefs = [
-    { id:'K_AZAMAT',   label:'Азамат',   color:'***REMOVED***FFDD2D' },
-    { id:'K_VLADIMIR', label:'Владимир', color:'***REMOVED***378ADD' },
-    { id:'K_YULIA',    label:'Юлия',     color:'***REMOVED***2E8B6F' },
+    { id:'K_AZAMAT',   label:'Азамат',   color:'var(--c-accent)' },
+    { id:'K_VLADIMIR', label:'Владимир', color:'var(--c-kassa-vladimir)' },
+    { id:'K_YULIA',    label:'Юлия',     color:'var(--c-kassa-yulia)' },
   ];
   const kassaRowsHtml = kassaDefs.map(function(k) {
     const bal = _calcKassaBal(k.id);
@@ -1506,26 +1506,26 @@ function _desktopShellHTML(dash) {
       + '<span style="width:8px;height:8px;border-radius:50%;background:' + k.color + ';flex-shrink:0"></span>'
       + '<span style="font-size:13px;color:var(--dt-text)">' + k.label + '</span>'
       + '</div>'
-      + '<span style="font-size:14px;font-weight:600;color:' + (bal>=0?'***REMOVED***2E8B6F':'***REMOVED***D14848') + '">' + (bal<0?'−':'') + fmtRub(Math.abs(bal)) + '</span>'
+      + '<span style="font-size:14px;font-weight:600;color:' + (bal>=0?'var(--c-profit)':'var(--c-loss)') + '">' + (bal<0?'−':'') + fmtRub(Math.abs(bal)) + '</span>'
       + '</div>';
   }).join('');
 
   const activeDeposits = (_deposits||[]).filter(function(d){ return String(d.status||'').toLowerCase().includes('актив'); }).reduce(function(s,d){ return s+(Number(d.amount)||0); }, 0);
 
   return '<style>'
-    + ':root{--dt-text:***REMOVED***1A1A1A;--dt-muted:***REMOVED***8A8A8E;--dt-card:***REMOVED***fff;--dt-bg:***REMOVED***F0F1F3;--dt-border:rgba(0,0,0,.08)}'
-    + '@media(prefers-color-scheme:dark){:root{--dt-text:***REMOVED***F0F0F0;--dt-muted:***REMOVED***9A9A9E;--dt-card:***REMOVED***1E1E1E;--dt-bg:***REMOVED***111;--dt-border:rgba(255,255,255,.08)}}'
+    + ':root{--dt-text:var(--c-neutral);--dt-muted:var(--c-muted);--dt-card:var(--c-surface);--dt-bg:var(--c-bg-page);--dt-border:rgba(0,0,0,.08)}'
+    + '@media(prefers-color-scheme:dark){:root{--dt-text:var(--c-bg-page);--dt-muted:var(--c-desktop-muted);--dt-card:var(--c-desktop-bg-1);--dt-bg:var(--c-neutral);--dt-border:rgba(255,255,255,.08)}}'
     + '@keyframes dt-hbar{to{transform:scaleX(1)}}'
     + '@keyframes dt-fade-up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}'
     + '@keyframes dt-kpi-in{from{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:none}}'
     + '***REMOVED***analytics-root{height:100dvh!important;overflow:hidden!important;padding:0!important;display:flex;flex-direction:column}'+ '.dt-root{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;background:var(--dt-bg)}'
-    + '.dt-hdr{background:***REMOVED***1A1A1A;padding:16px 28px 0;flex-shrink:0}'
+    + '.dt-hdr{background:var(--c-dark);padding:16px 28px 0;flex-shrink:0}'
     + '.dt-hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}'
-    + '.dt-title{font-size:18px;font-weight:700;color:***REMOVED***fff;letter-spacing:-.02em}'
+    + '.dt-title{font-size:18px;font-weight:700;color:var(--c-on-dark);letter-spacing:-.02em}'
     + '.dt-pills{display:flex;gap:6px;align-items:center}'
     + '.dt-pill{font-size:12px;padding:5px 12px;border-radius:20px;border:0.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.55);background:transparent;cursor:pointer;transition:all .15s}'
-    + '.dt-pill:hover{color:***REMOVED***fff;border-color:rgba(255,255,255,.4)}'
-    + '.dt-pill--on{background:***REMOVED***FFDD2D;color:***REMOVED***1A1A1A!important;border-color:***REMOVED***FFDD2D!important;font-weight:600}'
+    + '.dt-pill:hover{color:var(--c-on-dark);border-color:rgba(255,255,255,.4)}'
+    + '.dt-pill--on{background:var(--c-accent);color:var(--c-dark)!important;border-color:var(--c-accent)!important;font-weight:600}'
     + '.dt-hero{display:flex;align-items:flex-end;gap:28px;padding:16px 0 20px;flex-wrap:wrap}'
     + '.dt-hero-main{flex:1;min-width:200px}'
     + '.dt-hero-lbl{font-size:11px;color:rgba(255,255,255,.4);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px}'
@@ -1534,7 +1534,7 @@ function _desktopShellHTML(dash) {
     + '.dt-kpis{display:flex;gap:10px;flex-wrap:wrap}'
     + '.dt-kpi{background:rgba(255,255,255,.07);border-radius:10px;padding:10px 14px;min-width:110px;animation:dt-kpi-in .4s ease backwards}'
     + '.dt-kpi-lbl{font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}'
-    + '.dt-kpi-val{font-size:16px;font-weight:600;color:***REMOVED***fff}'
+    + '.dt-kpi-val{font-size:16px;font-weight:600;color:var(--c-on-dark)}'
     + '.dt-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:20px 24px 24px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;align-content:start}'
     + '.dt-card{background:var(--dt-card);border-radius:14px;padding:18px 20px;border:0.5px solid var(--dt-border);animation:dt-fade-up .4s ease backwards}'
     + '.dt-card-title{font-size:11px;font-weight:600;color:var(--dt-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px}'
@@ -1558,14 +1558,14 @@ function _desktopShellHTML(dash) {
     + '<div class="dt-hero">'
     + '<div class="dt-hero-main">'
     + '<div class="dt-hero-lbl">Чистая прибыль · ' + (dash.allTime ? 'всё время' : _monthLabelFull(dash.year, dash.month)) + '</div>'
-    + '<div class="dt-hero-num" style="color:' + (profit>=0?'***REMOVED***2E8B6F':'***REMOVED***D14848') + '">' + (profit>=0?'+':'') + fmtRub(profit) + '</div>'
+    + '<div class="dt-hero-num" style="color:' + (profit>=0?'var(--c-profit)':'var(--c-loss)') + '">' + (profit>=0?'+':'') + fmtRub(profit) + '</div>'
     + '<div class="dt-hero-sub">Выручка ' + fmtRub(revenue) + ' · Расходы ' + fmtRub(opex) + '</div>'
     + '</div>'
     + '<div class="dt-kpis">'
-    + '<div class="dt-kpi" style="animation-delay:.05s"><div class="dt-kpi-lbl">Выручка</div><div class="dt-kpi-val" style="color:***REMOVED***2E8B6F">' + fmtRub(revenue) + '</div>' + _dtDelta('revenue',revenue,byKey('revenue').previous) + '</div>'
-    + '<div class="dt-kpi" style="animation-delay:.1s"><div class="dt-kpi-lbl">Расходы</div><div class="dt-kpi-val" style="color:***REMOVED***D14848">' + fmtRub(opex) + '</div>' + _dtDelta('opex',opex,byKey('opex').previous) + '</div>'
-    + '<div class="dt-kpi" style="animation-delay:.15s"><div class="dt-kpi-lbl">CAPEX всего</div><div class="dt-kpi-val" style="color:***REMOVED***8A8A8E">' + fmtRub(capexAll) + '</div></div>'
-    + '<div class="dt-kpi" style="animation-delay:.2s"><div class="dt-kpi-lbl">Загрузка</div><div class="dt-kpi-val" style="color:***REMOVED***60A5FA">' + rentPct + '%</div></div>'
+    + '<div class="dt-kpi" style="animation-delay:.05s"><div class="dt-kpi-lbl">Выручка</div><div class="dt-kpi-val" style="color:var(--c-profit)">' + fmtRub(revenue) + '</div>' + _dtDelta('revenue',revenue,byKey('revenue').previous) + '</div>'
+    + '<div class="dt-kpi" style="animation-delay:.1s"><div class="dt-kpi-lbl">Расходы</div><div class="dt-kpi-val" style="color:var(--c-loss)">' + fmtRub(opex) + '</div>' + _dtDelta('opex',opex,byKey('opex').previous) + '</div>'
+    + '<div class="dt-kpi" style="animation-delay:.15s"><div class="dt-kpi-lbl">CAPEX всего</div><div class="dt-kpi-val" style="color:var(--c-muted)">' + fmtRub(capexAll) + '</div></div>'
+    + '<div class="dt-kpi" style="animation-delay:.2s"><div class="dt-kpi-lbl">Загрузка</div><div class="dt-kpi-val" style="color:var(--c-desktop-accent)">' + rentPct + '%</div></div>'
     + '</div></div></div>'
 
     + '<div class="dt-body" id="dt-body">'
@@ -1581,23 +1581,23 @@ function _desktopShellHTML(dash) {
     + '<div class="dt-card" style="animation-delay:.12s">'
     + '<div class="dt-card-title">Выручка · 5 месяцев</div>'
     + '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px">'
-    + '<span class="dt-big" style="color:***REMOVED***2E8B6F">' + fmtRub(revenue) + '</span>'
+    + '<span class="dt-big" style="color:var(--c-profit)">' + fmtRub(revenue) + '</span>'
     + _dtDelta('revenue',revenue,byKey('revenue').previous)
     + '</div>'
-    + '<div style="margin-top:10px">' + _sparklineSvg(revSeries,'***REMOVED***2E8B6F',52) + '</div>'
+    + '<div style="margin-top:10px">' + _sparklineSvg(revSeries,'var(--c-profit)',52) + '</div>'
     + '</div>'
 
     + '<div class="dt-card" style="animation-delay:.16s">'
     + '<div class="dt-card-title">Парк · ' + fTotal + ' машин</div>'
     + '<div class="dt-fleet-grid">'
-    + '<div class="dt-fleet-tile" style="background:***REMOVED***E8F2EC;color:***REMOVED***2E8B6F"><div class="dt-fleet-tile-n">' + fRent + '</div><div class="dt-fleet-tile-l">Аренда</div></div>'
-    + '<div class="dt-fleet-tile" style="background:***REMOVED***FEF9C3;color:***REMOVED***D97706"><div class="dt-fleet-tile-n">' + fIdle + '</div><div class="dt-fleet-tile-l">Простой</div></div>'
-    + '<div class="dt-fleet-tile" style="background:***REMOVED***FBE9E9;color:***REMOVED***D14848"><div class="dt-fleet-tile-n">' + fRepair + '</div><div class="dt-fleet-tile-l">Ремонт</div></div>'
+    + '<div class="dt-fleet-tile" style="background:var(--c-rent-bg);color:var(--c-rent)"><div class="dt-fleet-tile-n">' + fRent + '</div><div class="dt-fleet-tile-l">Аренда</div></div>'
+    + '<div class="dt-fleet-tile" style="background:var(--c-idle-bg);color:var(--c-idle)"><div class="dt-fleet-tile-n">' + fIdle + '</div><div class="dt-fleet-tile-l">Простой</div></div>'
+    + '<div class="dt-fleet-tile" style="background:var(--c-repair-bg);color:var(--c-repair)"><div class="dt-fleet-tile-n">' + fRepair + '</div><div class="dt-fleet-tile-l">Ремонт</div></div>'
     + '</div>'
     + '<div class="dt-fleet-bar">'
-    + '<div class="dt-fleet-seg" style="width:' + (fRent/fTotal*100).toFixed(1) + '%;background:***REMOVED***2E8B6F"></div>'
-    + '<div class="dt-fleet-seg" style="width:' + (fIdle/fTotal*100).toFixed(1) + '%;background:***REMOVED***D97706"></div>'
-    + '<div class="dt-fleet-seg" style="width:' + (fRepair/fTotal*100).toFixed(1) + '%;background:***REMOVED***D14848"></div>'
+    + '<div class="dt-fleet-seg" style="width:' + (fRent/fTotal*100).toFixed(1) + '%;background:var(--c-rent)"></div>'
+    + '<div class="dt-fleet-seg" style="width:' + (fIdle/fTotal*100).toFixed(1) + '%;background:var(--c-idle)"></div>'
+    + '<div class="dt-fleet-seg" style="width:' + (fRepair/fTotal*100).toFixed(1) + '%;background:var(--c-repair)"></div>'
     + '</div>'
     + '<div class="dt-fleet-pct">Загрузка ' + rentPct + '%</div>'
     + '</div>'
@@ -1628,7 +1628,7 @@ function _desktopShellHTML(dash) {
     + kassaRowsHtml
     + '<div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;margin-top:6px">'
     + '<span style="font-size:12px;color:var(--dt-muted)">Активные залоги</span>'
-    + '<span style="font-size:14px;font-weight:600;color:***REMOVED***111111">' + fmtRub(activeDeposits) + '</span>'
+    + '<span style="font-size:14px;font-weight:600;color:var(--c-neutral)">' + fmtRub(activeDeposits) + '</span>'
     + '</div></div>'
 
     + '</div></div>';
@@ -1636,10 +1636,10 @@ function _desktopShellHTML(dash) {
 
 function _desktopSkeletonHTML() {
   return '<style>'
-    + '.dt-root{display:flex;flex-direction:column;height:100dvh;overflow:hidden;background:***REMOVED***F0F1F3}'
-    + '.dt-hdr{background:***REMOVED***1A1A1A;padding:16px 28px 20px;flex-shrink:0}'
+    + '.dt-root{display:flex;flex-direction:column;height:100dvh;overflow:hidden;background:var(--c-bg-page)}'
+    + '.dt-hdr{background:var(--c-dark);padding:16px 28px 20px;flex-shrink:0}'
     + '.dt-body{flex:1;overflow-y:auto;padding:20px 24px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;align-content:start}'
-    + '.dt-card{background:***REMOVED***fff;border-radius:14px;padding:18px 20px;border:0.5px solid rgba(0,0,0,.08)}'
+    + '.dt-card{background:var(--c-surface);border-radius:14px;padding:18px 20px;border:0.5px solid rgba(0,0,0,.08)}'
     + '@media(max-width:1279px){.dt-body{grid-template-columns:1fr 1fr}}'
     + '</style>'
     + '<div class="dt-root"><div class="dt-hdr"><div class="skeleton" style="height:16px;border-radius:6px;margin-bottom:8px;width:120px"></div><div class="skeleton" style="height:40px;border-radius:6px;width:200px"></div></div>'

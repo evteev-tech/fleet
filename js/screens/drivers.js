@@ -5,7 +5,7 @@
 
 import { getDrivers, getFleet, postAction, invalidateCache } from '../api.js';
 import { getWithSWR, CACHE_KEYS, invalidateCache as invalidateLocalCache } from '../cache.js';
-import { showScreen } from '../router.js?v=7';
+import { showScreen } from '../router.js';
 import { showBottomSheet, hideBottomSheet, showToast } from '../ui.js';
 import { CAR_STATUSES, SHEETS } from '../config.js';
 

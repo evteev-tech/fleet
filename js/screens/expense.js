@@ -5,7 +5,7 @@
 import { getFleet, postAction, invalidateCache } from '../api.js';
 import { getWithSWR, CACHE_KEYS, invalidateCache as invalidateLocalCache } from '../cache.js';
 import { getCurrentUser } from '../auth.js';
-import { showScreen } from '../router.js?v=7';
+import { showScreen } from '../router.js';
 import { showBottomSheet, hideBottomSheet, showToast } from '../ui.js';
 import { KASSA_ID, ROLES, SHEETS } from '../config.js';
 import { formatDate } from '../utils/date.js';

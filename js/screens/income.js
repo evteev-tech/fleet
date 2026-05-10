@@ -13,7 +13,7 @@ import {
 import { getWithSWR, CACHE_KEYS, invalidateCache as invalidateLocalCache } from '../cache.js';
 import { SHEETS } from '../config.js';
 import { getCurrentUser } from '../auth.js';
-import { showScreen } from '../router.js?v=7';
+import { showScreen } from '../router.js';
 import { showToast } from '../ui.js';
 import { CAR_STATUSES, KASSA_ID, ROLES } from '../config.js';
 

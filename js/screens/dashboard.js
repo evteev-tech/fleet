@@ -9,7 +9,7 @@ import { getOperations, getFleet } from '../api.js';
 import { getWithSWR, CACHE_KEYS } from '../cache.js';
 import { getCurrentUser }          from '../auth.js';
 import { parseRuDate }             from './history.js';
-import { showScreen }              from '../router.js?v=7';
+import { showScreen }              from '../router.js';
 import { KASSA_ID, KASSA_NAMES, CAR_STATUSES, ROLES } from '../config.js';
 
 const _now = new Date();

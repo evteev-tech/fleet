@@ -1,35 +1,24 @@
 /* ═══════════════════════════════════════════════
-   ANALYTICS THEME PATCH — T-bank inspired
-   Подключать ПОСЛЕ screens.css
+   ANALYTICS THEME — использует CSS custom properties
+   Подключать ПОСЛЕ colors.css и screens.css
 ════════════════════════════════════════════════ */
-
-/* ── Переменные ── */
-:root {
-  --an-green:    ***REMOVED***2E8B6F;
-  --an-green-bg: ***REMOVED***E8F2EC;
-  --an-red:      ***REMOVED***D14848;
-  --an-red-bg:   ***REMOVED***FBE9E9;
-  --an-muted:    rgba(17,17,17,0.42);
-  --an-border:   rgba(17,17,17,0.07);
-}
 
 /* ── Фон страницы ── */
 .analytics-root {
-  background: ***REMOVED***F6F7F8;
+  background: var(--c-bg-page);
 }
 
 /* ── Карточки — без теней, плоские ── */
 .analytics-tile {
   box-shadow: none;
-  border: 0.5px solid var(--an-border);
+  border: 0.5px solid rgba(17,17,17,0.07);
 }
 
 .analytics-card-pad {
   box-shadow: none;
-  border: 0.5px solid var(--an-border);
+  border: 0.5px solid rgba(17,17,17,0.07);
 }
 
-/* ── Тайлы: числа тяжелее ── */
 .analytics-tile__amount {
   font-weight: 800;
   letter-spacing: -0.025em;
@@ -40,24 +29,20 @@
   font-weight: 800;
   letter-spacing: -0.04em;
 }
-.ovw-hero__amount--pos { color: ***REMOVED***2E8B6F; }
-.ovw-hero__amount--neg { color: ***REMOVED***D14848; }
+.ovw-hero__amount--pos { color: var(--c-profit); }
+.ovw-hero__amount--neg { color: var(--c-loss); }
 
-/* Полоска hero — зелёная для прибыли уже задаётся inline,
-   переопределяем дефолтный цвет через CSS */
 .ovw-hero__stripe {
-  background: ***REMOVED***2E8B6F;
+  background: var(--c-profit);
 }
 
-/* ── Ovw-sheet фон совпадает с новым bg ── */
 .ovw-sheet {
-  background: ***REMOVED***F6F7F8;
+  background: var(--c-bg-page);
 }
 
-/* ── Ovw-tile: плоские, без теней ── */
 .ovw-tile {
   box-shadow: none;
-  border: 0.5px solid var(--an-border);
+  border: 0.5px solid rgba(17,17,17,0.07);
 }
 
 .ovw-tile__val {
@@ -65,115 +50,107 @@
   letter-spacing: -0.025em;
 }
 
-.ovw-delta--pos { color: ***REMOVED***2E8B6F; }
-.ovw-delta--neg { color: ***REMOVED***D14848; }
+.ovw-delta--pos { color: var(--c-profit); }
+.ovw-delta--neg { color: var(--c-loss); }
 
-/* ── Парк: цвета статусов ── */
-.ovw-fleet__cell--rent  { background: var(--an-green-bg); }
-.ovw-fleet__cell--idle  { background: ***REMOVED***FEF9C3; }
-.ovw-fleet__cell--repair { background: var(--an-red-bg); }
+/* ── Парк ── */
+.ovw-fleet__cell--rent  { background: var(--c-rent-bg); }
+.ovw-fleet__cell--idle  { background: var(--c-idle-bg); }
+.ovw-fleet__cell--repair { background: var(--c-repair-bg); }
 
-.ovw-fleet__cell--rent .ovw-fleet__num  { color: ***REMOVED***2E8B6F; }
-.ovw-fleet__cell--idle .ovw-fleet__num  { color: ***REMOVED***D97706; }
-.ovw-fleet__cell--repair .ovw-fleet__num { color: ***REMOVED***D14848; }
+.ovw-fleet__cell--rent .ovw-fleet__num  { color: var(--c-rent); }
+.ovw-fleet__cell--idle .ovw-fleet__num  { color: var(--c-idle); }
+.ovw-fleet__cell--repair .ovw-fleet__num { color: var(--c-repair); }
 
-.ovw-fleet__cell--rent .ovw-fleet__lbl  { color: ***REMOVED***2E8B6F; }
-.ovw-fleet__cell--idle .ovw-fleet__lbl  { color: ***REMOVED***D97706; }
-.ovw-fleet__cell--repair .ovw-fleet__lbl { color: ***REMOVED***D14848; }
+.ovw-fleet__cell--rent .ovw-fleet__lbl  { color: var(--c-rent); }
+.ovw-fleet__cell--idle .ovw-fleet__lbl  { color: var(--c-idle); }
+.ovw-fleet__cell--repair .ovw-fleet__lbl { color: var(--c-repair); }
 
-.ovw-fleet__seg--rent   { background: ***REMOVED***2E8B6F; }
-.ovw-fleet__seg--idle   { background: ***REMOVED***F59E0B; }
-.ovw-fleet__seg--repair { background: ***REMOVED***D14848; }
+.ovw-fleet__seg--rent   { background: var(--c-rent); }
+.ovw-fleet__seg--idle   { background: var(--c-idle); }
+.ovw-fleet__seg--repair { background: var(--c-repair); }
 
 .ovw-fleet__bar-pct {
   font-weight: 800;
 }
 
-/* ── Дельта-блоки ── */
-.analytics-delta--good { color: ***REMOVED***2E8B6F; }
-.analytics-delta--bad  { color: ***REMOVED***D14848; }
+/* ── Дельта ── */
+.analytics-delta--good { color: var(--c-profit); }
+.analytics-delta--bad  { color: var(--c-loss); }
 
-/* ── OPEX bars — нейтральный серый вместо жёлтого ── */
-.analytics-bar span         { background: ***REMOVED***111111; }
-.analytics-bar--accent span { background: ***REMOVED***111111; }
-.analytics-bar--danger span { background: ***REMOVED***D14848; }
-.analytics-bar--muted span  { background: ***REMOVED***8A8A8E; }
+/* ── OPEX bars ── */
+.analytics-bar span         { background: var(--c-neutral); }
+.analytics-bar--accent span { background: var(--c-neutral); }
+.analytics-bar--danger span { background: var(--c-loss); }
+.analytics-bar--muted span  { background: var(--c-muted); }
 
-/* ── CAPEX timeline — нейтральный ── */
-.tl-fill  { background: ***REMOVED***111111; }
-.tl-val   { color: ***REMOVED***111111; }
-.tl-track { background: ***REMOVED***EBEBEB; }
-.tl-row   { border-bottom-color: ***REMOVED***EBEBEB; }
+/* ── CAPEX timeline ── */
+.tl-fill  { background: var(--c-neutral); }
+.tl-val   { color: var(--c-neutral); }
+.tl-track { background: var(--c-bar-empty); }
+.tl-row   { border-bottom-color: var(--c-bar-empty); }
 
-/* ── ROI card ── */
+/* ── ROI ── */
 .roi-card {
-  background: var(--an-green-bg);
-  border-left-color: ***REMOVED***2E8B6F;
+  background: var(--c-profit-bg);
+  border-left-color: var(--c-profit);
 }
-.roi-val { color: ***REMOVED***2E8B6F; }
+.roi-val { color: var(--c-profit); }
 
 /* ── Opex dynamics ── */
-.opex-dyn-hero__arrow--up   { color: ***REMOVED***D14848; }
-.opex-dyn-hero__arrow--down { color: ***REMOVED***2E8B6F; }
-.opex-dyn-delta--up         { color: ***REMOVED***D14848; }
-.opex-dyn-delta--down       { color: ***REMOVED***2E8B6F; }
-.opex-dyn-top               { background: var(--an-red-bg); }
+.opex-dyn-hero__arrow--up   { color: var(--c-loss); }
+.opex-dyn-hero__arrow--down { color: var(--c-profit); }
+.opex-dyn-delta--up         { color: var(--c-loss); }
+.opex-dyn-delta--down       { color: var(--c-profit); }
+.opex-dyn-top               { background: var(--c-loss-bg); }
 
-/* ── Кассы: dot-цвета ── */
-.analytics-kassa-row--azamat   { background: ***REMOVED***FFDD2D; }
-.analytics-kassa-row--vladimir { background: ***REMOVED***378ADD; }
-.analytics-kassa-row--yulia    { background: ***REMOVED***2E8B6F; }
+/* ── Кассы ── */
+.analytics-kassa-row--azamat   { background: var(--c-kassa-azamat); }
+.analytics-kassa-row--vladimir { background: var(--c-kassa-vladimir); }
+.analytics-kassa-row--yulia    { background: var(--c-kassa-yulia); }
 
 .analytics-kassa-row__nums { font-weight: 800; }
-.analytics-kassa-row__inc  { color: ***REMOVED***2E8B6F; }
-.analytics-kassa-row__exp  { color: ***REMOVED***D14848; }
+.analytics-kassa-row__inc  { color: var(--c-profit); }
+.analytics-kassa-row__exp  { color: var(--c-loss); }
 
-/* ── PnL heatmap: числа ярче ── */
-.phc--pos .phc__res { color: ***REMOVED***7EFFC4; }
-.phc--neg .phc__res { color: ***REMOVED***FFB3B3; }
-.pnl-heat3-total__val { color: ***REMOVED***2E8B6F; }
+/* ── PnL heatmap ── */
+.phc--pos .phc__res { color: var(--c-pnl-cell-pos); }
+.phc--neg .phc__res { color: var(--c-pnl-cell-neg); }
+.pnl-heat3-total__val { color: var(--c-profit); }
 
 /* ── Сег-кнопки CAPEX ── */
 .analytics-seg__btn--active {
-  background: ***REMOVED***111111;
-  color: ***REMOVED***FFDD2D;
+  background: var(--c-neutral);
+  color: var(--c-accent);
 }
 
-/* ── Числа capex/opex крупнее ── */
+/* ── Числа крупнее ── */
 .analytics-capex-hero__amount {
   font-weight: 800;
   letter-spacing: -0.03em;
 }
 .analytics-capex-row__sum { font-weight: 800; }
 .analytics-capex-sum      { font-weight: 800; }
-
-/* ── Утилизация bars ── */
-.analytics-bar--accent span { background: ***REMOVED***2E8B6F; }
 .analytics-util-pct { font-weight: 800; }
 
-/* ── Прогноз — hero-блок ── */
+/* ── Прогноз ── */
 .fcst-hero {
-  background: ***REMOVED***111111;
+  background: var(--c-dark);
 }
-.fcst-hero__label  { color: ***REMOVED***FFDD2D; }
-.fcst-hero__amount { color: ***REMOVED***FFFFFF; }
+.fcst-hero__label  { color: var(--c-accent); }
+.fcst-hero__amount { color: var(--c-on-dark); }
 
-/* ── Недельные блоки прогноза ── */
 .fcst-wk {
-  border: 0.5px solid var(--an-border);
+  border: 0.5px solid rgba(17,17,17,0.07);
   box-shadow: none;
 }
-.fcst-wk__col--today .fcst-wk__day { color: ***REMOVED***2E8B6F; }
+.fcst-wk__col--today .fcst-wk__day { color: var(--c-profit); }
 
-/* ── Плашки ближайших дней ── */
-.fcst-nd--today            { background: var(--an-green-bg); }
-.fcst-nd--today .fcst-nd__date { color: ***REMOVED***2E8B6F; }
+.fcst-nd--today            { background: var(--c-profit-bg); }
+.fcst-nd--today .fcst-nd__date { color: var(--c-profit); }
 
-/* ── Белые карточки — плоские ── */
+/* ── Белые карточки ── */
 .white-card {
   box-shadow: none;
-  border: 0.5px solid var(--an-border);
+  border: 0.5px solid rgba(17,17,17,0.07);
 }
-
-/* ── Числа в кассах ── */
-.analytics-kassa-row__inc { font-weight: 800; }

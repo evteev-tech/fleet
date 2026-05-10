@@ -7,7 +7,7 @@
 
 import { getUsers } from './api.js';
 import { clearAllCache } from './cache.js';
-import { showScreen, renderNavbar } from './router.js?v=7';
+import { showScreen, renderNavbar } from './router.js';
 import { showToast } from './ui.js';
 import { ROLES } from './config.js';
 
