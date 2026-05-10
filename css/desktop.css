@@ -1,12 +1,15 @@
 /**
- * Десктопный layout (≥1024px): sidebar + область контента.
+ * desktop.css — единый десктопный layout (≥1024px).
+ * Объединяет desktop.css + desktop_patch.css + desktop_patch_fix1.css
  * Мобильный вид <1024px не затрагивается.
  */
 
+/* ══════════════════════════════════════════════════════════════
+   БАЗОВЫЙ LAYOUT: body + sidebar + app-content
+══════════════════════════════════════════════════════════════ */
+
 @media (min-width: 1024px) {
-  html {
-    height: 100%;
-  }
+  html { height: 100%; }
 
   body {
     display: flex;
@@ -16,9 +19,7 @@
     margin: 0;
   }
 
-  ***REMOVED***navbar {
-    display: none !important;
-  }
+  ***REMOVED***navbar { display: none !important; }
 
   ***REMOVED***sidebar {
     position: fixed;
@@ -26,7 +27,6 @@
     top: 0;
     z-index: 300;
     height: 100dvh;
-    max-height: 100dvh;
     background: ***REMOVED***1a1a1a;
     display: flex;
     flex-direction: column;
@@ -41,11 +41,9 @@
     min-width: 0;
   }
 
-  /* Каркас экранов */
   ***REMOVED***app-content > .screen {
     height: 100dvh;
     max-height: 100dvh;
-    min-height: 0;
     overflow: hidden;
   }
 
@@ -54,13 +52,59 @@
     flex-direction: column;
   }
 
-  /* Убрать отступ под мобильный navbar */
   ***REMOVED***app-content .pb-navbar {
     padding-bottom: 24px;
   }
 
-  /* ── Sidebar компоненты ── */
+  /* Убрать FAB и fixed-bottom-bar */
+  .fab-add,
+  .btn-fixed-bottom,
+  .action-bottom-bar {
+    display: none !important;
+  }
 
+  /* Overflow guard */
+  ***REMOVED***app-content {
+    min-width: 0 !important;
+    overflow-x: hidden !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SCREEN-LOGIN — вне ***REMOVED***app-content, защита от flex-row body
+══════════════════════════════════════════════════════════════ */
+
+@media (min-width: 1024px) {
+  ***REMOVED***screen-login {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 500 !important;
+    display: none !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: var(--bg-page) !important;
+  }
+
+  ***REMOVED***screen-login.screen--active {
+    display: flex !important;
+  }
+
+  ***REMOVED***screen-login .login-wrap {
+    min-height: auto !important;
+    padding: 0 !important;
+    width: 320px !important;
+    background: transparent !important;
+    justify-content: flex-start !important;
+    gap: 20px !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SIDEBAR КОМПОНЕНТЫ
+══════════════════════════════════════════════════════════════ */
+
+@media (min-width: 1024px) {
   .sidebar-header {
     display: flex;
     align-items: center;
@@ -98,17 +142,14 @@
 
   .sidebar-section-label {
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.3);
+    color: rgba(255,255,255,0.3);
     text-transform: uppercase;
     letter-spacing: 0.08em;
     padding: 8px 10px 4px;
     flex-shrink: 0;
   }
 
-  .sidebar-spacer {
-    flex: 1;
-    min-height: 8px;
-  }
+  .sidebar-spacer { flex: 1; min-height: 8px; }
 
   .sidebar-item {
     position: relative;
@@ -121,7 +162,7 @@
     background: transparent;
     cursor: pointer;
     font-family: var(--font-family);
-    color: rgba(255, 255, 255, 0.45);
+    color: rgba(255,255,255,0.45);
     border-radius: 8px;
     padding: 9px 10px;
     font-size: 14px;
@@ -129,20 +170,16 @@
     box-sizing: border-box;
   }
 
-  .sidebar-item i {
-    font-size: 18px;
-    flex-shrink: 0;
-    line-height: 1;
-  }
+  .sidebar-item i { font-size: 18px; flex-shrink: 0; line-height: 1; }
 
   .sidebar-item--active {
-    background: rgba(255, 221, 45, 0.12);
+    background: rgba(255,221,45,0.12);
     color: ***REMOVED***ffdd2d;
   }
 
   .sidebar-item:hover:not(.sidebar-item--active) {
-    background: rgba(255, 255, 255, 0.07);
-    color: rgba(255, 255, 255, 0.85);
+    background: rgba(255,255,255,0.07);
+    color: rgba(255,255,255,0.85);
   }
 
   .sidebar-tooltip {
@@ -151,7 +188,7 @@
     top: 50%;
     transform: translateY(-50%);
     background: ***REMOVED***1a1a1a;
-    border: 0.5px solid rgba(255, 255, 255, 0.15);
+    border: 0.5px solid rgba(255,255,255,0.15);
     color: ***REMOVED***fff;
     font-size: 12px;
     padding: 5px 10px;
@@ -169,7 +206,7 @@
     align-items: center;
     gap: 8px;
     padding: 10px;
-    border-top: 0.5px solid rgba(255, 255, 255, 0.1);
+    border-top: 0.5px solid rgba(255,255,255,0.1);
     flex-shrink: 0;
     margin-top: auto;
   }
@@ -191,7 +228,7 @@
   .sidebar-user-name {
     font-size: 13px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.85);
+    color: rgba(255,255,255,0.85);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -200,72 +237,139 @@
 
 /* ── Развёрнутый sidebar (≥1280px) ── */
 @media (min-width: 1280px) {
-  ***REMOVED***sidebar {
-    width: 210px;
-    padding: 16px 10px 12px;
-  }
-
-  ***REMOVED***app-content {
-    margin-left: 210px;
-  }
-
-  .sidebar-tooltip {
-    display: none;
-  }
+  ***REMOVED***sidebar { width: 210px; padding: 16px 10px 12px; }
+  ***REMOVED***app-content { margin-left: 210px; }
+  .sidebar-tooltip { display: none; }
 }
 
 /* ── Свёрнутый sidebar (1024–1279px) ── */
 @media (min-width: 1024px) and (max-width: 1279px) {
-  ***REMOVED***sidebar {
-    width: 64px;
-    padding: 16px 8px 12px;
-    align-items: stretch;
-  }
-
-  ***REMOVED***app-content {
-    margin-left: 64px;
-  }
-
-  .sidebar-header {
-    justify-content: center;
-  }
-
+  ***REMOVED***sidebar { width: 64px; padding: 16px 8px 12px; align-items: stretch; }
+  ***REMOVED***app-content { margin-left: 64px; }
+  .sidebar-header { justify-content: center; }
   .sidebar-logo-text,
   .sidebar-label,
   .sidebar-section-label,
-  .sidebar-user-name {
-    display: none !important;
-  }
-
-  .sidebar-user {
-    justify-content: center;
-    padding: 10px 8px;
-  }
-
-  .sidebar-item {
-    justify-content: center;
-    padding: 9px 8px;
-  }
-
-  .sidebar-item:hover .sidebar-tooltip {
-    opacity: 1;
-  }
+  .sidebar-user-name { display: none !important; }
+  .sidebar-user { justify-content: center; padding: 10px 8px; }
+  .sidebar-item { justify-content: center; padding: 9px 8px; }
+  .sidebar-item:hover .sidebar-tooltip { opacity: 1; }
 }
 
 /* ══════════════════════════════════════════════════════════════
-   ЭКРАНЫ: двухколоночный layout (≥1024px)
+   SCREEN-HOME — двухколоночный layout
 ══════════════════════════════════════════════════════════════ */
 
 @media (min-width: 1024px) {
+  ***REMOVED***screen-home { overflow: hidden !important; }
 
-  /* ── screen-dashboard ── */
+  ***REMOVED***screen-home ***REMOVED***home-body {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: stretch !important;
+    height: 100dvh !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+  }
 
+  ***REMOVED***screen-home .home-header {
+    width: 320px !important;
+    min-width: 320px !important;
+    max-width: 320px !important;
+    flex-shrink: 0 !important;
+    height: 100dvh !important;
+    overflow-y: auto !important;
+    background: var(--color-dark) !important;
+    color: ***REMOVED***fff !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 28px 20px 20px !important;
+    box-sizing: border-box !important;
+  }
+
+  ***REMOVED***screen-home .home-hdr__brand-row { display: none !important; }
+
+  ***REMOVED***screen-home .home-cash-card {
+    background: rgba(255,255,255,0.07) !important;
+    border-radius: 14px !important;
+    padding: 16px !important;
+    color: ***REMOVED***fff !important;
+  }
+
+  ***REMOVED***screen-home .home-cash-card__label {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.06em !important;
+    color: rgba(255,255,255,0.45) !important;
+    text-transform: uppercase !important;
+    margin-bottom: 6px !important;
+  }
+
+  ***REMOVED***screen-home .home-cash-card__amount {
+    font-size: 36px !important;
+    font-weight: 700 !important;
+    color: ***REMOVED***fff !important;
+    line-height: 1.1 !important;
+    letter-spacing: -0.02em !important;
+  }
+
+  ***REMOVED***screen-home .home-cash-card__delta.is-pos { color: var(--color-green) !important; }
+  ***REMOVED***screen-home .home-cash-card__delta.is-neg { color: var(--color-red) !important; }
+
+  ***REMOVED***screen-home .home-action-wrap,
+  ***REMOVED***screen-home .home-action-row {
+    margin-top: auto !important;
+    padding-top: 20px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    flex-shrink: 0 !important;
+    width: 100% !important;
+  }
+
+  ***REMOVED***screen-home .home-action-row .btn-primary,
+  ***REMOVED***screen-home .home-action-wrap .btn-primary {
+    background: var(--color-yellow) !important;
+    color: var(--color-dark) !important;
+  }
+
+  ***REMOVED***screen-home .home-action-row .btn-secondary,
+  ***REMOVED***screen-home .home-action-wrap .btn-secondary {
+    background: rgba(255,255,255,0.1) !important;
+    color: ***REMOVED***fff !important;
+    border: none !important;
+  }
+
+  ***REMOVED***screen-home .home-action-row .btn-secondary:hover,
+  ***REMOVED***screen-home .home-action-wrap .btn-secondary:hover {
+    background: rgba(255,255,255,0.17) !important;
+  }
+
+  ***REMOVED***screen-home .home-content-sheet {
+    flex: 1 !important;
+    min-width: 0 !important;
+    height: 100dvh !important;
+    overflow-y: auto !important;
+    padding: 28px 28px 24px !important;
+    background: var(--color-bg) !important;
+    margin-top: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  ***REMOVED***screen-home .home-content-sheet .fab,
+  ***REMOVED***screen-home .home-content-sheet .btn-fab { display: none !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SCREEN-DASHBOARD — двухколоночный layout
+══════════════════════════════════════════════════════════════ */
+
+@media (min-width: 1024px) {
   ***REMOVED***screen-dashboard {
     flex-direction: row !important;
     overflow: hidden !important;
   }
 
-  /* Левая тёмная колонка */
   ***REMOVED***screen-dashboard .dashboard-header {
     width: 300px !important;
     flex-shrink: 0 !important;
@@ -277,16 +381,9 @@
     flex-direction: column !important;
   }
 
-  /* Скрыть логотип и аватар — они в sidebar */
-  ***REMOVED***screen-dashboard .header-top-row {
-    display: none !important;
-  }
+  ***REMOVED***screen-dashboard .header-top-row { display: none !important; }
+  ***REMOVED***screen-dashboard .header-total-amount { font-size: 42px !important; }
 
-  ***REMOVED***screen-dashboard .header-total-amount {
-    font-size: 42px !important;
-  }
-
-  /* Правая колонка с кассами и парком */
   ***REMOVED***screen-dashboard .dashboard-body {
     flex: 1 !important;
     min-width: 0 !important;
@@ -294,102 +391,141 @@
     overflow-y: auto !important;
     padding: 32px 32px 24px !important;
     box-sizing: border-box !important;
-  }
-
-  /* ── screen-home ── */
-
-  /*
-   * DOM-структура которую рендерит home.js внутрь ***REMOVED***home-body:
-   *
-   * ***REMOVED***screen-home
-   *   └── ***REMOVED***home-body.home-scroll.pb-navbar   ← единственный потомок в HTML
-   *         ├── .home-header                 ← тёмная левая колонка
-   *         └── .home-content-sheet          ← светлая правая колонка
-   *
-   * Решение: делаем ***REMOVED***home-body горизонтальным flex-контейнером.
-   * Каждый прямой потомок становится колонкой.
-   */
-
-  ***REMOVED***screen-home {
-    overflow: hidden !important;
-  }
-
-  /* ***REMOVED***home-body — горизонтальный контейнер двух колонок */
-  ***REMOVED***screen-home ***REMOVED***home-body {
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: stretch !important;
-    height: 100dvh !important;
-    overflow: hidden !important;
-    padding-bottom: 0 !important; /* убрать отступ под мобильный navbar */
-  }
-
-  /* Левая колонка — тёмная панель с балансом */
-  ***REMOVED***screen-home .home-header {
-    /* размеры */
-    width: 320px !important;
-    min-width: 320px !important;
-    max-width: 320px !important;
-    flex-shrink: 0 !important;
-    /* высота = весь экран, своя прокрутка */
-    height: 100dvh !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    /* внутренний layout — flex-колонка чтобы margin-top:auto работал */
-    display: flex !important;
-    flex-direction: column !important;
-    /* отступы */
-    padding: 32px 24px 24px !important;
-    box-sizing: border-box !important;
-    /* z-index ниже sidebar */
-    position: relative !important;
-    z-index: 1 !important;
-  }
-
-  /* Скрыть логотип и аватар — они в sidebar */
-  ***REMOVED***screen-home .home-hdr__brand-row {
-    display: none !important;
-  }
-
-  /* Баланс покрупнее */
-  ***REMOVED***screen-home .kassa-amount {
-    font-size: 40px !important;
-  }
-
-  /*
-   * Кнопки «Принять платёж» и «Расход» — прижать к низу левой панели.
-   * margin-top: auto работает только если родитель (.home-header)
-   * является flex-колонкой И имеет height: 100dvh — оба условия выше выполнены.
-   */
-  ***REMOVED***screen-home .home-action-wrap {
-    margin-top: auto !important;
-    padding-top: 24px !important;
-    flex-shrink: 0 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 8px !important;
-    width: 100% !important;
-  }
-
-  /* Правая колонка — парк и список операций */
-  ***REMOVED***screen-home .home-content-sheet {
-    flex: 1 !important;
-    min-width: 0 !important;
-    height: 100dvh !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    padding: 32px !important;
-    padding-bottom: 24px !important;
-    box-sizing: border-box !important;
-    /* убрать мобильные стили */
-    margin-top: 0 !important;
     border-radius: 0 !important;
+    background: var(--color-bg) !important;
+  }
+
+  ***REMOVED***screen-dashboard .month-switcher { margin-top: 20px !important; }
+
+  ***REMOVED***screen-driver ***REMOVED***driver-back svg,
+  ***REMOVED***screen-add    ***REMOVED***add-back    svg {
+    width: 22px !important;
+    height: 22px !important;
   }
 }
 
+/* ══════════════════════════════════════════════════════════════
+   SCREEN-FLEET — сетка карточек
+══════════════════════════════════════════════════════════════ */
+
 @media (min-width: 1024px) {
-  .expense-bottom,
-  .transfer-bottom {
-    display: none !important;
+  ***REMOVED***screen-fleet .fleet-page {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100dvh !important;
+    overflow: hidden !important;
+  }
+
+  ***REMOVED***screen-fleet .fleet-page__header {
+    flex-shrink: 0 !important;
+    padding: 24px 32px 0 !important;
+  }
+
+  ***REMOVED***screen-fleet .fleet-page__tabs {
+    flex-shrink: 0 !important;
+    padding: 12px 32px !important;
+    display: flex !important;
+    gap: 8px !important;
+  }
+
+  ***REMOVED***screen-fleet .fleet-tab {
+    flex: 0 0 auto !important;
+    padding: 7px 16px !important;
+    font-size: 13px !important;
+    border-radius: 20px !important;
+    min-width: 0 !important;
+  }
+
+  ***REMOVED***screen-fleet .fleet-page__body {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    padding: 8px 32px 24px !important;
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
+    gap: 16px !important;
+    align-content: start !important;
+  }
+
+  ***REMOVED***screen-fleet .fleet-car { align-self: start !important; }
+  ***REMOVED***screen-fleet .fleet-empty { grid-column: 1 / -1 !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SCREEN-DRIVERS — сетка карточек
+══════════════════════════════════════════════════════════════ */
+
+@media (min-width: 1024px) {
+  ***REMOVED***screen-drivers .drivers-page {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100dvh !important;
+    overflow: hidden !important;
+  }
+
+  ***REMOVED***screen-drivers .drivers-page__header {
+    flex-shrink: 0 !important;
+    padding: 24px 32px 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
+
+  ***REMOVED***screen-drivers .drivers-page__tabs {
+    flex-shrink: 0 !important;
+    padding: 12px 32px !important;
+    display: flex !important;
+    gap: 8px !important;
+  }
+
+  ***REMOVED***screen-drivers .drivers-tab {
+    flex: 0 0 auto !important;
+    padding: 7px 16px !important;
+    font-size: 13px !important;
+    border-radius: 20px !important;
+    min-width: 0 !important;
+  }
+
+  ***REMOVED***screen-drivers .drivers-page__body {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    padding: 8px 32px 24px !important;
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
+    gap: 16px !important;
+    align-content: start !important;
+  }
+
+  ***REMOVED***screen-drivers .drivers-card { align-self: start !important; }
+  ***REMOVED***screen-drivers .drivers-empty { grid-column: 1 / -1 !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SCREEN-EXPENSE — кнопка в потоке (не fixed)
+══════════════════════════════════════════════════════════════ */
+
+@media (min-width: 1024px) {
+  .transfer-bottom { display: none !important; }
+
+  .expense-bottom {
+    position: static !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 16px 0 8px !important;
+    background: transparent !important;
+    z-index: auto !important;
+  }
+
+  .expense-scroll { padding-bottom: 24px !important; }
+  .btn-expense-submit { max-width: 400px !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ШИРОКИЕ ЭКРАНЫ (≥1440px) — 3 колонки
+══════════════════════════════════════════════════════════════ */
+
+@media (min-width: 1440px) {
+  ***REMOVED***screen-fleet .fleet-page__body,
+  ***REMOVED***screen-drivers .drivers-page__body {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
   }
 }
