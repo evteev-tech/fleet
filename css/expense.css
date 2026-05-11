@@ -20,11 +20,11 @@
   padding: 0 8px;
   padding-top: max(8px, env(safe-area-inset-top));
   background: var(--bg-header);
-  color: ***REMOVED***fff;
+  color: #fff;
 }
 
 .expense-header__back {
-  color: ***REMOVED***fff;
+  color: #fff;
   width: 44px;
   height: 44px;
 }
@@ -69,13 +69,13 @@
 }
 
 .expense-cat {
-  border: 1px solid ***REMOVED***e5e5ea;
+  border: 1px solid #e5e5ea;
   border-radius: var(--radius-sm);
   padding: var(--space-md) 8px;
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--color-dark);
-  background: ***REMOVED***fff;
+  background: #fff;
   cursor: pointer;
   transition: border-color var(--transition-fast), background var(--transition-fast);
   text-align: center;
@@ -83,14 +83,14 @@
 }
 
 .expense-cat--frequent {
-  background: ***REMOVED***fafce8;
-  border-color: ***REMOVED***e8e4c8;
+  background: #fafce8;
+  border-color: #e8e4c8;
   font-weight: 700;
 }
 
 .expense-cat--selected {
   border: 2px solid var(--color-accent);
-  background: ***REMOVED***fafce8;
+  background: #fafce8;
 }
 
 .expense-kassa-wrap {
@@ -114,18 +114,18 @@
 .expense-kassa-btn {
   flex: 1;
   padding: var(--space-md);
-  border: 1px solid ***REMOVED***e5e5ea;
+  border: 1px solid #e5e5ea;
   border-radius: var(--radius-sm);
   font-size: var(--text-base);
   font-weight: 600;
-  background: ***REMOVED***fff;
+  background: #fff;
   color: var(--color-dark);
   cursor: pointer;
 }
 
 .expense-kassa-btn--active {
   border: 2px solid var(--color-accent);
-  background: ***REMOVED***fafce8;
+  background: #fafce8;
 }
 
 .expense-capex-wrap {
@@ -134,8 +134,8 @@
   gap: var(--space-md);
   margin-bottom: 16px;
   padding: 12px var(--space-lg);
-  background: ***REMOVED***fff;
-  border: 1px solid ***REMOVED***e5e5ea;
+  background: #fff;
+  border: 1px solid #e5e5ea;
   border-radius: var(--radius-md);
   cursor: pointer;
 }
@@ -154,9 +154,9 @@
 
 .expense-cars-wrap {
   margin-bottom: 16px;
-  background: ***REMOVED***fff;
+  background: #fff;
   border-radius: var(--radius-md);
-  border: 1px solid ***REMOVED***e0e0e0;
+  border: 1px solid #e0e0e0;
   overflow: hidden;
 }
 
@@ -168,7 +168,7 @@
   gap: var(--space-md);
   padding: var(--space-lg) 16px;
   border: none;
-  background: ***REMOVED***fff;
+  background: #fff;
   cursor: pointer;
   text-align: left;
 }
@@ -192,8 +192,8 @@
 .expense-cars-toggle__chev {
   width: var(--space-md);
   height: var(--space-md);
-  border-right: 2px solid ***REMOVED***888;
-  border-bottom: 2px solid ***REMOVED***888;
+  border-right: 2px solid #888;
+  border-bottom: 2px solid #888;
   transform: rotate(45deg);
   transition: transform var(--transition-base) ease;
   flex-shrink: 0;
@@ -206,7 +206,7 @@
 }
 
 .expense-cars-list {
-  border-top: 1px solid ***REMOVED***f0f0f0;
+  border-top: 1px solid #f0f0f0;
   max-height: 280px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -220,8 +220,8 @@
   gap: 4px;
   padding: 12px 16px;
   border: none;
-  border-bottom: 1px solid ***REMOVED***f5f5f5;
-  background: ***REMOVED***fff;
+  border-bottom: 1px solid #f5f5f5;
+  background: #fff;
   cursor: pointer;
   text-align: left;
 }
@@ -231,7 +231,7 @@
 }
 
 .expense-car-item--selected {
-  background: ***REMOVED***fafce8;
+  background: #fafce8;
   box-shadow: inset 3px 0 0 var(--color-accent);
 }
 
@@ -285,11 +285,11 @@
   width: 100%;
   box-sizing: border-box;
   padding: 12px var(--space-lg);
-  border: 1px solid ***REMOVED***e5e5ea;
+  border: 1px solid #e5e5ea;
   border-radius: var(--radius-md);
   font-size: var(--text-base);
   font-family: var(--font-family);
-  background: ***REMOVED***fff;
+  background: #fff;
 }
 
 .expense-bottom {
@@ -298,7 +298,7 @@
   right: 0;
   bottom: calc(var(--navbar-height) + var(--safe-bottom));
   z-index: 30;
-  background: ***REMOVED***fff;
+  background: #fff;
   padding: var(--space-lg) 16px calc(12px + env(safe-area-inset-bottom));
   box-shadow: 0 -4px 20px rgba(26, 26, 26, 0.08);
   border-radius: 16px 16px 0 0;
@@ -313,7 +313,7 @@
   font-size: var(--text-lg);
   font-weight: 800;
   background: var(--color-dark);
-  color: ***REMOVED***fff;
+  color: #fff;
   cursor: pointer;
 }
 
@@ -335,7 +335,7 @@
   right: 0;
   bottom: 0;
   z-index: 210;
-  background: ***REMOVED***fff;
+  background: #fff;
   border-radius: 16px 16px 0 0;
   padding: 12px 16px calc(20px + env(safe-area-inset-bottom));
   box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.18);
@@ -350,7 +350,7 @@
 .expense-numpad__display {
   font-size: var(--text-3xl);
   font-weight: 900;
-  color: ***REMOVED***1a1a1a;
+  color: #1a1a1a;
   letter-spacing: -0.04em;
   text-align: center;
   padding: 4px 0 12px;
@@ -367,9 +367,9 @@
   padding: 16px;
   font-size: var(--text-2xl);
   font-weight: 700;
-  border: 1px solid ***REMOVED***e8e8e8;
+  border: 1px solid #e8e8e8;
   border-radius: var(--radius-md);
-  background: ***REMOVED***fafafa;
+  background: #fafafa;
   cursor: pointer;
   font-family: var(--font-family);
 }
@@ -405,16 +405,16 @@
 .mileage-sheet__input {
   width: 100%;
   padding: 12px var(--space-lg);
-  border: 1.5px solid ***REMOVED***e5e5ea;
+  border: 1.5px solid #e5e5ea;
   border-radius: var(--radius-md);
   font-size: var(--text-base);
   font-family: var(--font-family);
-  background: ***REMOVED***fff;
+  background: #fff;
   color: var(--color-dark);
 }
 
 .mileage-sheet__input:focus {
   border-color: var(--color-accent);
   outline: none;
-  background: ***REMOVED***fafce8;
+  background: #fafce8;
 }

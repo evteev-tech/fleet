@@ -42,11 +42,11 @@
   padding: 0 8px;
   padding-top: max(8px, env(safe-area-inset-top));
   background: var(--bg-header);
-  color: ***REMOVED***fff;
+  color: #fff;
 }
 
 .income-header__back {
-  color: ***REMOVED***fff;
+  color: #fff;
   width: 44px;
   height: 44px;
 }
@@ -91,11 +91,11 @@
 }
 
 .income-card {
-  background: ***REMOVED***fff;
+  background: #fff;
   border-radius: 12px;
   padding: 14px 16px;
   margin-bottom: 12px;
-  border: 1px solid ***REMOVED***e0e0e0;
+  border: 1px solid #e0e0e0;
   box-shadow: 0 2px 12px rgba(26, 26, 26, 0.06);
   cursor: pointer;
   transition: border-color var(--transition-fast), background var(--transition-fast);
@@ -103,7 +103,7 @@
 
 .income-card--selected {
   border: 2px solid var(--color-accent);
-  background: ***REMOVED***fafce8;
+  background: #fafce8;
 }
 
 .income-card__top {
@@ -138,7 +138,7 @@
 
 .income-card__rule {
   height: 1px;
-  background: ***REMOVED***e8e8e8;
+  background: #e8e8e8;
   margin: 12px 0;
 }
 
@@ -168,7 +168,7 @@
 }
 
 .income-km--mid {
-  color: ***REMOVED***e6b800;
+  color: #e6b800;
 }
 
 .income-card__driver {
@@ -177,7 +177,7 @@
   gap: 10px;
   margin-top: 14px;
   padding-top: 12px;
-  border-top: 1px solid ***REMOVED***f0f0f0;
+  border-top: 1px solid #f0f0f0;
 }
 
 .income-avatar {
@@ -206,7 +206,7 @@
   right: 0;
   bottom: calc(var(--navbar-height) + var(--safe-bottom));
   z-index: 30;
-  background: ***REMOVED***fff;
+  background: #fff;
   padding: 14px 16px calc(12px + env(safe-area-inset-bottom));
   box-shadow: 0 -4px 20px rgba(26, 26, 26, 0.08);
   border-radius: 16px 16px 0 0;
@@ -232,10 +232,10 @@
 }
 
 .income-period {
-  border: 1px solid ***REMOVED***e5e5ea;
+  border: 1px solid #e5e5ea;
   border-radius: 10px;
   padding: 8px 6px;
-  background: ***REMOVED***fafafa;
+  background: #fafafa;
   cursor: pointer;
   font-family: var(--font-family);
 }
@@ -305,7 +305,7 @@
 }
 
 .income-dates__arrow {
-  color: ***REMOVED***c4c4c4;
+  color: #c4c4c4;
 }
 
 .income-dates__days {
@@ -317,7 +317,7 @@
   font-size: 12px;
   font-weight: 600;
   color: var(--color-dark);
-  background: ***REMOVED***fff9e6;
+  background: #fff9e6;
   border: 1px solid var(--color-accent);
   border-radius: 10px;
   padding: 10px 12px;
@@ -378,7 +378,7 @@
 
 .income-numpad-inline {
   padding: 8px 0 4px;
-  border-top: 1px solid ***REMOVED***f0f0f0;
+  border-top: 1px solid #f0f0f0;
   margin-top: 4px;
 }
 
@@ -397,9 +397,9 @@
   padding: 14px;
   font-size: 20px;
   font-weight: 700;
-  border: 1px solid ***REMOVED***e8e8e8;
+  border: 1px solid #e8e8e8;
   border-radius: 10px;
-  background: ***REMOVED***fafafa;
+  background: #fafafa;
   cursor: pointer;
   font-family: var(--font-family);
   text-align: center;

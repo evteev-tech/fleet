@@ -155,7 +155,7 @@ async function _submit(op) {
     hideBottomSheet();
 
     /* Перерендерить текущий экран */
-    const activeScreen = document.querySelector('***REMOVED***app-content .screen--active')?.id;
+    const activeScreen = document.querySelector('#app-content .screen--active')?.id;
     if (activeScreen === 'screen-history') {
       document.dispatchEvent(new CustomEvent('screen:activated',
         { detail: { screenId: 'screen-history' } }));

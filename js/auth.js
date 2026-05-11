@@ -90,7 +90,7 @@ export function initAuth() {
 
 /**
  * Инициализирует PIN-клавиатуру и управляет состоянием ввода.
- * Клавиатура рендерится динамически в ***REMOVED***pinKeyboard.
+ * Клавиатура рендерится динамически в #pinKeyboard.
  */
 export function handlePinInput() {
   const keyboard = document.getElementById('pinKeyboard');

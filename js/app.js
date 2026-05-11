@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const sid =
           currentScreen() ||
-          document.querySelector('***REMOVED***app-content .screen--active')?.id ||
+          document.querySelector('#app-content .screen--active')?.id ||
           '';
         if (sid) updateSidebarActive(sid);
       } else {
@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (crossed && navbar) {
           const currentSid =
             currentScreen() ||
-            document.querySelector('***REMOVED***app-content .screen--active')?.id ||
+            document.querySelector('#app-content .screen--active')?.id ||
             '';
           // Показываем navbar только не на экране логина и аналитики
           if (currentSid && currentSid !== 'screen-login' && currentSid !== 'screen-analytics') {

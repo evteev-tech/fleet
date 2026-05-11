@@ -15,24 +15,24 @@
   --text-3xl:  32px;
 
   /* Unified colors (без --color-green / --color-red — используйте --c-profit / --c-loss) */
-  --c-profit: ***REMOVED***2E8B6F;
-  --c-loss: ***REMOVED***D14848;
-  --c-neutral: ***REMOVED***111111;
-  --c-muted: ***REMOVED***8A8A8E;
-  --c-profit-light: ***REMOVED***E3F9F0;
-  --c-loss-light: ***REMOVED***FFF0EE;
+  --c-profit: #2E8B6F;
+  --c-loss: #D14848;
+  --c-neutral: #111111;
+  --c-muted: #8A8A8E;
+  --c-profit-light: #E3F9F0;
+  --c-loss-light: #FFF0EE;
 
   /* Остальная палитра UI (не success/error) */
-  --color-dark: ***REMOVED***1A1A1A;
-  --color-yellow: ***REMOVED***ffdd2d;
-  --color-bg: ***REMOVED***f0f1f3;
-  --color-white: ***REMOVED***ffffff;
-  --color-muted: ***REMOVED***8a8a8e;
-  --color-border: ***REMOVED***e5e5ea;
-  --color-blue: ***REMOVED***0066ff;
-  --color-blue-bg: ***REMOVED***eef4ff;
-  --color-orange: ***REMOVED***e08000;
-  --color-orange-bg: ***REMOVED***fff3e0;
+  --color-dark: #1A1A1A;
+  --color-yellow: #ffdd2d;
+  --color-bg: #f0f1f3;
+  --color-white: #ffffff;
+  --color-muted: #8a8a8e;
+  --color-border: #e5e5ea;
+  --color-blue: #0066ff;
+  --color-blue-bg: #eef4ff;
+  --color-orange: #e08000;
+  --color-orange-bg: #fff3e0;
 
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
@@ -72,15 +72,15 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 
   /* Семантические алиасы */
-  --bg-page: ***REMOVED***f0f1f3;
-  --bg-card: ***REMOVED***ffffff;
-  --bg-header: ***REMOVED***1a1a1a;
-  --color-text-main: ***REMOVED***1a1a1a;
+  --bg-page: #f0f1f3;
+  --bg-card: #ffffff;
+  --bg-header: #1a1a1a;
+  --color-text-main: #1a1a1a;
   --color-text-muted: rgba(0, 0, 0, 0.45);
   --color-text-muted-white: rgba(255, 255, 255, 0.45);
   --color-positive: var(--c-profit);
   --color-negative: var(--c-loss);
-  --color-accent: ***REMOVED***ffdd2d;
+  --color-accent: #ffdd2d;
 }
 
 /* ─── Сброс ─── */

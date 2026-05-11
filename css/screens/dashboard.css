@@ -51,39 +51,39 @@
    ЭКРАН: ДАШБОРД (новый макет)
 ───────────────────────────────────────────── */
 
-***REMOVED***screen-dashboard {
+#screen-dashboard {
   overflow: hidden;
 }
 
-***REMOVED***screen-dashboard .dashboard-header {
+#screen-dashboard .dashboard-header {
   flex-shrink: 0;
-  background: ***REMOVED***1A1A1A;
+  background: #1A1A1A;
   padding: max(16px, env(safe-area-inset-top)) 16px 20px;
   display: flex;
   flex-direction: column;
   gap: 0;
 }
 
-***REMOVED***screen-dashboard .header-top-row {
+#screen-dashboard .header-top-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 12px;
 }
 
-***REMOVED***screen-dashboard .header-logo {
-  color: ***REMOVED***FFDD2D;
+#screen-dashboard .header-logo {
+  color: #FFDD2D;
   font-size: 15px;
   font-weight: 900;
   letter-spacing: -0.3px;
 }
 
-***REMOVED***screen-dashboard .header-avatar {
+#screen-dashboard .header-avatar {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: ***REMOVED***FFDD2D;
-  color: ***REMOVED***1A1A1A;
+  background: #FFDD2D;
+  color: #1A1A1A;
   font-size: 12px;
   font-weight: 900;
   display: flex;
@@ -91,7 +91,7 @@
   justify-content: center;
 }
 
-***REMOVED***screen-dashboard .header-total-label {
+#screen-dashboard .header-total-label {
   color: rgba(255, 255, 255, 0.45);
   font-size: 10px;
   font-weight: 700;
@@ -100,8 +100,8 @@
   margin-bottom: 6px;
 }
 
-***REMOVED***screen-dashboard .header-total-amount {
-  color: ***REMOVED***FFFFFF;
+#screen-dashboard .header-total-amount {
+  color: #FFFFFF;
   font-size: 36px;
   font-weight: 900;
   letter-spacing: -1.5px;
@@ -109,21 +109,21 @@
   margin-bottom: 14px;
 }
 
-***REMOVED***screen-dashboard .dash-total-skeleton {
+#screen-dashboard .dash-total-skeleton {
   display: inline-block;
   width: min(220px, 70vw);
   height: 36px;
   border-radius: 8px;
 }
 
-***REMOVED***screen-dashboard .header-stats-row {
+#screen-dashboard .header-stats-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 6px;
   margin-bottom: 14px;
 }
 
-***REMOVED***screen-dashboard .header-stat-tile {
+#screen-dashboard .header-stat-tile {
   background: rgba(255, 255, 255, 0.1);
   border-radius: 10px;
   padding: 10px 8px;
@@ -132,22 +132,22 @@
   gap: 3px;
 }
 
-***REMOVED***screen-dashboard .header-stat-value {
+#screen-dashboard .header-stat-value {
   font-size: 14px;
   font-weight: 800;
   line-height: 1;
 }
 
-***REMOVED***screen-dashboard .header-stat-value.green { color: ***REMOVED***00A86B; }
-***REMOVED***screen-dashboard .header-stat-value.red   { color: ***REMOVED***E34234; }
-***REMOVED***screen-dashboard .header-stat-value.white { color: ***REMOVED***FFFFFF; }
+#screen-dashboard .header-stat-value.green { color: #00A86B; }
+#screen-dashboard .header-stat-value.red   { color: #E34234; }
+#screen-dashboard .header-stat-value.white { color: #FFFFFF; }
 
-***REMOVED***screen-dashboard .header-stat-label {
+#screen-dashboard .header-stat-label {
   font-size: 10px;
   color: rgba(255, 255, 255, 0.45);
 }
 
-***REMOVED***screen-dashboard .month-switcher {
+#screen-dashboard .month-switcher {
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -155,7 +155,7 @@
   padding: 10px 0 4px;
 }
 
-***REMOVED***screen-dashboard .month-chevron {
+#screen-dashboard .month-chevron {
   background: transparent;
   border: none;
   color: rgba(255, 255, 255, 0.45);
@@ -165,19 +165,19 @@
   line-height: 1;
 }
 
-***REMOVED***screen-dashboard .month-text {
-  color: ***REMOVED***FFFFFF;
+#screen-dashboard .month-text {
+  color: #FFFFFF;
   font-size: 14px;
   font-weight: 600;
   font-family: inherit;
 }
 
-***REMOVED***screen-dashboard .dashboard-body {
+#screen-dashboard .dashboard-body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  background: ***REMOVED***F0F1F3;
+  background: #F0F1F3;
   padding: 14px 16px;
   padding-bottom: calc(var(--navbar-height) + var(--safe-bottom) + var(--space-lg));
   display: flex;

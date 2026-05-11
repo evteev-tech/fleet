@@ -135,7 +135,7 @@ export function renderSidebar(role) {
 
   const active =
     currentScreen() ||
-    document.querySelector('***REMOVED***app-content .screen--active')?.id ||
+    document.querySelector('#app-content .screen--active')?.id ||
     null;
   if (active) updateSidebarActive(active);
 }
@@ -144,7 +144,7 @@ export function renderSidebar(role) {
  * @param {string} screenId
  */
 export function updateSidebarActive(screenId) {
-  document.querySelectorAll('***REMOVED***sidebar .sidebar-item').forEach(el => {
+  document.querySelectorAll('#sidebar .sidebar-item').forEach(el => {
     el.classList.toggle('sidebar-item--active', el.dataset.screen === screenId);
   });
 }

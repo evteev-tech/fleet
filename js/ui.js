@@ -8,11 +8,11 @@ import { fmtRuInt } from './utils/format.js';
 // ─── TOAST ────────────────────────────────────────────────────────────────────
 
 const TOAST_COLORS = {
-  success: { bg: 'var(--color-green)',    text: '***REMOVED***fff' },
-  error:   { bg: 'var(--color-red)',      text: '***REMOVED***fff' },
-  warning: { bg: '***REMOVED***F5A623',              text: '***REMOVED***fff' },
-  info:    { bg: 'var(--color-dark)',     text: '***REMOVED***fff' },
-  default: { bg: 'var(--color-dark)',     text: '***REMOVED***fff' },
+  success: { bg: 'var(--color-green)',    text: '#fff' },
+  error:   { bg: 'var(--color-red)',      text: '#fff' },
+  warning: { bg: '#F5A623',              text: '#fff' },
+  info:    { bg: 'var(--color-dark)',     text: '#fff' },
+  default: { bg: 'var(--color-dark)',     text: '#fff' },
 };
 
 const TOAST_ICONS = {

@@ -121,9 +121,9 @@ const ICONS = {
   wallet: iconSvg('<path d="M17 8V6a2 2 0 00-2-2H8a2 2 0 00-2 2v12a2 2 0 002 2h9a2 2 0 002-2v-8"/><path d="M14 12h.01"/><path d="M17 8h3v4h-3"/>'),
 };
 
-const TILE_GREEN = { iconColor: '***REMOVED***2d8a3f', bg: '***REMOVED***e3f5e8' };
-const TILE_RED = { iconColor: '***REMOVED***c43838', bg: '***REMOVED***fce8e8' };
-const TILE_NEU = { iconColor: '***REMOVED***666', bg: '***REMOVED***ececea' };
+const TILE_GREEN = { iconColor: '#2d8a3f', bg: '#e3f5e8' };
+const TILE_RED = { iconColor: '#c43838', bg: '#fce8e8' };
+const TILE_NEU = { iconColor: '#666', bg: '#ececea' };
 
 /**
  * @returns {{ html: string, iconColor: string, bg: string }}

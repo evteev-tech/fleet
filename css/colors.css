@@ -5,62 +5,62 @@
 
 :root {
   /* ── Семантические цвета ── */
-  --c-profit:      ***REMOVED***2E8B6F;  /* прибыль, рост, "хорошо" */
-  --c-loss:        ***REMOVED***D14848;  /* убыток, падение, "плохо" */
-  --c-neutral:     ***REMOVED***111111;  /* нейтральный акцент, OPEX */
-  --c-muted:       ***REMOVED***8A8A8E;  /* приглушённый текст, метки */
+  --c-profit:      #2E8B6F;  /* прибыль, рост, "хорошо" */
+  --c-loss:        #D14848;  /* убыток, падение, "плохо" */
+  --c-neutral:     #111111;  /* нейтральный акцент, OPEX */
+  --c-muted:       #8A8A8E;  /* приглушённый текст, метки */
 
   /* ── Фоновые заливки ── */
-  --c-profit-bg:   ***REMOVED***E8F2EC;  /* светло-зелёный фон */
-  --c-loss-bg:     ***REMOVED***FBE9E9;  /* светло-красный фон */
-  --c-warning-bg:  ***REMOVED***FEF9C3;  /* жёлтый фон (простой) */
-  --c-bg-page:     ***REMOVED***F6F7F8;  /* фон страницы аналитики */
+  --c-profit-bg:   #E8F2EC;  /* светло-зелёный фон */
+  --c-loss-bg:     #FBE9E9;  /* светло-красный фон */
+  --c-warning-bg:  #FEF9C3;  /* жёлтый фон (простой) */
+  --c-bg-page:     #F6F7F8;  /* фон страницы аналитики */
 
   /* ── Поверхности и текст на тёмном ── */
-  --c-surface:     ***REMOVED***FFFFFF;  /* карточки, белый фон */
-  --c-on-dark:     ***REMOVED***FFFFFF;  /* текст на тёмном хедере */
+  --c-surface:     #FFFFFF;  /* карточки, белый фон */
+  --c-on-dark:     #FFFFFF;  /* текст на тёмном хедере */
 
   /* ── PnL heatmap: текст на ячейке ── */
-  --c-pnl-cell-pos: ***REMOVED***7EFFC4;
-  --c-pnl-cell-neg: ***REMOVED***FFB3B3;
+  --c-pnl-cell-pos: #7EFFC4;
+  --c-pnl-cell-neg: #FFB3B3;
 
   /* ── Монохромная шкала для графиков ── */
-  --c-bar-100:     ***REMOVED***111111;  /* самый тёмный */
-  --c-bar-75:      ***REMOVED***444444;
-  --c-bar-50:      ***REMOVED***777777;
-  --c-bar-25:      ***REMOVED***AAAAAA;
-  --c-bar-10:      ***REMOVED***CCCCCC;  /* самый светлый */
-  --c-bar-empty:   ***REMOVED***EBEBEB;  /* пустая ячейка/трек */
+  --c-bar-100:     #111111;  /* самый тёмный */
+  --c-bar-75:      #444444;
+  --c-bar-50:      #777777;
+  --c-bar-25:      #AAAAAA;
+  --c-bar-10:      #CCCCCC;  /* самый светлый */
+  --c-bar-empty:   #EBEBEB;  /* пустая ячейка/трек */
 
   /* ── Статусы парка ── */
-  --c-rent:        ***REMOVED***2E8B6F;  /* аренда */
-  --c-rent-bg:     ***REMOVED***E8F2EC;
-  --c-idle:        ***REMOVED***D97706;  /* простой */
-  --c-idle-bg:     ***REMOVED***FEF9C3;
-  --c-repair:      ***REMOVED***D14848;  /* ремонт */
-  --c-repair-bg:   ***REMOVED***FBE9E9;
+  --c-rent:        #2E8B6F;  /* аренда */
+  --c-rent-bg:     #E8F2EC;
+  --c-idle:        #D97706;  /* простой */
+  --c-idle-bg:     #FEF9C3;
+  --c-repair:      #D14848;  /* ремонт */
+  --c-repair-bg:   #FBE9E9;
 
   /* ── Кассы (точки на графиках) ── */
-  --c-kassa-azamat:   ***REMOVED***FFDD2D;
-  --c-kassa-vladimir: ***REMOVED***378ADD;
-  --c-kassa-yulia:    ***REMOVED***2E8B6F;
+  --c-kassa-azamat:   #FFDD2D;
+  --c-kassa-vladimir: #378ADD;
+  --c-kassa-yulia:    #2E8B6F;
 
   /* ── Акценты UI ── */
-  --c-accent:      ***REMOVED***FFDD2D;  /* жёлтый — кнопки, активная вкладка */
-  --c-dark:        ***REMOVED***111111;  /* фон тёмных блоков */
+  --c-accent:      #FFDD2D;  /* жёлтый — кнопки, активная вкладка */
+  --c-dark:        #111111;  /* фон тёмных блоков */
 
   /* ── PnL heatmap градиенты ── */
-  --c-pnl-profit-dark:   ***REMOVED***1E6F5C;  /* высокая маржа >60% */
-  --c-pnl-profit-mid:    ***REMOVED***2E8B6F;  /* средняя маржа 30–60% */
-  --c-pnl-profit-light:  ***REMOVED***7FB5A6;  /* низкая маржа <30% */
+  --c-pnl-profit-dark:   #1E6F5C;  /* высокая маржа >60% */
+  --c-pnl-profit-mid:    #2E8B6F;  /* средняя маржа 30–60% */
+  --c-pnl-profit-light:  #7FB5A6;  /* низкая маржа <30% */
 
-  --c-pnl-loss-dark:     ***REMOVED***8B3A26;  /* большой убыток >30k */
-  --c-pnl-loss-mid:      ***REMOVED***A04848;  /* средний убыток 10–30k */
-  --c-pnl-loss-light:    ***REMOVED***C65D5D;  /* малый убыток <10k */
+  --c-pnl-loss-dark:     #8B3A26;  /* большой убыток >30k */
+  --c-pnl-loss-mid:      #A04848;  /* средний убыток 10–30k */
+  --c-pnl-loss-light:    #C65D5D;  /* малый убыток <10k */
 
   /* ── Desktop-specific оттенки ── */
-  --c-desktop-bg-1:   ***REMOVED***1E1E1E;
-  --c-desktop-bg-2:   ***REMOVED***2A2A2A;
-  --c-desktop-muted:  ***REMOVED***9A9A9E;
-  --c-desktop-accent: ***REMOVED***60A5FA;
+  --c-desktop-bg-1:   #1E1E1E;
+  --c-desktop-bg-2:   #2A2A2A;
+  --c-desktop-muted:  #9A9A9E;
+  --c-desktop-accent: #60A5FA;
 }

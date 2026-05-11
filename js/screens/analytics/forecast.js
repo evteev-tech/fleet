@@ -162,7 +162,7 @@ export function animateForecast(container) {
 }
 
 export async function hydrateForecast(root) {
-  const mount = root.querySelector('***REMOVED***analytics-forecast-mount');
+  const mount = root.querySelector('#analytics-forecast-mount');
   if (!mount) return;
   if (forecastRentalsCache !== null) {
     mount.innerHTML = forecastHtml(forecastRentalsCache);

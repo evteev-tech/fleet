@@ -53,7 +53,7 @@
 ───────────────────────────────────────────── */
 
 .screen-history {
-  background: ***REMOVED***1a1a1a;
+  background: #1a1a1a;
 }
 
 .hist-history-root {
@@ -71,7 +71,7 @@
 }
 
 .hist-hdr {
-  background: ***REMOVED***1a1a1a;
+  background: #1a1a1a;
   padding: max(48px, calc(env(safe-area-inset-top) + 32px)) 0 0;
   flex-shrink: 0;
 }
@@ -101,7 +101,7 @@
   gap: 4px;
   background: transparent;
   border: none;
-  color: ***REMOVED***fff;
+  color: #fff;
   font-size: 16px;
   font-weight: 500;
   cursor: pointer;
@@ -127,7 +127,7 @@
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.06);
   border: none;
-  color: ***REMOVED***fff;
+  color: #fff;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -148,7 +148,7 @@
 
 .hist-round-btn--dark {
   background: rgba(0, 0, 0, 0.06);
-  color: ***REMOVED***1a1a1a;
+  color: #1a1a1a;
 }
 
 .hist-search-field {
@@ -173,7 +173,7 @@
   min-width: 0;
   border: none;
   background: transparent;
-  color: ***REMOVED***fff;
+  color: #fff;
   font-size: 15px;
   outline: none;
 }
@@ -208,12 +208,12 @@
   cursor: pointer;
   border: none;
   background: rgba(255, 255, 255, 0.06);
-  color: ***REMOVED***d4d4d4;
+  color: #d4d4d4;
 }
 
 .hist-type-chip--on {
-  background: ***REMOVED***ffc72c;
-  color: ***REMOVED***1a1a1a;
+  background: #ffc72c;
+  color: #1a1a1a;
   font-weight: 500;
 }
 
@@ -252,7 +252,7 @@
   cursor: pointer;
   border: 0.5px solid rgba(255, 199, 44, 0.4);
   background: rgba(255, 199, 44, 0.16);
-  color: ***REMOVED***ffc72c;
+  color: #ffc72c;
   font-family: var(--font-family);
 }
 
@@ -260,7 +260,7 @@
   display: flex;
   align-items: center;
   line-height: 0;
-  color: ***REMOVED***ffc72c;
+  color: #ffc72c;
 }
 
 .hist-add-dot {
@@ -269,7 +269,7 @@
   border-radius: 14px;
   border: 0.5px dashed rgba(255, 255, 255, 0.25);
   background: transparent;
-  color: ***REMOVED***888;
+  color: #888;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -309,7 +309,7 @@
 
 .hist-saldo2__lbl {
   font-size: 11px;
-  color: ***REMOVED***888;
+  color: #888;
   letter-spacing: 0.3px;
 }
 
@@ -325,15 +325,15 @@
 }
 
 .hist-saldo2__val--pos {
-  color: ***REMOVED***4ade80;
+  color: #4ade80;
 }
 
 .hist-saldo2__val--neg {
-  color: ***REMOVED***ff5e5e;
+  color: #ff5e5e;
 }
 
 .hist-saldo2__chev-wrap {
-  color: ***REMOVED***888;
+  color: #888;
   display: flex;
   transition: transform 0.25s ease;
 }
@@ -369,7 +369,7 @@
 
 .hist-saldo2__sub-lbl {
   font-size: 12px;
-  color: ***REMOVED***888;
+  color: #888;
 }
 
 .hist-saldo2__sub-val {
@@ -378,11 +378,11 @@
 }
 
 .hist-saldo2__sub-val--inc {
-  color: ***REMOVED***4ade80;
+  color: #4ade80;
 }
 
 .hist-saldo2__sub-val--exp {
-  color: ***REMOVED***ff5e5e;
+  color: #ff5e5e;
 }
 
 /* Тело — светлый блок */
@@ -391,7 +391,7 @@
   min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  background: ***REMOVED***f4f4f0;
+  background: #f4f4f0;
   border-radius: 18px 18px 0 0;
   padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
 }
@@ -406,7 +406,7 @@
 
 .hist-list .op-row {
   cursor: pointer;
-  border-bottom-color: ***REMOVED***e5e5e0;
+  border-bottom-color: #e5e5e0;
 }
 
 .hist-day-block {
@@ -423,17 +423,17 @@
 .hist-day-hdr__left {
   font-size: 11px;
   font-weight: 500;
-  color: ***REMOVED***888;
+  color: #888;
   letter-spacing: 0.5px;
 }
 
 .hist-day-hdr__cnt {
   font-size: 11px;
-  color: ***REMOVED***999;
+  color: #999;
 }
 
 .hist-day-cards {
-  background: ***REMOVED***fff;
+  background: #fff;
   border-radius: 14px;
   overflow: hidden;
 }
@@ -443,7 +443,7 @@
   align-items: flex-start;
   gap: 12px;
   padding: 12px 14px;
-  border-bottom: 0.5px solid ***REMOVED***ececea;
+  border-bottom: 0.5px solid #ececea;
   cursor: pointer;
   font-family: var(--font-family);
 }
@@ -470,14 +470,14 @@
 .op-card__title {
   font-size: 14px;
   font-weight: 500;
-  color: ***REMOVED***1a1a1a;
+  color: #1a1a1a;
   line-height: 1.25;
 }
 
 .op-card__sub {
   margin-top: 1px;
   font-size: 12px;
-  color: ***REMOVED***888;
+  color: #888;
   line-height: 1.3;
 }
 
@@ -490,15 +490,15 @@
 }
 
 .op-card__amt--inc {
-  color: ***REMOVED***2d8a3f;
+  color: #2d8a3f;
 }
 
 .op-card__amt--exp {
-  color: ***REMOVED***c43838;
+  color: #c43838;
 }
 
 .op-card__amt--xfer {
-  color: ***REMOVED***666;
+  color: #666;
 }
 
 .op-row__rub {
@@ -521,32 +521,32 @@
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  border: 1.5px solid ***REMOVED***c5c4be;
+  border: 1.5px solid #c5c4be;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 14px;
-  color: ***REMOVED***888;
+  color: #888;
 }
 
 .hist-empty__text {
   font-size: 14px;
-  color: ***REMOVED***555;
+  color: #555;
   margin-bottom: 4px;
 }
 
 .hist-empty__sub {
   font-size: 12px;
-  color: ***REMOVED***999;
+  color: #999;
   margin-bottom: 14px;
 }
 
 .hist-empty__reset {
   padding: 8px 14px;
   border-radius: 14px;
-  background: ***REMOVED***1a1a1a;
+  background: #1a1a1a;
   border: none;
-  color: ***REMOVED***fff;
+  color: #fff;
   font-size: 13px;
   cursor: pointer;
 }
@@ -578,8 +578,8 @@
 .hist-filter-opt {
   padding: 7px 14px;
   border-radius: 16px;
-  background: ***REMOVED***f0f0f5;
-  color: ***REMOVED***0a0a0f;
+  background: #f0f0f5;
+  color: #0a0a0f;
   font-size: 13px;
   font-weight: 500;
   border: none;
@@ -587,8 +587,8 @@
 }
 
 .hist-filter-opt--active {
-  background: ***REMOVED***ffdd2d;
-  color: ***REMOVED***1a1a1a;
+  background: #ffdd2d;
+  color: #1a1a1a;
 }
 
 .hist-filter-empty {
@@ -606,7 +606,7 @@
   width: 36px;
   height: 4px;
   border-radius: 2px;
-  background: ***REMOVED***ddd;
+  background: #ddd;
   margin: 8px auto 12px;
 }
 
@@ -616,7 +616,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 16px 12px;
-  border-bottom: 0.5px solid ***REMOVED***ececea;
+  border-bottom: 0.5px solid #ececea;
 }
 
 .hist-fs-head2 {
@@ -626,7 +626,7 @@
 .hist-fs-title {
   font-size: 16px;
   font-weight: 500;
-  color: ***REMOVED***1a1a1a;
+  color: #1a1a1a;
 }
 
 .hist-fs-title--center {
@@ -639,7 +639,7 @@
   background: transparent;
   padding: 4px;
   cursor: pointer;
-  color: ***REMOVED***666;
+  color: #666;
   display: flex;
 }
 
@@ -648,14 +648,14 @@
   background: transparent;
   padding: 4px;
   cursor: pointer;
-  color: ***REMOVED***1a1a1a;
+  color: #1a1a1a;
 }
 
 .hist-fs-reset {
   border: none;
   background: transparent;
   font-size: 14px;
-  color: ***REMOVED***0066ff;
+  color: #0066ff;
   cursor: pointer;
   padding: 4px;
   min-width: 72px;
@@ -670,16 +670,16 @@
   min-height: 48px;
   padding: 0 16px;
   border: none;
-  border-bottom: 0.5px solid ***REMOVED***ececea;
-  background: ***REMOVED***fff;
+  border-bottom: 0.5px solid #ececea;
+  background: #fff;
   font-size: 15px;
-  color: ***REMOVED***1a1a1a;
+  color: #1a1a1a;
   cursor: pointer;
   text-align: left;
 }
 
 .hist-fs-row__meta {
-  color: ***REMOVED***888;
+  color: #888;
   font-size: 14px;
 }
 
@@ -695,7 +695,7 @@
   gap: 12px;
   padding: 10px 16px;
   font-size: 15px;
-  color: ***REMOVED***1a1a1a;
+  color: #1a1a1a;
   cursor: pointer;
 }
 
@@ -709,8 +709,8 @@
   padding: 12px 16px;
   border: none;
   border-radius: 12px;
-  background: ***REMOVED***ffc72c;
-  color: ***REMOVED***1a1a1a;
+  background: #ffc72c;
+  color: #1a1a1a;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
@@ -740,7 +740,7 @@
   position: relative;
   width: 100%;
   max-width: 420px;
-  background: ***REMOVED***fff;
+  background: #fff;
   border-radius: 16px 16px 0 0;
   padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
   z-index: 1;
@@ -750,14 +750,14 @@
   width: 36px;
   height: 4px;
   border-radius: 2px;
-  background: ***REMOVED***ddd;
+  background: #ddd;
   margin: 8px auto 4px;
 }
 
 .hist-mp-year {
   text-align: center;
   font-size: 14px;
-  color: ***REMOVED***888;
+  color: #888;
   padding: 4px 0 8px;
 }
 
@@ -772,16 +772,16 @@
   height: 40px;
   border-radius: 8px;
   border: none;
-  background: ***REMOVED***f4f4f0;
+  background: #f4f4f0;
   font-size: 13px;
   font-weight: 500;
-  color: ***REMOVED***1a1a1a;
+  color: #1a1a1a;
   cursor: pointer;
 }
 
 .hist-mp__cell--on {
-  background: ***REMOVED***ffc72c;
-  color: ***REMOVED***1a1a1a;
+  background: #ffc72c;
+  color: #1a1a1a;
 }
 
 .hist-mp__cell:disabled {
@@ -795,7 +795,7 @@
   justify-content: space-between;
   padding: 0 16px 8px;
   gap: 12px;
-  border-top: 0.5px solid ***REMOVED***ececea;
+  border-top: 0.5px solid #ececea;
   padding-top: 12px;
 }
 
@@ -811,7 +811,7 @@
   padding: 8px 14px;
   border-radius: 10px;
   border: none;
-  background: ***REMOVED***f4f4f0;
+  background: #f4f4f0;
   font-size: 14px;
   cursor: pointer;
 }

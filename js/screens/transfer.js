@@ -98,9 +98,9 @@ function _renderTransfer() {
     </div>
   `;
 
-  root.querySelector('***REMOVED***transfer-back')?.addEventListener('click', () => showScreen('screen-home'));
+  root.querySelector('#transfer-back')?.addEventListener('click', () => showScreen('screen-home'));
 
-  root.querySelector('***REMOVED***transfer-to-list')?.addEventListener('click', e => {
+  root.querySelector('#transfer-to-list')?.addEventListener('click', e => {
     const btn = e.target.closest('.transfer-to-btn');
     if (!btn) return;
     _state.toKassaId = btn.dataset.kassaId || null;
@@ -110,25 +110,25 @@ function _renderTransfer() {
     _updateSubmit(root);
   });
 
-  root.querySelector('***REMOVED***transfer-comment')?.addEventListener('input', e => {
+  root.querySelector('#transfer-comment')?.addEventListener('input', e => {
     _state.comment = e.target.value ?? '';
   });
 
-  root.querySelector('***REMOVED***transfer-sum-btn')?.addEventListener('click', () => _openNumpad(root));
-  root.querySelector('***REMOVED***transfer-submit')?.addEventListener('click', () => _submitTransfer(root));
+  root.querySelector('#transfer-sum-btn')?.addEventListener('click', () => _openNumpad(root));
+  root.querySelector('#transfer-submit')?.addEventListener('click', () => _submitTransfer(root));
 
   _updateSumDisplay(root);
   _updateSubmit(root);
 }
 
 function _updateSumDisplay(root) {
-  const el = root.querySelector('***REMOVED***transfer-sum-display');
+  const el = root.querySelector('#transfer-sum-display');
   if (!el) return;
   el.textContent = fmtRub(_state.amount);
 }
 
 function _updateSubmit(root) {
-  const btn = root.querySelector('***REMOVED***transfer-submit');
+  const btn = root.querySelector('#transfer-submit');
   if (!btn) return;
   const ok = _state.amount > 0 && _state.toKassaId !== null;
   btn.disabled = !ok;
@@ -138,7 +138,7 @@ function _updateSubmit(root) {
 }
 
 function _syncNumpadDisplay(root) {
-  const disp = root.querySelector('***REMOVED***transfer-numpad-display');
+  const disp = root.querySelector('#transfer-numpad-display');
   if (!disp) return;
   const n = _state.numpadBuf || '0';
   disp.textContent = `${fmtRuInt(Number(n))} ₽`;
@@ -147,9 +147,9 @@ function _syncNumpadDisplay(root) {
 function _openNumpad(root) {
   _state.numpadBuf = _state.amount > 0 ? String(Math.round(_state.amount)) : '';
 
-  const overlay = root.querySelector('***REMOVED***transfer-numpad-overlay');
-  const pad = root.querySelector('***REMOVED***transfer-numpad');
-  const keys = root.querySelector('***REMOVED***transfer-numpad-keys');
+  const overlay = root.querySelector('#transfer-numpad-overlay');
+  const pad = root.querySelector('#transfer-numpad');
+  const keys = root.querySelector('#transfer-numpad-keys');
   if (!overlay || !pad || !keys) return;
 
   overlay.classList.remove('hidden');
@@ -201,8 +201,8 @@ function _numpadKey(root, k) {
 }
 
 function _closeNumpad(root) {
-  const overlay = root.querySelector('***REMOVED***transfer-numpad-overlay');
-  const pad = root.querySelector('***REMOVED***transfer-numpad');
+  const overlay = root.querySelector('#transfer-numpad-overlay');
+  const pad = root.querySelector('#transfer-numpad');
   if (!overlay || !pad) return;
   pad.classList.remove('transfer-numpad--visible');
   overlay.classList.add('hidden');
@@ -216,7 +216,7 @@ async function _submitTransfer(root) {
     showToast('Перевод на этот счёт недоступен', 'error');
     return;
   }
-  const btn = root.querySelector('***REMOVED***transfer-submit');
+  const btn = root.querySelector('#transfer-submit');
   if (btn) {
     btn.disabled = true;
     btn.textContent = 'Сохраняем…';
@@ -280,5 +280,5 @@ function _escapeHtml(s) {
 }
 
 function _escapeAttr(s) {
-  return _escapeHtml(s).replace(/'/g, '&***REMOVED***39;');
+  return _escapeHtml(s).replace(/'/g, '&#39;');
 }

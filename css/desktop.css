@@ -16,24 +16,24 @@
     margin: 0;
   }
 
-  ***REMOVED***navbar {
+  #navbar {
     display: none !important;
   }
 
-  ***REMOVED***sidebar {
+  #sidebar {
     position: fixed;
     left: 0;
     top: 0;
     z-index: 300;
     height: 100dvh;
     max-height: 100dvh;
-    background: ***REMOVED***1a1a1a;
+    background: #1a1a1a;
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
   }
 
-  ***REMOVED***app-content {
+  #app-content {
     flex: 1;
     height: 100dvh;
     max-height: 100dvh;
@@ -42,20 +42,20 @@
   }
 
   /* Каркас экранов */
-  ***REMOVED***app-content > .screen {
+  #app-content > .screen {
     height: 100dvh;
     max-height: 100dvh;
     min-height: 0;
     overflow: hidden;
   }
 
-  ***REMOVED***app-content > .screen.screen--active {
+  #app-content > .screen.screen--active {
     display: flex;
     flex-direction: column;
   }
 
   /* Убрать отступ под мобильный navbar */
-  ***REMOVED***app-content .pb-navbar {
+  #app-content .pb-navbar {
     padding-bottom: 24px;
   }
 
@@ -73,10 +73,10 @@
     width: 30px;
     height: 30px;
     border-radius: var(--radius-sm);
-    background: ***REMOVED***ffdd2d;
+    background: #ffdd2d;
     font-size: var(--text-base);
     font-weight: 900;
-    color: ***REMOVED***1a1a1a;
+    color: #1a1a1a;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -86,7 +86,7 @@
   .sidebar-logo-text {
     font-size: var(--text-lg);
     font-weight: 900;
-    color: ***REMOVED***fff;
+    color: #fff;
     letter-spacing: -0.04em;
   }
 
@@ -137,7 +137,7 @@
 
   .sidebar-item--active {
     background: rgba(255, 221, 45, 0.12);
-    color: ***REMOVED***ffdd2d;
+    color: #ffdd2d;
   }
 
   .sidebar-item:hover:not(.sidebar-item--active) {
@@ -150,9 +150,9 @@
     left: 54px;
     top: 50%;
     transform: translateY(-50%);
-    background: ***REMOVED***1a1a1a;
+    background: #1a1a1a;
     border: 0.5px solid rgba(255, 255, 255, 0.15);
-    color: ***REMOVED***fff;
+    color: #fff;
     font-size: var(--text-sm);
     padding: 5px var(--space-md);
     border-radius: var(--space-sm);
@@ -178,10 +178,10 @@
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    background: ***REMOVED***ffdd2d;
+    background: #ffdd2d;
     font-size: var(--text-xs);
     font-weight: 700;
-    color: ***REMOVED***1a1a1a;
+    color: #1a1a1a;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -200,12 +200,12 @@
 
 /* ── Развёрнутый sidebar (≥1280px) ── */
 @media (min-width: 1280px) {
-  ***REMOVED***sidebar {
+  #sidebar {
     width: 210px;
     padding: 16px var(--space-md) 12px;
   }
 
-  ***REMOVED***app-content {
+  #app-content {
     margin-left: 210px;
   }
 
@@ -216,13 +216,13 @@
 
 /* ── Свёрнутый sidebar (1024–1279px) ── */
 @media (min-width: 1024px) and (max-width: 1279px) {
-  ***REMOVED***sidebar {
+  #sidebar {
     width: 64px;
     padding: 16px 8px 12px;
     align-items: stretch;
   }
 
-  ***REMOVED***app-content {
+  #app-content {
     margin-left: 64px;
   }
 
@@ -260,13 +260,13 @@
 
   /* ── screen-dashboard ── */
 
-  ***REMOVED***screen-dashboard {
+  #screen-dashboard {
     flex-direction: row !important;
     overflow: hidden !important;
   }
 
   /* Левая тёмная колонка */
-  ***REMOVED***screen-dashboard .dashboard-header {
+  #screen-dashboard .dashboard-header {
     width: 300px !important;
     flex-shrink: 0 !important;
     height: 100dvh !important;
@@ -278,16 +278,16 @@
   }
 
   /* Скрыть логотип и аватар — они в sidebar */
-  ***REMOVED***screen-dashboard .header-top-row {
+  #screen-dashboard .header-top-row {
     display: none !important;
   }
 
-  ***REMOVED***screen-dashboard .header-total-amount {
+  #screen-dashboard .header-total-amount {
     font-size: 42px !important;
   }
 
   /* Правая колонка с кассами и парком */
-  ***REMOVED***screen-dashboard .dashboard-body {
+  #screen-dashboard .dashboard-body {
     flex: 1 !important;
     min-width: 0 !important;
     height: 100dvh !important;
@@ -299,23 +299,23 @@
   /* ── screen-home ── */
 
   /*
-   * DOM-структура которую рендерит home.js внутрь ***REMOVED***home-body:
+   * DOM-структура которую рендерит home.js внутрь #home-body:
    *
-   * ***REMOVED***screen-home
-   *   └── ***REMOVED***home-body.home-scroll.pb-navbar   ← единственный потомок в HTML
+   * #screen-home
+   *   └── #home-body.home-scroll.pb-navbar   ← единственный потомок в HTML
    *         ├── .home-header                 ← тёмная левая колонка
    *         └── .home-content-sheet          ← светлая правая колонка
    *
-   * Решение: делаем ***REMOVED***home-body горизонтальным flex-контейнером.
+   * Решение: делаем #home-body горизонтальным flex-контейнером.
    * Каждый прямой потомок становится колонкой.
    */
 
-  ***REMOVED***screen-home {
+  #screen-home {
     overflow: hidden !important;
   }
 
-  /* ***REMOVED***home-body — горизонтальный контейнер двух колонок */
-  ***REMOVED***screen-home ***REMOVED***home-body {
+  /* #home-body — горизонтальный контейнер двух колонок */
+  #screen-home #home-body {
     display: flex !important;
     flex-direction: row !important;
     align-items: stretch !important;
@@ -325,7 +325,7 @@
   }
 
   /* Левая колонка — тёмная панель с балансом */
-  ***REMOVED***screen-home .home-header {
+  #screen-home .home-header {
     /* размеры */
     width: 320px !important;
     min-width: 320px !important;
@@ -347,12 +347,12 @@
   }
 
   /* Скрыть логотип и аватар — они в sidebar */
-  ***REMOVED***screen-home .home-hdr__brand-row {
+  #screen-home .home-hdr__brand-row {
     display: none !important;
   }
 
   /* Баланс покрупнее */
-  ***REMOVED***screen-home .kassa-amount {
+  #screen-home .kassa-amount {
     font-size: 40px !important;
   }
 
@@ -361,7 +361,7 @@
    * margin-top: auto работает только если родитель (.home-header)
    * является flex-колонкой И имеет height: 100dvh — оба условия выше выполнены.
    */
-  ***REMOVED***screen-home .home-action-wrap {
+  #screen-home .home-action-wrap {
     margin-top: auto !important;
     padding-top: 24px !important;
     flex-shrink: 0 !important;
@@ -372,7 +372,7 @@
   }
 
   /* Правая колонка — парк и список операций */
-  ***REMOVED***screen-home .home-content-sheet {
+  #screen-home .home-content-sheet {
     flex: 1 !important;
     min-width: 0 !important;
     height: 100dvh !important;
@@ -418,8 +418,8 @@
 }
 
 @media (min-width: 1024px) {
-  /* screen-login вне ***REMOVED***app-content — защищаем от flex-row на body */
-  ***REMOVED***screen-login {
+  /* screen-login вне #app-content — защищаем от flex-row на body */
+  #screen-login {
     position: fixed !important;
     inset: 0 !important;
     z-index: 500 !important;
@@ -431,7 +431,7 @@
     min-height: 100dvh !important;
   }
 
-  ***REMOVED***screen-login.screen--active {
+  #screen-login.screen--active {
     display: flex !important;
   }
 
@@ -458,9 +458,9 @@
     height: 64px !important;
     font-size: var(--space-2xl) !important;
     font-weight: 700 !important;
-    border: 1px solid ***REMOVED***e8e8e8 !important;
+    border: 1px solid #e8e8e8 !important;
     border-radius: 12px !important;
-    background: ***REMOVED***fff !important;
+    background: #fff !important;
     cursor: pointer !important;
   }
 

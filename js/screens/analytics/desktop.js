@@ -268,7 +268,7 @@ export function renderDesktopShell(dash) {
     '@keyframes dt-hbar{to{transform:scaleX(1)}}' +
     '@keyframes dt-fade-up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}' +
     '@keyframes dt-kpi-in{from{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:none}}' +
-    '***REMOVED***analytics-root{height:100dvh!important;overflow:hidden!important;padding:0!important;display:flex;flex-direction:column}' +
+    '#analytics-root{height:100dvh!important;overflow:hidden!important;padding:0!important;display:flex;flex-direction:column}' +
     '.dt-root{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;background:var(--dt-bg)}' +
     '.dt-hdr{background:var(--c-dark);padding:16px 28px 0;flex-shrink:0}' +
     '.dt-hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}' +

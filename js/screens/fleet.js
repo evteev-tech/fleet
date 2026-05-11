@@ -70,10 +70,10 @@ function fmtBuyDate(d) {
 }
 
 const TO_MILEAGE_COLOR_HEX = {
-  red: '***REMOVED***C62828',
-  yellow: '***REMOVED***F57F17',
-  green: '***REMOVED***2E7D32',
-  gray: '***REMOVED***9E9E9E',
+  red: '#C62828',
+  yellow: '#F57F17',
+  green: '#2E7D32',
+  gray: '#9E9E9E',
 };
 
 /**
@@ -222,7 +222,7 @@ function _cardHTML(car) {
   const opts = ['rent', 'idle', 'repair'].filter(k => k !== sk);
   const title = [car.name, car.color].filter(Boolean).join(' · ');
   const toInfo = formatToMileage(car.mileage, car.toMileage);
-  const toHex = TO_MILEAGE_COLOR_HEX[toInfo.color] ?? '***REMOVED***9E9E9E';
+  const toHex = TO_MILEAGE_COLOR_HEX[toInfo.color] ?? '#9E9E9E';
   const note = String(car.note || '').trim();
 
   return `
@@ -300,7 +300,7 @@ function escapeHtml(s) {
 }
 
 function escapeAttr(s) {
-  return escapeHtml(s).replace(/'/g, '&***REMOVED***39;');
+  return escapeHtml(s).replace(/'/g, '&#39;');
 }
 
 function _initials(name) {
@@ -398,7 +398,7 @@ async function _openCarSheet(car) {
   const opts = ['rent', 'idle', 'repair'].filter(k => k !== sk);
 
   const toInfo = formatToMileage(car.mileage, car.toMileage);
-  const toHex = TO_MILEAGE_COLOR_HEX[toInfo.color] ?? '***REMOVED***9E9E9E';
+  const toHex = TO_MILEAGE_COLOR_HEX[toInfo.color] ?? '#9E9E9E';
 
   const cid = String(car.carId ?? '').trim();
   const assigned = drivers.find(d => String(d.currentCar ?? '').trim() === cid);
@@ -585,7 +585,7 @@ async function _changeStatusWithDriver(car, newStatus, driverId) {
 }
 
 async function _changeStatus(car, newStatus) {
-  const btns = document.querySelectorAll('***REMOVED***fleet-status-btns .fleet-status-btn');
+  const btns = document.querySelectorAll('#fleet-status-btns .fleet-status-btn');
   btns.forEach(b => { b.disabled = true; b.style.opacity = '0.5'; });
 
   try {

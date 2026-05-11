@@ -1,5 +1,5 @@
-***REMOVED***!/usr/bin/env python3
-***REMOVED*** -*- coding: utf-8 -*-
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """Split css/screens.css into css/screens/*.css by section comment headers."""
 
 from __future__ import annotations
@@ -75,7 +75,7 @@ def main() -> None:
             block_starts.append(bs)
             block_titles.append(lines[ti].rstrip("\n"))
 
-    chunks: list[tuple[str, str]] = []  ***REMOVED*** (bucket, content)
+    chunks: list[tuple[str, str]] = []  # (bucket, content)
     first_start = block_starts[0]
     if first_start > 0:
         common = "".join(lines[:first_start])

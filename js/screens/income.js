@@ -292,9 +292,9 @@ function _selectedCar() {
 
 function _updateBottom(root) {
   const car = _selectedCar();
-  const bottom = root.querySelector('***REMOVED***income-bottom');
-  const hint = root.querySelector('***REMOVED***income-bottom-hint');
-  const active = root.querySelector('***REMOVED***income-bottom-active');
+  const bottom = root.querySelector('#income-bottom');
+  const hint = root.querySelector('#income-bottom-hint');
+  const active = root.querySelector('#income-bottom-active');
 
   if (!car) {
     bottom?.classList.add('income-bottom--disabled');
@@ -307,7 +307,7 @@ function _updateBottom(root) {
   hint?.classList.add('hidden');
   active?.classList.remove('hidden');
 
-  const periods = root.querySelector('***REMOVED***income-periods');
+  const periods = root.querySelector('#income-periods');
   if (periods && car.rate > 0) {
     const p7 = Math.round(car.rate * 7);
     const p14 = Math.round(car.rate * 14);
@@ -347,7 +347,7 @@ function _updateBottom(root) {
 }
 
 function _updateMileageField(root, car) {
-  const slot = root.querySelector('***REMOVED***income-mileage-slot');
+  const slot = root.querySelector('#income-mileage-slot');
   if (!slot || !car) return;
 
   const curMileage = Number(car.mileage) || 0;
@@ -395,7 +395,7 @@ function _updatePeriodButtons(root) {
 }
 
 function _updateSumDisplay(root) {
-  const el = root.querySelector('***REMOVED***income-sum-display');
+  const el = root.querySelector('#income-sum-display');
   if (el) {
     el.textContent = fmtRub(_state.amount);
     el.classList.toggle('income-sum--warn', _state.amount <= 0);
@@ -415,8 +415,8 @@ function _parseStartDate(car) {
 
 function _updateDatesRow(root) {
   const car = _selectedCar();
-  const row = root.querySelector('***REMOVED***income-dates-row');
-  const warnEl = root.querySelector('***REMOVED***income-warn');
+  const row = root.querySelector('#income-dates-row');
+  const warnEl = root.querySelector('#income-warn');
   if (!car || !row || !warnEl) return;
 
   const rate = car.rate;
@@ -453,7 +453,7 @@ function _updateDatesRow(root) {
 }
 
 function _updateSubmit(root) {
-  const btn = root.querySelector('***REMOVED***income-submit');
+  const btn = root.querySelector('#income-submit');
   const car = _selectedCar();
   const ok = car && _state.amount > 0;
   if (btn) btn.disabled = !ok;
@@ -465,9 +465,9 @@ function _openNumpad(root) {
   _state.period = null;
   _updatePeriodButtons(root);
 
-  const inlinePad = root.querySelector('***REMOVED***income-numpad-inline');
-  const bottom = root.querySelector('***REMOVED***income-bottom');
-  const keys = root.querySelector('***REMOVED***income-numpad-keys');
+  const inlinePad = root.querySelector('#income-numpad-inline');
+  const bottom = root.querySelector('#income-bottom');
+  const keys = root.querySelector('#income-numpad-keys');
   if (!inlinePad || !bottom || !keys) return;
 
   inlinePad.classList.remove('hidden');
@@ -510,7 +510,7 @@ function _numpadKey(root, k) {
     _state.numpadBuf += k;
   }
   // Показываем набираемые цифры прямо во время ввода
-  const el = root.querySelector('***REMOVED***income-sum-display');
+  const el = root.querySelector('#income-sum-display');
   if (el) {
     const preview = _state.numpadBuf
       ? `${fmtRuInt(parseInt(_state.numpadBuf, 10))} ₽`
@@ -524,8 +524,8 @@ function _closeNumpad(root) {
   _state.numpadOpen = false;
   const scope = root ?? document.getElementById('income-root');
   if (!scope) return;
-  const inlinePad = scope.querySelector('***REMOVED***income-numpad-inline');
-  const bottom = scope.querySelector('***REMOVED***income-bottom');
+  const inlinePad = scope.querySelector('#income-numpad-inline');
+  const bottom = scope.querySelector('#income-bottom');
   inlinePad?.classList.add('hidden');
   bottom?.classList.remove('income-numpad-inline--open');
 }
@@ -538,8 +538,8 @@ async function _submit(root) {
     return;
   }
   if (!_state.amount || _state.amount <= 0) {
-    root.querySelector('***REMOVED***income-sum-display')?.classList.add('income-sum--flash');
-    setTimeout(() => root.querySelector('***REMOVED***income-sum-display')?.classList.remove('income-sum--flash'), 400);
+    root.querySelector('#income-sum-display')?.classList.add('income-sum--flash');
+    setTimeout(() => root.querySelector('#income-sum-display')?.classList.remove('income-sum--flash'), 400);
     showToast('Введите сумму', 'warning');
     return;
   }
@@ -568,7 +568,7 @@ async function _submit(root) {
     user?.role === ROLES.OPERATIONS ? KASSA_ID.VLADIMIR : KASSA_ID.AZAMAT;
   const provelShort = (user?.name || 'Азамат').trim().split(/\s+/)[0] || 'Азамат';
 
-  const btn = root.querySelector('***REMOVED***income-submit');
+  const btn = root.querySelector('#income-submit');
   if (btn) btn.disabled = true;
 
   try {
@@ -671,5 +671,5 @@ function escapeHtml(s) {
 }
 
 function escapeAttr(s) {
-  return escapeHtml(s).replace(/'/g, '&***REMOVED***39;');
+  return escapeHtml(s).replace(/'/g, '&#39;');
 }

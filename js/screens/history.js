@@ -751,7 +751,7 @@ function _bindHistShell(rawOps, fleet) {
   document.getElementById('hist-add-filter')?.addEventListener('click', () => _showAddFilterSheet());
 
   document.getElementById('hist-list')?.addEventListener('click', e => {
-    if (/** @type {HTMLElement} */ (e.target).closest('***REMOVED***hist-reset')) {
+    if (/** @type {HTMLElement} */ (e.target).closest('#hist-reset')) {
       e.preventDefault();
       _filters = {
         type: 'all',
@@ -1279,7 +1279,7 @@ function _escapeHtml(s) {
 }
 
 function _escapeAttr(s) {
-  return _escapeHtml(s).replace(/'/g, '&***REMOVED***39;');
+  return _escapeHtml(s).replace(/'/g, '&#39;');
 }
 
 function _skeletonHTML() {

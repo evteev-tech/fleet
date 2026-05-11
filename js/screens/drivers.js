@@ -45,10 +45,10 @@ function formatPhoneRu(raw) {
 
 function depositStyle(driver) {
   const x = Number(driver.deposit) || 0;
-  if (x < 0) return '***REMOVED***C62828';
-  if (x > 0 && isArchiveStatus(driver.status)) return '***REMOVED***757575';
-  if (x > 0) return '***REMOVED***2E7D32';
-  return '***REMOVED***757575';
+  if (x < 0) return '#C62828';
+  if (x > 0 && isArchiveStatus(driver.status)) return '#757575';
+  if (x > 0) return '#2E7D32';
+  return '#757575';
 }
 
 function badgeFor(driver) {
@@ -176,7 +176,7 @@ function _cardHTML(d) {
   const depCol = depositStyle(d);
   const car = d.currentCar;
   const carStr = car ? escapeHtml(String(car)) : '—';
-  const carCol = car ? '***REMOVED***2E7D32' : '***REMOVED***757575';
+  const carCol = car ? '#2E7D32' : '#757575';
   const note = String(d.note || '').trim();
 
   return `
@@ -221,7 +221,7 @@ function escapeHtml(s) {
 }
 
 function escapeAttr(s) {
-  return escapeHtml(s).replace(/'/g, '&***REMOVED***39;');
+  return escapeHtml(s).replace(/'/g, '&#39;');
 }
 
 function _bindRows(body, list) {

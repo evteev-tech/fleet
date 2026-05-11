@@ -248,30 +248,30 @@ function _render(body, allOps, fleet, drivers, rentalRows) {
         <div class="home-park-head"><span>Здоровье парка</span><strong>${fleet.length} машин</strong></div>
         <div class="home-park-bar" id="home-park-bar" role="button" tabindex="0" aria-label="Открыть парк">
           <button type="button" class="home-park-seg" data-park-status="rent" aria-label="В аренде"
-            style="width:${park.rentPct}%;background:***REMOVED***22c55e"></button>
+            style="width:${park.rentPct}%;background:#22c55e"></button>
           <button type="button" class="home-park-seg" data-park-status="idle" aria-label="Простой"
-            style="width:${park.idlePct}%;background:***REMOVED***f97316"></button>
+            style="width:${park.idlePct}%;background:#f97316"></button>
           <button type="button" class="home-park-seg" data-park-status="repair" aria-label="В ремонте"
-            style="width:${park.repairPct}%;background:***REMOVED***ef4444"></button>
+            style="width:${park.repairPct}%;background:#ef4444"></button>
         </div>
         <div class="home-park-legend">
           <button type="button" class="home-park-legend-btn" data-park-status="rent" aria-label="Парк: в аренде">
-            <strong style="color:***REMOVED***22c55e">${park.rent}</strong><span>Аренда</span>
+            <strong style="color:#22c55e">${park.rent}</strong><span>Аренда</span>
           </button>
           <button type="button" class="home-park-legend-btn" data-park-status="idle" aria-label="Парк: простой">
-            <strong style="color:***REMOVED***f97316">${park.idle}</strong><span>Простой</span>
+            <strong style="color:#f97316">${park.idle}</strong><span>Простой</span>
           </button>
           <button type="button" class="home-park-legend-btn" data-park-status="repair" aria-label="Парк: ремонт">
-            <strong style="color:***REMOVED***ef4444">${park.repair}</strong><span>Ремонт</span>
+            <strong style="color:#ef4444">${park.repair}</strong><span>Ремонт</span>
           </button>
         </div>
       </div>
     </div>
   `;
 
-  body.querySelector('***REMOVED***home-btn-income')?.addEventListener('click', () => showScreen('screen-income'));
-  body.querySelector('***REMOVED***home-btn-expense')?.addEventListener('click', () => showScreen('screen-expense'));
-  body.querySelector('***REMOVED***home-btn-transfer')?.addEventListener('click', () => showScreen('screen-transfer'));
+  body.querySelector('#home-btn-income')?.addEventListener('click', () => showScreen('screen-income'));
+  body.querySelector('#home-btn-expense')?.addEventListener('click', () => showScreen('screen-expense'));
+  body.querySelector('#home-btn-transfer')?.addEventListener('click', () => showScreen('screen-transfer'));
 
   const openPark = statusKey => {
     const st =
@@ -285,11 +285,11 @@ function _render(body, allOps, fleet, drivers, rentalRows) {
     showScreen('screen-fleet');
   };
 
-  body.querySelector('***REMOVED***home-park-bar')?.addEventListener('click', e => {
+  body.querySelector('#home-park-bar')?.addEventListener('click', e => {
     const seg = /** @type {HTMLElement} */ (e.target).closest('[data-park-status]');
     openPark(seg?.dataset.parkStatus || 'all');
   });
-  body.querySelector('***REMOVED***home-park-bar')?.addEventListener('keydown', e => {
+  body.querySelector('#home-park-bar')?.addEventListener('keydown', e => {
     if (e.key === 'Enter' || e.key === ' ') openPark('all');
   });
   body.querySelectorAll('.home-park-legend-btn[data-park-status]').forEach(btn => {

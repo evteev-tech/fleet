@@ -1,17 +1,17 @@
-***REMOVED*** Dependencies
+# Dependencies
 node_modules/
 
-***REMOVED*** Local artifacts
+# Local artifacts
 *.xlsx
 _worktrees/
 
-***REMOVED*** OS
+# OS
 .DS_Store
 Thumbs.db
 
-***REMOVED*** Editor
+# Editor
 .vscode/
 .idea/
 
-***REMOVED*** Logs
+# Logs
 *.log

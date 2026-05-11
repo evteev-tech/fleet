@@ -252,12 +252,12 @@ ${opsKassaCapexHtml}
   });
 
   if (isOperations) {
-    root.querySelectorAll('***REMOVED***expense-kassa-btns .expense-kassa-btn').forEach(btn => {
+    root.querySelectorAll('#expense-kassa-btns .expense-kassa-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const kid = btn.dataset.kassa;
         if (!kid) return;
         _state.kassaId = kid;
-        root.querySelectorAll('***REMOVED***expense-kassa-btns .expense-kassa-btn').forEach(b => {
+        root.querySelectorAll('#expense-kassa-btns .expense-kassa-btn').forEach(b => {
           b.classList.toggle('expense-kassa-btn--active', b.dataset.kassa === kid);
         });
       });
@@ -275,7 +275,7 @@ ${opsKassaCapexHtml}
       root.querySelectorAll('.expense-cat').forEach(b => {
         b.classList.toggle('expense-cat--selected', b.dataset.cat === k);
       });
-      root.querySelector('***REMOVED***expense-cats')?.classList.remove('expense-cats--warn');
+      root.querySelector('#expense-cats')?.classList.remove('expense-cats--warn');
       if (k && EXPENSE_AUTO_EXPAND_CARS.has(k)) _state.carsExpanded = true;
       _syncCarsPanel(root);
       _updateSubmit(root);
@@ -320,9 +320,9 @@ function _carSummaryText() {
 }
 
 function _syncCarsPanel(root) {
-  const list = root.querySelector('***REMOVED***expense-cars-list');
-  const toggle = root.querySelector('***REMOVED***expense-cars-toggle');
-  const summary = root.querySelector('***REMOVED***expense-car-summary');
+  const list = root.querySelector('#expense-cars-list');
+  const toggle = root.querySelector('#expense-cars-toggle');
+  const summary = root.querySelector('#expense-car-summary');
   if (list) list.classList.toggle('hidden', !_state.carsExpanded);
   if (toggle) toggle.setAttribute('aria-expanded', _state.carsExpanded ? 'true' : 'false');
   toggle?.classList.toggle('expense-cars-toggle--open', _state.carsExpanded);
@@ -330,7 +330,7 @@ function _syncCarsPanel(root) {
 }
 
 function _updateSumDisplay(root) {
-  const el = root.querySelector('***REMOVED***expense-sum-display');
+  const el = root.querySelector('#expense-sum-display');
   if (el) {
     el.textContent = fmtRub(_state.amount);
     el.classList.toggle('expense-sum--warn', _state.amount <= 0);
@@ -338,14 +338,14 @@ function _updateSumDisplay(root) {
 }
 
 function _updateSubmit(root) {
-  const btn = root.querySelector('***REMOVED***expense-submit');
+  const btn = root.querySelector('#expense-submit');
   const ok = _state.category !== null && _state.amount > 0;
   if (btn) btn.disabled = !ok;
 }
 
 function _syncExpenseNumpadDisplay(root) {
   const scope = root ?? document.getElementById('expense-root');
-  const disp = scope?.querySelector('***REMOVED***expense-numpad-display');
+  const disp = scope?.querySelector('#expense-numpad-display');
   if (disp) {
     const n = _state.numpadBuf || '0';
     disp.textContent = `${fmtRuInt(Number(n))} ₽`;
@@ -356,9 +356,9 @@ function _openNumpad(root) {
   _state.numpadOpen = true;
   _state.numpadBuf = _state.amount > 0 ? String(Math.round(_state.amount)) : '';
 
-  const overlay = root.querySelector('***REMOVED***expense-numpad-overlay');
-  const pad = root.querySelector('***REMOVED***expense-numpad');
-  const keys = root.querySelector('***REMOVED***expense-numpad-keys');
+  const overlay = root.querySelector('#expense-numpad-overlay');
+  const pad = root.querySelector('#expense-numpad');
+  const keys = root.querySelector('#expense-numpad-keys');
   if (!overlay || !pad || !keys) return;
 
   overlay.classList.remove('hidden');
@@ -411,8 +411,8 @@ function _closeNumpad(root) {
   _state.numpadOpen = false;
   const scope = root ?? document.getElementById('expense-root');
   if (!scope) return;
-  const overlay = scope.querySelector('***REMOVED***expense-numpad-overlay');
-  const pad = scope.querySelector('***REMOVED***expense-numpad');
+  const overlay = scope.querySelector('#expense-numpad-overlay');
+  const pad = scope.querySelector('#expense-numpad');
   if (!overlay && !pad) return;
   pad?.classList.remove('expense-numpad--visible');
   overlay?.classList.add('hidden');
@@ -421,18 +421,18 @@ function _closeNumpad(root) {
 
 async function _submit(root) {
   if (_state.category === null) {
-    root.querySelector('***REMOVED***expense-cats')?.classList.add('expense-cats--warn');
+    root.querySelector('#expense-cats')?.classList.add('expense-cats--warn');
     showToast('Выберите категорию', 'warning');
     return;
   }
   if (_state.amount <= 0) {
-    root.querySelector('***REMOVED***expense-sum-display')?.classList.add('expense-sum--flash');
-    setTimeout(() => root.querySelector('***REMOVED***expense-sum-display')?.classList.remove('expense-sum--flash'), 400);
+    root.querySelector('#expense-sum-display')?.classList.add('expense-sum--flash');
+    setTimeout(() => root.querySelector('#expense-sum-display')?.classList.remove('expense-sum--flash'), 400);
     showToast('Введите сумму', 'warning');
     return;
   }
 
-  const btn = root.querySelector('***REMOVED***expense-submit');
+  const btn = root.querySelector('#expense-submit');
   if (btn) btn.disabled = true;
 
   const amt = Math.round(_state.amount);
@@ -609,5 +609,5 @@ function escapeHtml(s) {
 }
 
 function escapeAttr(s) {
-  return escapeHtml(s).replace(/'/g, '&***REMOVED***39;');
+  return escapeHtml(s).replace(/'/g, '&#39;');
 }

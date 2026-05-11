@@ -27,9 +27,9 @@ const KASSA_META = {
 };
 
 const FLEET_META = [
-  { status: CAR_STATUSES.RENT,   label: 'В аренде',   letter: 'А', bg: '***REMOVED***E3F9F0', color: '***REMOVED***00A86B' },
-  { status: CAR_STATUSES.IDLE,   label: 'Простой',    letter: 'П', bg: '***REMOVED***F0F1F3', color: '***REMOVED***8A8A8E' },
-  { status: CAR_STATUSES.REPAIR, label: 'На ремонте', letter: 'Р', bg: '***REMOVED***FFF3E0', color: '***REMOVED***E08000' },
+  { status: CAR_STATUSES.RENT,   label: 'В аренде',   letter: 'А', bg: '#E3F9F0', color: '#00A86B' },
+  { status: CAR_STATUSES.IDLE,   label: 'Простой',    letter: 'П', bg: '#F0F1F3', color: '#8A8A8E' },
+  { status: CAR_STATUSES.REPAIR, label: 'На ремонте', letter: 'Р', bg: '#FFF3E0', color: '#E08000' },
 ];
 
 const DASH_BODY_HTML = `
@@ -40,7 +40,7 @@ const DASH_BODY_HTML = `
 `;
 
 function _dashboardBodyEl() {
-  return document.querySelector('***REMOVED***screen-dashboard .dashboard-body');
+  return document.querySelector('#screen-dashboard .dashboard-body');
 }
 
 function _restoreDashboardBody() {
@@ -55,13 +55,13 @@ export function initDashboard() {
   if (root && !root.dataset.dashClickBound) {
     root.dataset.dashClickBound = '1';
     root.addEventListener('click', e => {
-      if (e.target.closest('***REMOVED***dashMonthPrev')) {
+      if (e.target.closest('#dashMonthPrev')) {
         _month--;
         if (_month < 1) { _month = 12; _year--; }
         _refreshMonthUI();
         return;
       }
-      if (e.target.closest('***REMOVED***dashMonthNext')) {
+      if (e.target.closest('#dashMonthNext')) {
         const next = _month === 12 ? { m: 1, y: _year + 1 } : { m: _month + 1, y: _year };
         if (next.y > _now.getFullYear() || (next.y === _now.getFullYear() && next.m > _now.getMonth() + 1)) return;
         _month = next.m;
@@ -69,7 +69,7 @@ export function initDashboard() {
         _refreshMonthUI();
         return;
       }
-      const kRow = e.target.closest('***REMOVED***dashKassaList .dash-kassa');
+      const kRow = e.target.closest('#dashKassaList .dash-kassa');
       if (kRow) {
         document.dispatchEvent(new CustomEvent('history:filter', {
           detail: { kassaId: kRow.dataset.kassa },
@@ -77,7 +77,7 @@ export function initDashboard() {
         showScreen('screen-history');
         return;
       }
-      const fRow = e.target.closest('***REMOVED***dashFleetList .dash-fleet-row');
+      const fRow = e.target.closest('#dashFleetList .dash-fleet-row');
       if (fRow) {
         document.dispatchEvent(new CustomEvent('fleet:filter', {
           detail: { status: fRow.dataset.status },

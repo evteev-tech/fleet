@@ -79,7 +79,7 @@ let _currentScreen = null;
  * Показывает экран с указанным id, скрывает остальные.
  * Обновляет активный пункт navbar.
  * Диспатчит screen:activated — экраны слушают его для ленивой загрузки данных.
- * @param {string} screenId  — id без '***REMOVED***' (напр. 'screen-home')
+ * @param {string} screenId  — id без '#' (напр. 'screen-home')
  * @param {object} [params]  — произвольные параметры, передаются в detail события
  */
 export function showScreen(screenId, params = {}) {
@@ -174,7 +174,7 @@ export async function renderNavbar(role) {
  */
 function _updateNavbar(screenId) {
   document
-    .querySelectorAll('***REMOVED***navbar .nav-item, ***REMOVED***screen-analytics .analytics-navbar .nav-item')
+    .querySelectorAll('#navbar .nav-item, #screen-analytics .analytics-navbar .nav-item')
     .forEach(btn => {
       btn.classList.toggle('active', btn.dataset.screen === screenId);
     });

@@ -80,7 +80,7 @@
 
 .fleet-page {
   min-height: 100%;
-  background: ***REMOVED***f0f1f3;
+  background: #f0f1f3;
   padding-bottom: var(--space-lg);
 }
 
@@ -96,7 +96,7 @@
   align-items: center;
   justify-content: space-between;
   padding: max(44px, calc(env(safe-area-inset-top) + 28px)) var(--space-lg) var(--space-md);
-  background: ***REMOVED***1a1a1a;
+  background: #1a1a1a;
 }
 
 .fleet-page__header--skel {
@@ -107,7 +107,7 @@
   margin: 0;
   font-size: 22px;
   font-weight: 700;
-  color: ***REMOVED***fff;
+  color: #fff;
   letter-spacing: -0.02em;
 }
 
@@ -121,7 +121,7 @@
   display: flex;
   gap: 8px;
   padding: var(--space-md) var(--space-lg);
-  background: ***REMOVED***f0f1f3;
+  background: #f0f1f3;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -140,15 +140,15 @@
   font-weight: 600;
   font-family: inherit;
   background: rgba(0, 0, 0, 0.06);
-  color: ***REMOVED***8a8a8e;
+  color: #8a8a8e;
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
   white-space: nowrap;
 }
 
 .fleet-tab--active {
-  background: ***REMOVED***ffdd2d;
-  color: ***REMOVED***1a1a1a;
+  background: #ffdd2d;
+  color: #1a1a1a;
 }
 
 .fleet-tab:active {
@@ -163,7 +163,7 @@
 }
 
 .fleet-car {
-  background: ***REMOVED***fff;
+  background: #fff;
   border-radius: 12px;
   padding: var(--space-md) var(--space-lg);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
@@ -190,7 +190,7 @@
 .fleet-car__plate {
   font-size: 20px;
   font-weight: 800;
-  color: ***REMOVED***1a1a1a;
+  color: #1a1a1a;
   letter-spacing: 0.02em;
   line-height: 1.15;
 }
@@ -199,7 +199,7 @@
   margin-top: 4px;
   font-size: 13px;
   font-weight: 500;
-  color: ***REMOVED***8a8a8e;
+  color: #8a8a8e;
   line-height: 1.3;
 }
 
@@ -212,23 +212,23 @@
 }
 
 .fleet-car__badge--rent {
-  background: ***REMOVED***e8f5e9;
-  color: ***REMOVED***2e7d32;
+  background: #e8f5e9;
+  color: #2e7d32;
 }
 
 .fleet-car__badge--idle {
-  background: ***REMOVED***fff8e1;
-  color: ***REMOVED***f57f17;
+  background: #fff8e1;
+  color: #f57f17;
 }
 
 .fleet-car__badge--repair {
-  background: ***REMOVED***ffebee;
-  color: ***REMOVED***c62828;
+  background: #ffebee;
+  color: #c62828;
 }
 
 .fleet-car__rule {
   height: 0.5px;
-  background: ***REMOVED***e8e8ed;
+  background: #e8e8ed;
   margin: var(--space-md) 0;
 }
 
@@ -241,26 +241,26 @@
 .fleet-car__lbl {
   font-size: 11px;
   font-weight: 600;
-  color: ***REMOVED***8a8a8e;
+  color: #8a8a8e;
   margin-bottom: 4px;
 }
 
 .fleet-car__val {
   font-size: 14px;
   font-weight: 600;
-  color: ***REMOVED***1a1a1a;
+  color: #1a1a1a;
 }
 
 .fleet-car__km--bad {
-  color: ***REMOVED***c62828;
+  color: #c62828;
 }
 
 .fleet-car__km--warn {
-  color: ***REMOVED***f57f17;
+  color: #f57f17;
 }
 
 .fleet-car__km--ok {
-  color: ***REMOVED***2e7d32;
+  color: #2e7d32;
 }
 
 .fleet-car__note {
@@ -270,9 +270,9 @@
   gap: 8px;
   padding: 10px 12px;
   border-radius: 10px;
-  background: ***REMOVED***f0f1f3;
+  background: #f0f1f3;
   font-size: 13px;
-  color: ***REMOVED***5c5c61;
+  color: #5c5c61;
   line-height: 1.35;
 }
 
@@ -285,7 +285,7 @@
   padding: var(--space-xl) var(--space-lg);
   font-size: 14px;
   font-weight: 500;
-  color: ***REMOVED***8a8a8e;
+  color: #8a8a8e;
 }
 
 .fleet-error {
@@ -296,6 +296,6 @@
 .fleet-error__text {
   font-size: 15px;
   font-weight: 600;
-  color: ***REMOVED***1a1a1a;
+  color: #1a1a1a;
   margin-bottom: var(--space-lg);
 }

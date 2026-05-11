@@ -1,5 +1,5 @@
 /**
- * analytics/kassas.js — строки балансов касс (подстановка в ***REMOVED***analytics-kassas-mount)
+ * analytics/kassas.js — строки балансов касс (подстановка в #analytics-kassas-mount)
  */
 
 import { analyticsCtx as ctx } from './context.js';

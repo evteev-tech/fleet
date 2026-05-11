@@ -333,8 +333,8 @@ function successShellHTML(dash, emptyMsg, capexMode) {
 }
 
 function updateCarouselChrome(root, idx) {
-  const car = root.querySelector('***REMOVED***analytics-carousel');
-  const label = root.querySelector('***REMOVED***analytics-page-label');
+  const car = root.querySelector('#analytics-carousel');
+  const label = root.querySelector('#analytics-page-label');
   const dots = root.querySelectorAll('[data-analytics-dot]');
   const safe = Math.max(0, Math.min(PAGE_LABELS.length - 1, idx));
   if (label) label.textContent = PAGE_LABELS[safe] ?? '';
@@ -347,7 +347,7 @@ function animatePage(root, idx) {
   const page = root.querySelector(`.analytics-page[data-page="${idx}"]`);
   if (!page) return;
   if (idx === 1) {
-    const rings = page.querySelectorAll('***REMOVED***opex-donut-svg circle[class]');
+    const rings = page.querySelectorAll('#opex-donut-svg circle[class]');
     rings.forEach((ring, i) => {
       ring.style.animation = 'none';
       ring.getBoundingClientRect();
@@ -411,7 +411,7 @@ function animatePage(root, idx) {
 }
 
 function bindCarouselScroll(root) {
-  const car = root.querySelector('***REMOVED***analytics-carousel');
+  const car = root.querySelector('#analytics-carousel');
   if (!car || car.dataset.analyticsScrollBound === '1') return;
   car.dataset.analyticsScrollBound = '1';
   let ticking = false;
@@ -432,14 +432,14 @@ function bindCarouselScroll(root) {
 }
 
 async function mountInlineNavbar(root) {
-  const slot = root.querySelector('***REMOVED***analytics-inline-navbar');
+  const slot = root.querySelector('#analytics-inline-navbar');
   const u = getCurrentUser();
   if (!slot || !u?.role) return;
   await mountNavbarInContainer(slot, u.role, 'screen-analytics');
 }
 
 function hydrateKassas(root, dash) {
-  const mount = root.querySelector('***REMOVED***analytics-kassas-mount');
+  const mount = root.querySelector('#analytics-kassas-mount');
   if (!mount) return;
   mount.innerHTML = renderKassas(dash);
 }
@@ -448,7 +448,7 @@ function afterShellMounted(root, dash) {
   bindCarouselScroll(root);
   void mountInlineNavbar(root);
   hydrateKassas(root, dash);
-  const car = root.querySelector('***REMOVED***analytics-carousel');
+  const car = root.querySelector('#analytics-carousel');
   if (car) {
     const safe = Math.max(0, Math.min(PAGE_LABELS.length - 1, _currentPage));
     car.scrollLeft = safe * (car.offsetWidth || 1);
@@ -603,7 +603,7 @@ function refreshViewOnly() {
       if (!isDesktop()) {
         void mountInlineNavbar(root);
         bindCarouselScroll(root);
-        const car = root.querySelector('***REMOVED***analytics-carousel');
+        const car = root.querySelector('#analytics-carousel');
         if (car) updateCarouselChrome(root, 0);
       }
     }
@@ -688,7 +688,7 @@ async function applyAllTime() {
 }
 
 function onRootClick(e) {
-  const retry = e.target.closest('***REMOVED***analytics-retry');
+  const retry = e.target.closest('#analytics-retry');
   if (retry) {
     if (_loading) return;
     _loading = true;
@@ -702,7 +702,7 @@ function onRootClick(e) {
   const dot = e.target.closest('[data-analytics-dot]');
   if (dot && dot.dataset.analyticsDot != null) {
     const root = document.getElementById('analytics-root');
-    const car = root?.querySelector('***REMOVED***analytics-carousel');
+    const car = root?.querySelector('#analytics-carousel');
     if (!car) return;
     const idx = Number(dot.dataset.analyticsDot) || 0;
     _currentPage = idx;

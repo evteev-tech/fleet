@@ -78,7 +78,7 @@ function renderSettings() {
       <div class="settings-row" id="set-webhook">
         <div class="settings-row__icon" style="background:var(--color-blue-bg)">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <path d="M3 9H15M10 4L15 9L10 14" stroke="***REMOVED***4A90E2" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M3 9H15M10 4L15 9L10 14" stroke="#4A90E2" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </div>
         <div class="settings-row__body">

@@ -4,8 +4,8 @@ export const USE_MOCK =
 
 // ─── Идентификаторы Google Таблицы ──────────────────────────────────────────
 export const SHEET_ID = '1z4raGK4oamjZNznow-OesTljRz649_wCFYIFOh3mufg';
-export const API_KEY     = 'REDACTED_OLD_APIKEY';
-export const WEBHOOK_URL = 'https://script.google.com/macros/s/REDACTED_OLD_WEBHOOK_ID/exec';
+export const API_KEY     = 'AIzaSyC5FiPFic6A-Ze6h7NlhvLfZki7xBc5qnU';
+export const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwx0giFZQdcIilAW51UjdKQnbLSwA4_NF64SOUuPeTg-dHYl73gTFZkg-5xnuyhd93u/exec';
 
 // Секретный токен для защиты от неавторизованных запросов
 export const SECRET_TOKEN = '7e50ed04-5919-44f0-995f-7d2e2799fe4b';
