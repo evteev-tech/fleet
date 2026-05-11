@@ -8,7 +8,7 @@ export const API_KEY     = 'REDACTED_OLD_APIKEY';
 export const WEBHOOK_URL = 'https://script.google.com/macros/s/REDACTED_OLD_WEBHOOK_ID/exec';
 
 // Секретный токен для защиты от неавторизованных запросов
-export const SECRET_TOKEN = 'REDACTED_OLD_TOKEN';
+export const SECRET_TOKEN = '7e50ed04-5919-44f0-995f-7d2e2799fe4b';
 
 
 
