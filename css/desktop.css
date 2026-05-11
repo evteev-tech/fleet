@@ -116,7 +116,7 @@
   .sidebar-logo-icon {
     width: 30px;
     height: 30px;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     background: ***REMOVED***ffdd2d;
     font-size: 14px;
     font-weight: 900;
@@ -163,7 +163,7 @@
     cursor: pointer;
     font-family: var(--font-family);
     color: rgba(255,255,255,0.45);
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     padding: 9px 10px;
     font-size: 14px;
     font-weight: 500;
@@ -192,11 +192,11 @@
     color: ***REMOVED***fff;
     font-size: 12px;
     padding: 5px 10px;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     white-space: nowrap;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 150ms ease;
+    transition: opacity var(--transition-fast);
     z-index: 400;
     font-weight: 500;
   }
@@ -291,7 +291,7 @@
 
   ***REMOVED***screen-home .home-cash-card {
     background: rgba(255,255,255,0.07) !important;
-    border-radius: 14px !important;
+    border-radius: var(--radius-md) !important;
     padding: 16px !important;
     color: ***REMOVED***fff !important;
   }
@@ -432,7 +432,7 @@
     flex: 0 0 auto !important;
     padding: 7px 16px !important;
     font-size: 13px !important;
-    border-radius: 20px !important;
+    border-radius: var(--radius-xl) !important;
     min-width: 0 !important;
   }
 
@@ -481,7 +481,7 @@
     flex: 0 0 auto !important;
     padding: 7px 16px !important;
     font-size: 13px !important;
-    border-radius: 20px !important;
+    border-radius: var(--radius-xl) !important;
     min-width: 0 !important;
   }
 

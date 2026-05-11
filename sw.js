@@ -5,8 +5,8 @@
  * Запросы: Network First, при ошибке — Cache (кроме Google API и CDN)
  */
 
-const CACHE_NAME = 'matizi-v1';
-const STATIC_CACHE_NAME = 'matizi-static-v1';
+const CACHE_NAME = 'matizi-v2';
+const STATIC_CACHE_NAME = 'matizi-static-v2';
 
 /** Пути от корня приложения (корректны и для GitHub Pages в подпапке). */
 const STATIC_FILES = [

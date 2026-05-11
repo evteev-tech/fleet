@@ -2,4 +2,8 @@
    СТИЛИ КОНКРЕТНЫХ ЭКРАНОВ — общий заголовок модуля
    Стили по экранам: css/screens/*.css (подключены в index.html после этого файла).
    Каркас .screen / bottomsheet — в main.css и components.css.
+
+   Дизайн-токены (радиусы, тени, переходы): см. :root в css/main.css
+   — --radius-xs … --radius-xl, --shadow-sm/md/lg, --shadow-top*,
+     --transition-fast|base|slow, --duration-fast|base|slow
 ════════════════════════════════════════════════ */
