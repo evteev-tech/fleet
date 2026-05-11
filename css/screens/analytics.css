@@ -367,11 +367,11 @@
 }
 
 .analytics-kassa-row__inc {
-  color: var(--color-green);
+  color: var(--c-profit);
 }
 
 .analytics-kassa-row__exp {
-  color: var(--color-red);
+  color: var(--c-loss);
 }
 
 .analytics-kassa-row--deposits {
@@ -421,11 +421,11 @@
 }
 
 .analytics-delta--good {
-  color: var(--color-green);
+  color: var(--c-profit);
 }
 
 .analytics-delta--bad {
-  color: var(--color-red);
+  color: var(--c-loss);
 }
 
 .analytics-delta--na {
@@ -721,11 +721,11 @@
 }
 
 .analytics-pnl-profit--pos {
-  color: var(--color-green);
+  color: var(--c-profit);
 }
 
 .analytics-pnl-profit--neg {
-  color: var(--color-red);
+  color: var(--c-loss);
 }
 
 .pnl-row--head {

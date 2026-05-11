@@ -868,8 +868,8 @@
 
 .drv-dep-date  { color: var(--color-muted); flex-shrink: 0; }
 .drv-dep-type  { flex: 1; font-weight: 600; }
-.drv-dep--income { color: var(--color-green); }
-.drv-dep--return { color: var(--color-red);   }
+.drv-dep--income { color: var(--c-profit); }
+.drv-dep--return { color: var(--c-loss); }
 .drv-dep-sum   { font-weight: 700; color: var(--color-dark); white-space: nowrap; }
 
 .drv-dep-empty {
@@ -893,7 +893,7 @@
   color: var(--color-dark);
 }
 .btn-danger {
-  background: var(--color-red);
+  background: var(--c-loss);
   color: ***REMOVED***fff;
   border: none;
   border-radius: var(--radius-md);

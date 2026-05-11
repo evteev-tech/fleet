@@ -225,8 +225,8 @@
   font-weight: 700;
 }
 
-.dash-kassa__bal--pos { color: var(--color-green); }
-.dash-kassa__bal--neg { color: var(--color-red); }
+.dash-kassa__bal--pos { color: var(--c-profit); }
+.dash-kassa__bal--neg { color: var(--c-loss); }
 
 /* ── Строки парка ── */
 .dash-fleet-row {

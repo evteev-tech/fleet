@@ -132,7 +132,7 @@
 .add-field-err {
   font-size: 12px;
   font-weight: 400;
-  color: var(--color-red);
+  color: var(--c-loss);
 }
 
 .add-kassa-fixed {

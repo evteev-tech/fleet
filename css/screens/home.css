@@ -494,7 +494,7 @@
   font-weight: 700;
 }
 
-.op-row__amount--pos { color: var(--color-green); }
+.op-row__amount--pos { color: var(--c-profit); }
 .op-row__amount--neg { color: var(--color-dark); }
 
 .op-row__time {

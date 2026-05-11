@@ -71,7 +71,7 @@
 }
 
 .income-cards-wrap.income-cards--warn {
-  outline: 2px solid var(--color-red);
+  outline: 2px solid var(--c-loss);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
@@ -132,8 +132,8 @@
   font-weight: 700;
   padding: 4px 10px;
   border-radius: 999px;
-  background: var(--color-green-bg);
-  color: var(--color-green);
+  background: var(--c-profit-light);
+  color: var(--c-profit);
 }
 
 .income-card__rule {
@@ -164,7 +164,7 @@
 }
 
 .income-km--bad {
-  color: var(--color-red);
+  color: var(--c-loss);
 }
 
 .income-km--mid {
@@ -277,12 +277,12 @@
 }
 
 .income-sum--warn {
-  color: var(--color-red);
+  color: var(--c-loss);
 }
 
 @keyframes income-sum-flash {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.02); color: var(--color-red); }
+  50% { transform: scale(1.02); color: var(--c-loss); }
 }
 
 .income-sum--flash {
