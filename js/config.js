@@ -7,6 +7,11 @@ export const SHEET_ID = '1z4raGK4oamjZNznow-OesTljRz649_wCFYIFOh3mufg';
 export const API_KEY     = 'REDACTED_OLD_APIKEY';
 export const WEBHOOK_URL = 'https://script.google.com/macros/s/REDACTED_OLD_WEBHOOK_ID/exec';
 
+// Секретный токен для защиты от неавторизованных запросов
+export const SECRET_TOKEN = 'REDACTED_OLD_TOKEN';
+
+
+
 // ─── Кассы ───────────────────────────────────────────────────────────────────
 export const KASSA_ID = {
   AZAMAT:   'K_AZAMAT',

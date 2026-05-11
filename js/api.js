@@ -5,7 +5,7 @@
  * Запись:  POST WEBHOOK_URL  (Apps Script doPost)
  */
 
-import { SHEET_ID, API_KEY, WEBHOOK_URL, CACHE_TTL_MS, SHEETS, USE_MOCK } from './config.js';
+import { SHEET_ID, API_KEY, WEBHOOK_URL, SECRET_TOKEN, CACHE_TTL_MS, SHEETS, USE_MOCK } from './config.js';
 import {
   CACHE_KEYS,
   clearAllCache,
@@ -401,7 +401,7 @@ export async function postAction(action, data) {
     act === 'ADD_INCOME'
       ? { ...incomingData, client_op_date: fmtDate(new Date()) }
       : incomingData;
-  const payload = JSON.stringify({ action: act, ...payloadData });
+  const payload = JSON.stringify({ action: act, token: SECRET_TOKEN, ...payloadData });
 
   // URLSearchParams → Content-Type: application/x-www-form-urlencoded
   // браузер не шлёт preflight, Apps Script читает через e.parameter.data
@@ -555,5 +555,3 @@ function _parseFlexDate(raw) {
 export async function getActiveRentals() {
   return postAction({ action: 'GET_ACTIVE_RENTALS' });
 }
-
-
