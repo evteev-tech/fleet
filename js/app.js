@@ -3,6 +3,7 @@
  * Инициализирует авторизацию и все экраны приложения.
  */
 
+import { registerServiceWorker, monitorNetworkStatus } from './register-sw.js';
 import { currentScreen } from './router.js';
 
 import { initAuth, getCurrentUser, clearCurrentUser } from './auth.js';
@@ -21,6 +22,9 @@ import { initAnalytics } from './screens/analytics.js';
 import { initIncome } from './screens/income.js';
 import { initExpense } from './screens/expense.js';
 import { initTransfer } from './screens/transfer.js';
+
+registerServiceWorker();
+monitorNetworkStatus();
 
 // ─── Старт ────────────────────────────────────────────────────────────────────
 

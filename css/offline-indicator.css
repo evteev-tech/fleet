@@ -1,0 +1,49 @@
+/**
+ * offline-indicator.css — индикатор офлайн режима
+ */
+
+.offline-indicator {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: ***REMOVED***d14848;
+  color: white;
+  padding: 8px 16px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  z-index: 10000;
+  transform: translateY(-100%);
+  transition: transform 0.3s ease;
+}
+
+body.offline .offline-indicator {
+  transform: translateY(0);
+}
+
+.offline-indicator__icon {
+  display: inline-block;
+  margin-right: 8px;
+  font-size: 16px;
+}
+
+body.offline {
+  padding-top: 40px;
+}
+
+body.offline .navbar,
+body.offline .sidebar {
+  opacity: 0.9;
+}
+
+body.offline [data-requires-network] {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+body.offline [data-requires-network]::after {
+  content: ' (требуется сеть)';
+  font-size: 12px;
+  color: var(--c-muted);
+}

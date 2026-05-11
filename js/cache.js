@@ -74,10 +74,14 @@ export function getWithSWR(key, fetchFn, options = {}) {
     try {
       fresh = await fetchFn();
     } catch (err) {
+      console.warn(`[SWR] ${key} fetch failed:`, err?.message ?? err);
       try {
         onFetchError?.(err, { hadCache });
       } catch {
         /* */
+      }
+      if (entry?.data) {
+        console.log(`[SWR] ${key} stale data kept in localStorage after error`);
       }
       return;
     }
