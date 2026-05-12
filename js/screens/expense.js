@@ -444,7 +444,7 @@ async function _submit(root) {
       : _calcClass(_state.category, amt);
 
   try {
-    await postAction('ADD_OPERATION', {
+    const result = await postAction('ADD_OPERATION', {
       date: fmtDate(new Date()),
       kassa_id: _state.kassaId,
       direction: 'расход',
@@ -462,7 +462,19 @@ async function _submit(root) {
     invalidateLocalCache(CACHE_KEYS.CASH_OPS);
     invalidateLocalCache(CACHE_KEYS.KASSAS);
     invalidateLocalCache(CACHE_KEYS.DASHBOARD);
-    showToast('Расход записан', 'success', 2000);
+    if (result?.autoCapitalized) {
+      const from = result.capitalizedFrom === 'K_INVEST_VLAD'
+        ? 'инвест. счёта Владимира'
+        : 'инвест. счёта Юлии';
+      const amtLabel = fmtRub(result.capitalizedAmount);
+      showToast(
+        `Расход записан. Довнесено ${amtLabel} с ${from}`,
+        'info',
+        4000,
+      );
+    } else {
+      showToast('Расход записан', 'success', 2000);
+    }
     const isTO = String(_state.category || '').toLowerCase() === 'то';
     const hasCar = !!_state.carId;
 

@@ -13,6 +13,7 @@ import { getCurrentUser }                         from '../auth.js';
 import { showScreen }                             from '../router.js';
 import { showToast }                              from '../ui.js';
 import { KASSA_ID, ROLES, CAR_STATUSES }          from '../config.js';
+import { fmtRub }                                 from '../utils/format.js';
 
 // ─── Категории по типу ────────────────────────────────────────────────────────
 const CATEGORIES = {
@@ -292,7 +293,7 @@ async function _submit(user) {
   const direction     = _type === 'ДОХОД' ? 'приход' : 'расход';
 
   try {
-    await postAction('ADD_OPERATION', {
+    const addOpResult = await postAction('ADD_OPERATION', {
       date:      dateFormatted,
       kassa_id:  kassaId,
       direction: isXfer ? 'перевод' : direction,
@@ -325,7 +326,19 @@ async function _submit(user) {
       invalidateLocalCache(CACHE_KEYS.RENTALS);
       invalidateLocalCache(CACHE_KEYS.INCOME_FORM);
     }
-    showToast('Записано ✓', 'success');
+    if (addOpResult?.autoCapitalized) {
+      const from = addOpResult.capitalizedFrom === 'K_INVEST_VLAD'
+        ? 'инвест. счёта Владимира'
+        : 'инвест. счёта Юлии';
+      const amtLabel = fmtRub(addOpResult.capitalizedAmount);
+      showToast(
+        `Расход записан. Довнесено ${amtLabel} с ${from}`,
+        'info',
+        4000,
+      );
+    } else {
+      showToast('Записано ✓', 'success');
+    }
     _resetForm(isMech, dateISO, kassaId);
 
   } catch (err) {

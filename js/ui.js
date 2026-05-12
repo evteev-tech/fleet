@@ -11,7 +11,8 @@ const TOAST_COLORS = {
   success: { bg: 'var(--color-green)',    text: '#fff' },
   error:   { bg: 'var(--color-red)',      text: '#fff' },
   warning: { bg: '#F5A623',              text: '#fff' },
-  info:    { bg: 'var(--color-dark)',     text: '#fff' },
+  /* Информирование: синий, не успех и не ошибка */
+  info:    { bg: 'var(--color-blue)',     text: '#fff' },
   default: { bg: 'var(--color-dark)',     text: '#fff' },
 };
 
@@ -30,6 +31,7 @@ export function showToast(message, type = 'default', duration = 3000) {
   const { bg, text } = TOAST_COLORS[type] ?? TOAST_COLORS.default;
   const icon         = TOAST_ICONS[type] ?? '';
   const isDesktop    = typeof window !== 'undefined' && window.innerWidth >= 1024;
+  const isInfo       = type === 'info';
 
   const el = document.createElement('div');
   // Базовые стили только через атрибут style — позиция управляется CSS-классами
@@ -45,8 +47,8 @@ export function showToast(message, type = 'default', duration = 3000) {
     'display:flex',
     'align-items:center',
     'gap:6px',
-    'white-space:nowrap',
-    `max-width:${isDesktop ? '360px' : 'calc(100vw - 40px)'}`,
+    isInfo ? 'white-space:normal;line-height:1.35' : 'white-space:nowrap',
+    `max-width:${isInfo ? (isDesktop ? '420px' : 'calc(100vw - 32px)') : (isDesktop ? '360px' : 'calc(100vw - 40px)')}`,
     'box-shadow:0 4px 16px rgba(0,0,0,.18)',
     'z-index:9999',
     'opacity:0',
