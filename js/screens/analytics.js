@@ -9,11 +9,12 @@ import {
   getOperations,
   getKassas,
   getDeposits,
+  fetchDashboardAnalytics,
 } from '../api.js';
-import { getWithSWR, CACHE_KEYS } from '../cache.js';
+import { getWithSWR, CACHE_KEYS, invalidateCache as invalidateLocalCache } from '../cache.js';
 import { getCurrentUser } from '../auth.js';
 import { mountNavbarInContainer } from '../router.js';
-import { renderOverview } from './analytics/overview.js';
+import { renderOverview, renderOverviewSkeleton } from './analytics/overview.js';
 import { renderOpex } from './analytics/opex.js';
 import { renderCapex } from './analytics/capex.js';
 import { renderPnL } from './analytics/pnl.js';
@@ -294,7 +295,7 @@ function skeletonShellHTML() {
   const carouselInner = PAGE_LABELS.map(
     (_, i) => `
     <div class="analytics-page" data-page="${i}">
-      <div class="analytics-page-inner">${sk}${sk}</div>
+      <div class="analytics-page-inner">${i === 0 ? renderOverviewSkeleton() : `${sk}${sk}`}</div>
     </div>`,
   ).join('');
   return shellFromParts({
@@ -483,6 +484,42 @@ let _deposits = [];
 let _capexMode = CAPEX_MODE.PERIOD;
 let _currentPage = 0;
 
+/** Поля GET_DASHBOARD (trailing12, capexTotal, …); null — ещё не было успешного ответа. */
+let _dashApiExtras = null;
+let _dashApiExtrasError = false;
+
+function normalizeDashboardApi_(d) {
+  if (!d || typeof d !== 'object') {
+    return {
+      trailing12: [],
+      cumulativeProfit: 0,
+      capexTotal: 0,
+      paybackMonths: null,
+      forecastNextMonth: 0,
+    };
+  }
+  const pm = d.paybackMonths;
+  const paybackMonths =
+    pm === null || pm === undefined || Number.isNaN(Number(pm)) ? null : Number(pm);
+  return {
+    trailing12: Array.isArray(d.trailing12) ? d.trailing12 : [],
+    cumulativeProfit: Number(d.cumulativeProfit) || 0,
+    capexTotal: Number(d.capexTotal) || 0,
+    paybackMonths,
+    forecastNextMonth: Number(d.forecastNextMonth) || 0,
+  };
+}
+
+function mergeDashboardApiIntoDash_(dash) {
+  const pack = _dashApiExtras === null ? normalizeDashboardApi_(null) : _dashApiExtras;
+  dash.trailing12 = pack.trailing12;
+  dash.cumulativeProfit = pack.cumulativeProfit;
+  dash.capexTotal = pack.capexTotal;
+  dash.paybackMonths = pack.paybackMonths;
+  dash.forecastNextMonth = pack.forecastNextMonth;
+  dash.overviewExtrasError = _dashApiExtrasError;
+}
+
 function applyDashToState(dash) {
   _pendingYear = dash.year;
   _pendingMonth = dash.month;
@@ -518,6 +555,7 @@ function refreshViewOnly() {
       year: y,
       month: m,
     });
+    mergeDashboardApiIntoDash_(dash);
     filled = true;
     applyDashToState(dash);
     if (isDesktop()) {
@@ -597,6 +635,26 @@ function refreshViewOnly() {
     },
   });
 
+  getWithSWR(CACHE_KEYS.DASHBOARD, () => fetchDashboardAnalytics(), {
+    onCached: d => {
+      _dashApiExtras = normalizeDashboardApi_(d);
+      _dashApiExtrasError = false;
+      paintIfReady();
+    },
+    onFresh: d => {
+      _dashApiExtras = normalizeDashboardApi_(d);
+      _dashApiExtrasError = false;
+      paintIfReady();
+    },
+    onFetchError: (_err, meta) => {
+      if (!meta?.hadCache) {
+        _dashApiExtrasError = true;
+        _dashApiExtras = normalizeDashboardApi_(null);
+      }
+      paintIfReady();
+    },
+  });
+
   setTimeout(() => {
     if (!cacheHit && !filled) {
       root.innerHTML = isDesktop() ? renderDesktopSkeleton() : skeletonShellHTML();
@@ -629,6 +687,7 @@ async function applyPeriod(year, month) {
       month,
     });
     setAnalyticsContext({ ops: _ops, cars: _cars, kassas: _kassas, deposits: _deposits });
+    mergeDashboardApiIntoDash_(dash);
     applyDashToState(dash);
     if (isDesktop()) {
       root.innerHTML = renderDesktopShell(dash);
@@ -668,6 +727,7 @@ async function applyAllTime() {
       month: _pendingMonth || now.getMonth() + 1,
     });
     setAnalyticsContext({ ops: _ops, cars: _cars, kassas: _kassas, deposits: _deposits });
+    mergeDashboardApiIntoDash_(dash);
     applyDashToState(dash);
     if (isDesktop()) {
       root.innerHTML = renderDesktopShell(dash);
@@ -707,6 +767,8 @@ function onRootClick(e) {
     const idx = Number(dot.dataset.analyticsDot) || 0;
     _currentPage = idx;
     car.scrollTo({ left: idx * car.offsetWidth, behavior: 'smooth' });
+    updateCarouselChrome(root, idx);
+    if (idx === 5) void hydrateForecast(root);
     return;
   }
 
@@ -733,6 +795,37 @@ function onRootClick(e) {
     return;
   }
 
+  const openTabBtn = e.target.closest('[data-action="open-tab"]');
+  if (openTabBtn && openTabBtn.dataset.tab) {
+    const map = { opex: 1, capex: 2, pnl: 3, forecast: 5 };
+    const idx = map[openTabBtn.dataset.tab];
+    if (idx != null) {
+      const rootEl = document.getElementById('analytics-root');
+      const car = rootEl?.querySelector('#analytics-carousel');
+      if (car) {
+        _currentPage = idx;
+        car.scrollTo({ left: idx * (car.offsetWidth || 1), behavior: 'smooth' });
+        updateCarouselChrome(rootEl, idx);
+        if (idx === 5) void hydrateForecast(rootEl);
+      }
+    }
+    return;
+  }
+
+  const overviewRetry = e.target.closest('[data-overview-retry]');
+  if (overviewRetry) {
+    invalidateLocalCache(CACHE_KEYS.DASHBOARD);
+    _dashApiExtrasError = false;
+    _dashApiExtras = null;
+    if (_loading) return;
+    _loading = true;
+    refreshViewOnly();
+    requestAnimationFrame(() => {
+      _loading = false;
+    });
+    return;
+  }
+
   const capexModeBtn = e.target.closest('[data-capex-mode]');
   if (capexModeBtn) {
     const nextMode = String(capexModeBtn.dataset.capexMode || '');
@@ -751,6 +844,7 @@ function onRootClick(e) {
       year: _pendingYear || now.getFullYear(),
       month: _pendingMonth || now.getMonth() + 1,
     });
+    mergeDashboardApiIntoDash_(dash);
     setAnalyticsContext({ ops: _ops, cars: _cars, kassas: _kassas, deposits: _deposits });
     if (isDesktop()) {
       root.innerHTML = renderDesktopShell(dash);

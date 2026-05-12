@@ -101,3 +101,21 @@ export function fmtShort(n) {
   if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
   return num.toFixed(0);
 }
+
+/**
+ * Краткий формат рублей для второстепенных подписей (например «312К ₽»).
+ * @param {number|string} n
+ * @returns {string}
+ */
+export function formatCompactRub(n) {
+  const num = Math.round(Number(n) || 0);
+  const abs = Math.abs(num);
+  const sign = num < 0 ? '−' : '';
+  if (abs >= 1_000_000) {
+    const v = abs / 1_000_000;
+    const s = v >= 10 ? v.toFixed(0) : v.toFixed(1).replace('.', ',');
+    return `${sign}${s} млн ₽`;
+  }
+  if (abs >= 1000) return `${sign}${Math.round(abs / 1000)}К ₽`;
+  return `${sign}${new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }).format(abs)} ₽`;
+}

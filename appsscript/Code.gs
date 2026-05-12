@@ -147,6 +147,44 @@ function cellNum_(v) {
 }
 
 /**
+ * Сумма из ячейки/поля (число или строка с пробелами/запятой).
+ * @param {*} val
+ * @returns {number}
+ */
+function parseAmount(val) {
+  if (val === '' || val === null || val === undefined) return 0;
+  if (typeof val === 'number' && !isNaN(val)) return val;
+  var s = String(val).replace(/\s/g, '').replace(',', '.');
+  var n = Number(s);
+  return isNaN(n) ? 0 : n;
+}
+
+/**
+ * Баланс кассы по листу «Касса_операции»: сумма приходов минус сумма расходов по колонке касса_id.
+ * @param {GoogleAppsScript.Spreadsheet.Spreadsheet} ss
+ * @param {string} kassaId
+ * @returns {number}
+ */
+function getKassaBalance(ss, kassaId) {
+  var sheet = ss.getSheetByName(SHEET.OPERATIONS);
+  if (!sheet) return 0;
+  var data = sheet.getDataRange().getValues();
+  var kid = String(kassaId);
+  var balance = 0;
+  var prihod = '\u043f\u0440\u0438\u0445\u043e\u0434';
+  var rashod = '\u0440\u0430\u0441\u0445\u043e\u0434';
+  for (var r = 1; r < data.length; r++) {
+    var row = data[r];
+    if (String(row[2]) !== kid) continue;
+    var dir = String(row[3] || '').trim();
+    var amt = parseAmount(row[4]);
+    if (dir === prihod) balance += amt;
+    else if (dir === rashod) balance -= amt;
+  }
+  return balance;
+}
+
+/**
  * Следующий порядковый ID вида PREFIX + трёхзначный номер.
  * Смотрит колонку A, берёт максимальный числовой суффикс.
  */
@@ -269,6 +307,8 @@ function handleAddOperation(ss, body) {
   const dirStr = String(direction || '');
   if (typeLower.startsWith('\u0430\u0440\u0435\u043d\u0434\u0430') || typeLower === '\u0430\u0440\u0435\u043d\u0434\u0430') {
     klass_itog = 'revenue';
+  } else if (typeLower.startsWith('\u043f\u0435\u0440\u0435\u0432\u043e\u0434_')) {
+    klass_itog = 'transfer';
   } else if (dirStr === '\u043f\u0435\u0440\u0435\u0432\u043e\u0434') {
     klass_itog = 'transfer';
   } else if (typeLower.startsWith('\u0434\u0435\u043f\u043e\u0437\u0438\u0442')) {
@@ -281,13 +321,65 @@ function handleAddOperation(ss, body) {
 
   const finalClass = class_override || klass_itog;
 
+  var rashod = '\u0440\u0430\u0441\u0445\u043e\u0434';
+  var prihod = '\u043f\u0440\u0438\u0445\u043e\u0434';
+  var kid = String(kassa_id);
+  var amtNum = Number(amount);
+  var korrekt = '\u043a\u043e\u0440\u0440\u0435\u043a\u0442\u0438\u0440\u043e\u0432\u043a\u0430';
+  var skipAutoCap =
+    dirStr !== rashod ||
+    (kid !== 'K_VLADIMIR' && kid !== 'K_YULIA') ||
+    typeLower === korrekt ||
+    typeLower.startsWith('\u043f\u0435\u0440\u0435\u0432\u043e\u0434_');
+
+  var autoCapitalized = false;
+  var capitalizedAmount = 0;
+  var capitalizedFrom = null;
+
+  if (!skipAutoCap && !isNaN(amtNum) && amtNum > 0) {
+    var balance = getKassaBalance(ss, kid);
+    if (balance < amtNum) {
+      var deficit = amtNum - balance;
+      var investKassaId = kid === 'K_VLADIMIR' ? 'K_INVEST_VLAD' : 'K_INVEST_YULIA';
+      var transferId = 'CAP_' + new Date().getTime();
+      var todayStr = formatDate(new Date());
+      var sys = '\u0421\u0438\u0441\u0442\u0435\u043c\u0430';
+      var typOut = '\u043f\u0435\u0440\u0435\u0432\u043e\u0434_\u0438\u0441\u0445\u043e\u0434\u044f\u0449\u0438\u0439';
+      var typIn = '\u043f\u0435\u0440\u0435\u0432\u043e\u0434_\u0432\u0445\u043e\u0434\u044f\u0449\u0438\u0439';
+      var cOut = '\u0410\u0432\u0442\u043e\u0434\u043e\u043a\u0430\u043f\u0438\u0442\u0430\u043b\u0438\u0437\u0430\u0446\u0438\u044f \u2192 ' + kid;
+      var cIn = '\u0410\u0432\u0442\u043e\u0434\u043e\u043a\u0430\u043f\u0438\u0442\u0430\u043b\u0438\u0437\u0430\u0446\u0438\u044f \u2190 ' + investKassaId;
+
+      sheet.appendRow([
+        transferId + '_OUT', todayStr, investKassaId, rashod, deficit,
+        typOut, '', '', '', cOut, sys,
+        '', 'transfer',
+      ]);
+      sheet.appendRow([
+        transferId + '_IN', todayStr, kid, prihod, deficit,
+        typIn, '', '', '', cIn, sys,
+        '', 'transfer',
+      ]);
+
+      autoCapitalized = true;
+      capitalizedAmount = deficit;
+      capitalizedFrom = investKassaId;
+    }
+  }
+
   sheet.appendRow([
     op_id, date, kassa_id, direction, Number(amount),
     type, category, car_id, driver_id, comment, provel,
     class_override, finalClass,
   ]);
 
-  return ok({ op_id });
+  return ok({
+    success: true,
+    op_id: op_id,
+    opId: op_id,
+    autoCapitalized: autoCapitalized,
+    capitalizedAmount: capitalizedAmount,
+    capitalizedFrom: capitalizedFrom,
+  });
 }
 
 // -----------------------------------------------------------------------------
@@ -472,68 +564,243 @@ function handleAddRental(ss, body) {
 // -----------------------------------------------------------------------------
 
 function handleGetDashboard(ss) {
-  const sheet = ss.getSheetByName('\u0414\u0430\u0448\u0431\u043e\u0440\u0434');
-  if (!sheet) {
+  var sheet = ss.getSheetByName('\u0414\u0430\u0448\u0431\u043e\u0440\u0434');
+
+  var nowD = new Date();
+  var year, month, allTime, summary, opex, pnl, utilization;
+
+  if (sheet) {
+    year  = Number(sheet.getRange('B2').getValue()) || nowD.getFullYear();
+    month = Number(sheet.getRange('B3').getValue()) || (nowD.getMonth() + 1);
+    // Маркер UI «Всё время» (E99); при необходимости подключите к формулам листа.
+    var periodAllRaw = sheet.getRange('E99').getValue();
+    allTime = String(periodAllRaw || '').trim().toUpperCase() === 'ALL';
+
+    var summaryLabels = ['\u0412\u044b\u0440\u0443\u0447\u043a\u0430', 'OPEX', 'CAPEX', '\u041f\u0440\u0438\u0431\u044b\u043b\u044c'];
+    var summaryKeys   = ['revenue', 'opex', 'capex', 'profit'];
+    var sumVals = sheet.getRange(10, 2, 13, 3).getValues();
+    summary = [];
+    for (var si = 0; si < 4; si++) {
+      summary.push({
+        key:      summaryKeys[si],
+        label:    summaryLabels[si],
+        current:  cellNum_(sumVals[si][0]),
+        previous: cellNum_(sumVals[si][1]),
+      });
+    }
+
+    var opexRaw = sheet.getRange(17, 1, 26, 3).getValues();
+    opex = [];
+    for (var oi = 0; oi < opexRaw.length; oi++) {
+      var name = String(opexRaw[oi][0] || '').trim();
+      if (!name) continue;
+      var amt      = cellNum_(opexRaw[oi][1]);
+      var shareRaw = opexRaw[oi][2];
+      var share    = cellNum_(shareRaw);
+      if (share !== null && share > 1) share = share / 100;
+      opex.push({ name: name, amount: amt !== null ? amt : 0, share: share !== null ? share : null });
+    }
+
+    var pnlRaw = sheet.getRange(30, 1, 44, 4).getValues();
+    pnl = [];
+    for (var pi = 0; pi < pnlRaw.length; pi++) {
+      var carName = String(pnlRaw[pi][0] || '').trim();
+      if (!carName) continue;
+      pnl.push({
+        car:     carName,
+        revenue: cellNum_(pnlRaw[pi][1]) || 0,
+        expense: cellNum_(pnlRaw[pi][2]) || 0,
+        profit:  cellNum_(pnlRaw[pi][3]) || 0,
+      });
+    }
+
+    var utilRaw = sheet.getRange(47, 1, 70, 2).getValues();
+    utilization = [];
+    for (var ui = 0; ui < utilRaw.length; ui++) {
+      var carU   = String(utilRaw[ui][0] || '').trim();
+      if (!carU) continue;
+      var pctRaw = cellNum_(utilRaw[ui][1]);
+      var pct    = pctRaw;
+      if (pct !== null && pct >= 0 && pct <= 1) pct = pct * 100;
+      utilization.push({ car: carU, pct: pct });
+    }
+  } else {
+    // Лист «Дашборд» отсутствует — не падаем, отдаём пустые структуры.
+    // Overview-блок всё равно посчитается из «Касса_операции» (см. ниже).
     logFailure(ss, 'GET_DASHBOARD', 'SHEET_NOT_FOUND', '\u0414\u0430\u0448\u0431\u043e\u0440\u0434');
-    return err('SHEET_NOT_FOUND');
+    year    = nowD.getFullYear();
+    month   = nowD.getMonth() + 1;
+    allTime = false;
+    summary = [
+      { key: 'revenue', label: '\u0412\u044b\u0440\u0443\u0447\u043a\u0430',   current: null, previous: null },
+      { key: 'opex',    label: 'OPEX',                                          current: null, previous: null },
+      { key: 'capex',   label: 'CAPEX',                                         current: null, previous: null },
+      { key: 'profit',  label: '\u041f\u0440\u0438\u0431\u044b\u043b\u044c',   current: null, previous: null },
+    ];
+    opex = [];
+    pnl = [];
+    utilization = [];
   }
 
-  const year  = Number(sheet.getRange('B2').getValue()) || new Date().getFullYear();
-  const month = Number(sheet.getRange('B3').getValue()) || (new Date().getMonth() + 1);
-  // Маркер UI «Всё время» (E99); при необходимости подключите к формулам листа.
-  var periodAllRaw = sheet.getRange('E99').getValue();
-  var allTime = String(periodAllRaw || '').trim().toUpperCase() === 'ALL';
+  var extras = computeOverviewExtras_(ss);
 
-  const summaryLabels = ['\u0412\u044b\u0440\u0443\u0447\u043a\u0430', 'OPEX', 'CAPEX', '\u041f\u0440\u0438\u0431\u044b\u043b\u044c'];
-  const summaryKeys   = ['revenue', 'opex', 'capex', 'profit'];
-  const sumVals = sheet.getRange(10, 2, 13, 3).getValues();
-  var summary = [];
-  for (var si = 0; si < 4; si++) {
-    summary.push({
-      key:      summaryKeys[si],
-      label:    summaryLabels[si],
-      current:  cellNum_(sumVals[si][0]),
-      previous: cellNum_(sumVals[si][1]),
+  return ok({
+    dashboard: {
+      year: year,
+      month: month,
+      allTime: allTime,
+      summary: summary,
+      opex: opex,
+      pnl: pnl,
+      utilization: utilization,
+      trailing12:        extras.trailing12,
+      cumulativeProfit:  extras.cumulativeProfit,
+      capexTotal:        extras.capexTotal,
+      paybackMonths:     extras.paybackMonths,
+      forecastNextMonth: extras.forecastNextMonth,
+    },
+  });
+}
+
+/**
+ * Считает доп. метрики для вкладки Overview по листу «Касса_операции»
+ * за один проход. Колонки операций: B (idx 1) — дата, E (4) — сумма,
+ * M (12) — klass_itog ('revenue' | 'opex' | 'capex' | 'transfer' | 'deposit').
+ *
+ * Возвращает:
+ *   trailing12 — массив из 12 объектов {year, month, revenue, opex, profit},
+ *     отсортирован от старого к новому; последний элемент — ТЕКУЩИЙ месяц
+ *     (может быть неполным).
+ *   cumulativeProfit — сумма profit по trailing12.
+ *   capexTotal — сумма всех 'capex'-строк за всё время.
+ *   paybackMonths — расчётный срок окупаемости в месяцах:
+ *     • null  — avgProfit ≤ 0 (не окупается) либо нет данных за окно;
+ *     • 0     — уже окупилось (накопленная за всё время прибыль ≥ capexTotal);
+ *     • N > 0 — Math.ceil((capexTotal − cumulativeProfitTotalAllTime) / avgProfit).
+ *     avgProfit — средняя месячная прибыль по последним 6 ЗАВЕРШЁННЫМ месяцам
+ *     (текущий неполный месяц исключён). В знаменатель идут ТОЛЬКО месяцы
+ *     с активностью (revenue > 0 || opex > 0); пустые месяцы не размывают среднее.
+ *   forecastNextMonth — Math.round(avgRev3 − avgOpex3) по 3 последним
+ *     ЗАВЕРШЁННЫМ месяцам (без текущего). Пустые месяцы аналогично исключаются.
+ */
+function computeOverviewExtras_(ss) {
+  var empty = {
+    trailing12: [],
+    cumulativeProfit: 0,
+    capexTotal: 0,
+    paybackMonths: null,
+    forecastNextMonth: 0,
+  };
+
+  var opsSheet = ss.getSheetByName(SHEET.OPERATIONS);
+  if (!opsSheet) return empty;
+
+  var now  = new Date();
+  var curY = now.getFullYear();
+  var curM = now.getMonth() + 1;
+
+  // Бакеты на 12 месяцев: старый → новый, текущий — последним.
+  var months = [];
+  for (var i = 11; i >= 0; i--) {
+    var d = new Date(curY, curM - 1 - i, 1);
+    months.push({
+      year:    d.getFullYear(),
+      month:   d.getMonth() + 1,
+      revenue: 0,
+      opex:    0,
+      profit:  0,
     });
   }
-
-  var opexRaw = sheet.getRange(17, 1, 26, 3).getValues();
-  var opex = [];
-  for (var oi = 0; oi < opexRaw.length; oi++) {
-    var name = String(opexRaw[oi][0] || '').trim();
-    if (!name) continue;
-    var amt      = cellNum_(opexRaw[oi][1]);
-    var shareRaw = opexRaw[oi][2];
-    var share    = cellNum_(shareRaw);
-    if (share !== null && share > 1) share = share / 100;
-    opex.push({ name, amount: amt !== null ? amt : 0, share: share !== null ? share : null });
+  function keyOf(y, m) { return y * 100 + m; }
+  var trailingKeys = {};
+  for (var ti = 0; ti < months.length; ti++) {
+    trailingKeys[keyOf(months[ti].year, months[ti].month)] = months[ti];
   }
 
-  var pnlRaw = sheet.getRange(30, 1, 44, 4).getValues();
-  var pnl = [];
-  for (var pi = 0; pi < pnlRaw.length; pi++) {
-    var carName = String(pnlRaw[pi][0] || '').trim();
-    if (!carName) continue;
-    pnl.push({
-      car:     carName,
-      revenue: cellNum_(pnlRaw[pi][1]) || 0,
-      expense: cellNum_(pnlRaw[pi][2]) || 0,
-      profit:  cellNum_(pnlRaw[pi][3]) || 0,
-    });
+  // Один проход по «Касса_операции».
+  var capexTotal       = 0;
+  var allTimeNetProfit = 0; // Σ revenue − Σ opex по ВСЕМ месяцам существования проекта.
+
+  var values = opsSheet.getDataRange().getValues();
+  for (var r = 1; r < values.length; r++) {
+    var row = values[r];
+    var dt  = parseDate(row[1]);
+    if (!dt) continue;
+    var amt = cellNum_(row[4]);
+    if (amt === null) continue;
+    var klass = String(row[12] || '').trim().toLowerCase();
+
+    if (klass === 'capex') {
+      capexTotal += amt;
+      continue;
+    }
+    if (klass !== 'revenue' && klass !== 'opex') continue; // transfer / deposit / прочее — игнор.
+
+    if (klass === 'revenue') allTimeNetProfit += amt;
+    else                     allTimeNetProfit -= amt;
+
+    var bucket = trailingKeys[keyOf(dt.getFullYear(), dt.getMonth() + 1)];
+    if (bucket) {
+      if (klass === 'revenue') bucket.revenue += amt;
+      else                     bucket.opex    += amt;
+    }
   }
 
-  var utilRaw = sheet.getRange(47, 1, 70, 2).getValues();
-  var utilization = [];
-  for (var ui = 0; ui < utilRaw.length; ui++) {
-    var carU   = String(utilRaw[ui][0] || '').trim();
-    if (!carU) continue;
-    var pctRaw = cellNum_(utilRaw[ui][1]);
-    var pct    = pctRaw;
-    if (pct !== null && pct >= 0 && pct <= 1) pct = pct * 100;
-    utilization.push({ car: carU, pct });
+  var cumulativeProfit = 0;
+  for (var mi = 0; mi < months.length; mi++) {
+    months[mi].profit = months[mi].revenue - months[mi].opex;
+    cumulativeProfit += months[mi].profit;
   }
 
-  return ok({ dashboard: { year, month, allTime: allTime, summary, opex, pnl, utilization } });
+  // Завершённые месяцы: окно БЕЗ последнего (текущего неполного).
+  // months имеет длину 12; срезы slice(-7,-1) и slice(-4,-1) дают 6 и 3 месяца соответственно.
+  var last6Completed = months.slice(-7, -1);
+  var last3Completed = months.slice(-4, -1);
+
+  function hasActivity(m) { return m.revenue > 0 || m.opex > 0; }
+
+  // avgProfit по месяцам С активностью.
+  var active6 = last6Completed.filter(hasActivity);
+  var avgProfit = 0;
+  if (active6.length > 0) {
+    var sumP = 0;
+    for (var ai = 0; ai < active6.length; ai++) sumP += active6[ai].profit;
+    avgProfit = sumP / active6.length;
+  }
+
+  // paybackMonths:
+  //   avgProfit ≤ 0       → null (не окупается / нет данных)
+  //   уже окупилось       → 0
+  //   иначе               → ceil(остаток / avgProfit)
+  var paybackMonths;
+  if (avgProfit > 0) {
+    var remaining = capexTotal - allTimeNetProfit;
+    paybackMonths = remaining > 0 ? Math.ceil(remaining / avgProfit) : 0;
+  } else {
+    paybackMonths = null;
+  }
+
+  // forecastNextMonth: 3 последних ЗАВЕРШЁННЫХ, фильтр по активности.
+  var active3 = last3Completed.filter(hasActivity);
+  var avgRev = 0, avgOpex = 0;
+  if (active3.length > 0) {
+    var sumR = 0, sumO = 0;
+    for (var fi = 0; fi < active3.length; fi++) {
+      sumR += active3[fi].revenue;
+      sumO += active3[fi].opex;
+    }
+    avgRev  = sumR / active3.length;
+    avgOpex = sumO / active3.length;
+  }
+  var forecastNextMonth = Math.round(avgRev - avgOpex);
+
+  return {
+    trailing12: months,
+    cumulativeProfit: cumulativeProfit,
+    capexTotal: capexTotal,
+    paybackMonths: paybackMonths,
+    forecastNextMonth: forecastNextMonth,
+  };
 }
 
 function getDashboardData() {
@@ -931,4 +1198,32 @@ function testAll() {
   });
 
   Logger.log('=== testAll END ===');
+}
+
+/**
+ * Быстрая проверка ответа handleGetDashboard для вкладки Overview.
+ * Запускать вручную из редактора Apps Script: Run → testOverviewDashboard.
+ */
+function testOverviewDashboard() {
+  const ss = SpreadsheetApp.openById(SS_ID);
+  const out = handleGetDashboard(ss);
+  const parsed = JSON.parse(out.getContent());
+  const dash = parsed.dashboard || {};
+  const t12 = dash.trailing12 || [];
+
+  Logger.log('=== testOverviewDashboard START ===');
+  Logger.log('status: ' + parsed.status);
+  Logger.log('period: ' + dash.year + '-' + dash.month + ' (allTime=' + dash.allTime + ')');
+  Logger.log('trailing12 length: ' + t12.length);
+  Logger.log('trailing12 first: ' + JSON.stringify(t12[0]));
+  Logger.log('trailing12 last:  ' + JSON.stringify(t12[t12.length - 1]));
+  Logger.log('cumulativeProfit (за 12 мес): ' + dash.cumulativeProfit);
+  Logger.log('capexTotal (за всё время): ' + dash.capexTotal);
+  Logger.log('paybackMonths: ' + dash.paybackMonths
+    + '  // null = не окупается, 0 = уже окупилось, N>0 = месяцев осталось');
+  Logger.log('forecastNextMonth: ' + dash.forecastNextMonth);
+  Logger.log('summary entries: ' + (dash.summary || []).length);
+  Logger.log('opex entries: ' + (dash.opex || []).length);
+  Logger.log('pnl entries: ' + (dash.pnl || []).length);
+  Logger.log('=== testOverviewDashboard END ===');
 }

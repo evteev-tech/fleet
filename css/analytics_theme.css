@@ -24,54 +24,12 @@
   letter-spacing: -0.025em;
 }
 
-/* ── Hero-блок обзора ── */
-.ovw-hero__amount {
-  font-weight: 800;
-  letter-spacing: -0.04em;
+/* ── Overview tab ── */
+.overview-tab__profit--pos {
+  color: var(--c-profit);
 }
-.ovw-hero__amount--pos { color: var(--c-profit); }
-.ovw-hero__amount--neg { color: var(--c-loss); }
-
-.ovw-hero__stripe {
-  background: var(--c-profit);
-}
-
-.ovw-sheet {
-  background: var(--c-bg-page);
-}
-
-.ovw-tile {
-  box-shadow: none;
-  border: 0.5px solid rgba(17,17,17,0.07);
-}
-
-.ovw-tile__val {
-  font-weight: 800;
-  letter-spacing: -0.025em;
-}
-
-.ovw-delta--pos { color: var(--c-profit); }
-.ovw-delta--neg { color: var(--c-loss); }
-
-/* ── Парк ── */
-.ovw-fleet__cell--rent  { background: var(--c-rent-bg); }
-.ovw-fleet__cell--idle  { background: var(--c-idle-bg); }
-.ovw-fleet__cell--repair { background: var(--c-repair-bg); }
-
-.ovw-fleet__cell--rent .ovw-fleet__num  { color: var(--c-rent); }
-.ovw-fleet__cell--idle .ovw-fleet__num  { color: var(--c-idle); }
-.ovw-fleet__cell--repair .ovw-fleet__num { color: var(--c-repair); }
-
-.ovw-fleet__cell--rent .ovw-fleet__lbl  { color: var(--c-rent); }
-.ovw-fleet__cell--idle .ovw-fleet__lbl  { color: var(--c-idle); }
-.ovw-fleet__cell--repair .ovw-fleet__lbl { color: var(--c-repair); }
-
-.ovw-fleet__seg--rent   { background: var(--c-rent); }
-.ovw-fleet__seg--idle   { background: var(--c-idle); }
-.ovw-fleet__seg--repair { background: var(--c-repair); }
-
-.ovw-fleet__bar-pct {
-  font-weight: 800;
+.overview-tab__profit--neg {
+  color: var(--c-loss);
 }
 
 /* ── Дельта ── */

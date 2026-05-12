@@ -6,7 +6,7 @@ import { fmtRub, fmtDate, parseDate, fmtShort, fmtRuInt } from '../../utils/form
 
 export { fmtRub, fmtDate, parseDate, fmtShort, fmtRuInt };
 
-export const PAGE_LABELS = ['Обзор', 'Расходы', 'CAPEX', 'По машинам', 'Кассы', 'Прогноз'];
+export const PAGE_LABELS = ['Overview', 'Расходы', 'CAPEX', 'По машинам', 'Кассы', 'Прогноз'];
 
 export const CAPEX_MODE = {
   ALL: 'all',
