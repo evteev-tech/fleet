@@ -13,24 +13,25 @@ export const CAPEX_MODE = {
   PERIOD: 'period',
 };
 
-export const OPEX_COLORS = {
-  ремонт: 'var(--c-bar-100)',
-  запчасти: 'var(--c-bar-75)',
-  доставка: 'var(--c-bar-50)',
-  зп: 'var(--c-bar-100)',
-  страховка: 'var(--c-bar-50)',
-  реклама: 'var(--c-bar-25)',
-  прочее: 'var(--c-bar-10)',
-  то: 'var(--c-bar-75)',
-  штраф_гибдд: 'var(--c-bar-50)',
-  дтп: 'var(--c-bar-100)',
-  связь_глонасс: 'var(--c-muted)',
-  покупка_машины: 'var(--c-bar-100)',
-};
+/**
+ * Цвет категории расхода по названию (includes, без регистра).
+ * @param {string} name
+ * @returns {string}
+ */
+export function getCategoryColor(name) {
+  const s = String(name || '').toLowerCase();
+  if (s.includes('зп') || s.includes('зарплат') || s.includes('салар')) return 'var(--cat-salary)';
+  if (s.includes('страх')) return 'var(--cat-insurance)';
+  if (s.includes('запчаст') || s.includes('ремонт') || s.includes('детал')) return 'var(--cat-parts)';
+  if (s.includes('топлив') || s.includes('бензин') || s.includes('гсм') || s.includes('материал'))
+    return 'var(--cat-fuel)';
+  if (s.includes('штраф') || s.includes('гибдд') || s.includes('налог')) return 'var(--cat-fines)';
+  return 'var(--cat-other)';
+}
 
+/** @deprecated используйте getCategoryColor — оставлено для совместимости */
 export function getOpexColor(category) {
-  const key = String(category || '').toLowerCase().trim();
-  return OPEX_COLORS[key] ?? 'var(--c-bar-10)';
+  return getCategoryColor(category);
 }
 
 /** 4 месяца: три предыдущих + текущий (от «сегодня»). */
@@ -79,6 +80,50 @@ export function monthLabelFull(year, month) {
   return new Date(year, month - 1, 1)
     .toLocaleDateString('ru-RU', { month: 'long' })
     .replace(/^./, ch => ch.toUpperCase());
+}
+
+/** «в январе», «в апреле» — предложный падеж (как в copy «было N ₽ в апреле»). */
+const MONTHS_IN_PREPOSITIONAL = [
+  'январе',
+  'феврале',
+  'марте',
+  'апреле',
+  'мае',
+  'июне',
+  'июле',
+  'августе',
+  'сентябре',
+  'октябре',
+  'ноябре',
+  'декабре',
+];
+
+export function monthInPrepositional(_year, month) {
+  const idx = Math.max(0, Math.min(11, (Number(month) || 1) - 1));
+  return MONTHS_IN_PREPOSITIONAL[idx] || '';
+}
+
+/** Дательный падеж месяца + год: «апрелю 2027» (копирайт «к апрелю 2027»). */
+const MONTHS_DATIVE = [
+  'январю',
+  'февралю',
+  'марту',
+  'апрелю',
+  'маю',
+  'июню',
+  'июлю',
+  'августу',
+  'сентябрю',
+  'октябрю',
+  'ноябрю',
+  'декабрю',
+];
+
+export function monthYearDative(year, month) {
+  const idx = Math.max(0, Math.min(11, (Number(month) || 1) - 1));
+  const m = MONTHS_DATIVE[idx] || '';
+  const y = Number(year);
+  return m ? `${m} ${Number.isFinite(y) ? y : ''}`.trim() : '';
 }
 
 /** Лучше = ↑ зел.: выручка/прибыль растут; OPEX/CAPEX падают */

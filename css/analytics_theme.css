@@ -36,11 +36,7 @@
 .analytics-delta--good { color: var(--c-profit); }
 .analytics-delta--bad  { color: var(--c-loss); }
 
-/* ── OPEX bars ── */
-.analytics-bar span         { background: var(--c-neutral); }
-.analytics-bar--accent span { background: var(--c-neutral); }
-.analytics-bar--danger span { background: var(--c-loss); }
-.analytics-bar--muted span  { background: var(--c-muted); }
+/* .analytics-bar — без переопределения: цвета из screens.css (если блок снова появится в разметке). */
 
 /* ── CAPEX timeline ── */
 .tl-fill  { background: var(--c-neutral); }

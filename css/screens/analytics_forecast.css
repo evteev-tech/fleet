@@ -1,0 +1,374 @@
+/* ═══ Forecast (шаг 3) — карточки как OPEX/CAPEX, подписи ═══ */
+
+.analytics-forecast-tab.fcst2 {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.fcst2-card {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.fcst2-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-muted);
+  margin-bottom: 6px;
+}
+
+.fcst2-hero {
+  margin-bottom: 10px;
+}
+
+.fcst2-hero__lbl {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-tertiary, #8a8a8e);
+  margin-bottom: 4px;
+}
+
+.fcst2-hero__amt {
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-dark, #1a1a1a);
+}
+
+.fcst2-hero__amt--pos {
+  color: var(--c-profit-pos);
+}
+
+.fcst2-hero__amt--neg {
+  color: var(--c-profit-neg);
+}
+
+.fcst2-svg {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  margin: 4px 0 8px;
+}
+
+.fcst2-ylbl,
+.fcst2-xlbl {
+  font-size: 10px;
+  fill: var(--color-text-tertiary, #8a8a8e);
+}
+
+.fcst2-xlbl--cur {
+  fill: var(--color-dark, #1a1a1a);
+  font-weight: 700;
+}
+
+.fcst2-today-cap {
+  font-size: 9px;
+  fill: var(--color-text-tertiary, #8a8a8e);
+}
+
+.fcst2-leg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--c-muted);
+}
+
+.fcst2-leg__i {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fcst2-leg__sw {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.fcst2-leg__sw--fact {
+  background: var(--fcst-line-fact, #d85a30);
+}
+
+.fcst2-leg__sw--fc {
+  background: var(--fcst-line-fc, #1d9e75);
+}
+
+.fcst2-leg__sw--band {
+  background: var(--fcst-band-fill, rgba(29, 158, 117, 0.35));
+  border: 1px dashed var(--fcst-line-fc, #1d9e75);
+}
+
+.fcst2-micgrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.fcst2-mic {
+  text-align: center;
+  padding: 8px 4px;
+  border-radius: 10px;
+  background: var(--color-background-secondary, #f4f4f2);
+}
+
+.fcst2-mic__mo {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--c-muted);
+  margin-bottom: 4px;
+}
+
+.fcst2-mic__sum {
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.fcst2-mic__sum--pos {
+  color: var(--c-profit-pos);
+}
+
+.fcst2-mic__sum--neg {
+  color: var(--c-profit-neg);
+}
+
+.fcst2-mic__err {
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--color-text-tertiary, #8a8a8e);
+}
+
+.fcst2-breakeven__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.fcst2-breakeven__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-dark, #1a1a1a);
+}
+
+.fcst2-breakeven__pill {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(17, 17, 17, 0.06);
+  color: var(--c-muted);
+}
+
+.fcst2-breakeven__txt {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--color-dark, #1a1a1a);
+}
+
+.fcst2-acc__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.fcst2-acc__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-dark, #1a1a1a);
+}
+
+.fcst2-acc__pct {
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.fcst2-acc__sub {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--c-muted);
+}
+
+.fcst2-acc__lvl {
+  display: flex;
+  gap: 4px;
+  margin-top: 10px;
+}
+
+.fcst2-acc__seg {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(17, 17, 17, 0.08);
+}
+
+.fcst2-acc__seg--ok {
+  background: var(--c-profit-pos);
+}
+
+.fcst2-acc__seg--mid {
+  background: var(--c-warn);
+}
+
+.fcst2-acc__seg--muted {
+  background: rgba(17, 17, 17, 0.1);
+}
+
+.fcst2-acc__ticks {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 10px;
+  color: var(--c-muted);
+}
+
+.fcst2-empty {
+  padding: 20px 8px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--c-muted);
+}
+
+.fcst2-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── Ближайшие поступления (14 дн., аренды) ── */
+.fcst2-cash__kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-muted);
+  margin-bottom: 8px;
+}
+
+.fcst2-cash__hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin-bottom: 12px;
+}
+
+.fcst2-cash__hero-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 8px;
+  min-width: 0;
+}
+
+.fcst2-cash__hero-amt {
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-dark, #1a1a1a);
+}
+
+.fcst2-cash__hero-period {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-tertiary, #8a8a8e);
+}
+
+.fcst2-cash__badge {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(17, 17, 17, 0.06);
+  color: var(--c-muted);
+}
+
+.fcst2-cash__strip-wrap {
+  margin-bottom: 10px;
+}
+
+.fcst2-cash__strip {
+  display: flex;
+  gap: 2px;
+  height: 18px;
+  width: 100%;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--color-background-secondary, #ececec);
+  padding: 2px;
+  box-sizing: border-box;
+}
+
+.fcst2-cash__seg {
+  flex: 1 1 0;
+  min-width: 0;
+  border-radius: 3px;
+  background: rgba(17, 17, 17, 0.08);
+}
+
+.fcst2-cash__seg--paid {
+  background: var(--c-profit-pos, #0f6e56);
+}
+
+.fcst2-cash__strip-lbl {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-text-tertiary, #8a8a8e);
+  text-transform: lowercase;
+}
+
+.fcst2-cash__cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.fcst2-cash__card {
+  padding: 8px 6px;
+  border-radius: 10px;
+  background: var(--color-background-secondary, #f4f4f2);
+  text-align: center;
+  min-width: 0;
+}
+
+.fcst2-cash__card-d {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--c-muted);
+  margin-bottom: 4px;
+  line-height: 1.25;
+}
+
+.fcst2-cash__card-val {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.fcst2-cash__card-val--pos {
+  color: var(--c-profit-pos);
+}
+
+.fcst2-cash__card-val--muted {
+  color: var(--color-text-tertiary, #8a8a8e);
+}

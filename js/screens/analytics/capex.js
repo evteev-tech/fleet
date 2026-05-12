@@ -1,39 +1,72 @@
 /**
- * analytics/capex.js — вкладка CAPEX
+ * analytics/capex.js — вкладка CAPEX (мобильный макет + данные для Chart.js).
+ *
+ * Структура инвестиций: `dash.capexStructureByCategory` — только klass_itog=capex, колонка G,
+ * за всё время; нормализация как в `normalizeCapexCategoryG`. Сегмент «За период / всё время» на структуру не влияет.
  */
 
-import { analyticsCtx as ctx } from './context.js';
-import { fmtRub, CAPEX_MODE, monthLabelShort, opClass, toOpDate } from './utils.js';
+import { formatCompactRub } from '../../utils/format.js';
+import { buildCapexWaterfallModel } from './capexCharts.js';
+import { fmtRub, CAPEX_MODE } from './utils.js';
 
-function capexBucketName(cat) {
-  const v = String(cat || '').toLowerCase().trim();
+/** Нормализация колонки G (категория): lowerCase, `_` → пробел, trim. */
+export function normalizeCapexCategoryG(raw) {
+  return String(raw ?? '')
+    .toLowerCase()
+    .replace(/_/g, ' ')
+    .trim();
+}
+
+/**
+ * Бакет «Структура инвестиций» по нормализованной категории (см. analytics.js capexStructureByCategory).
+ * Порядок: Покупки → Запчасти → Ремонты → Прочее.
+ */
+export function capexStructureBucket(detailText) {
+  const v = normalizeCapexCategoryG(detailText);
   if (!v) return 'Прочее';
-  if (v.includes('покуп') || v.includes('приобрет')) return 'Покупки';
-  if (v.includes('ремонт') || v.includes('сто')) return 'Ремонты';
-  if (v.includes('запчаст') || v.includes('шина') || v.includes('масл') || v.includes('фильтр'))
-    return 'Запчасти';
+  if (v.includes('покупк') || v.includes('машин') || v.includes('авто') || v.includes('доставк')) return 'Покупки';
+  if (v.includes('запчаст') || v.includes('детал')) return 'Запчасти';
+  if (v.includes('ремонт')) return 'Ремонты';
   return 'Прочее';
 }
 
-function capexPageMonthly(ops, year, month) {
-  const rows = [];
-  for (let d = -3; d <= 0; d++) {
-    const t = new Date(year, month - 1 + d, 1);
-    const y = t.getFullYear();
-    const m = t.getMonth() + 1;
-    const sum = (ops || []).reduce((acc, op) => {
-      if (opClass(op) !== 'capex') return acc;
-      const dt = toOpDate(op);
-      if (!dt) return acc;
-      if (dt.getFullYear() !== y || dt.getMonth() + 1 !== m) return acc;
-      return acc + (Number(op.amount) || 0);
-    }, 0);
-    rows.push({
-      label: monthLabelShort(y, m),
-      amount: sum,
-    });
-  }
-  return rows;
+function avgProfitLast6(dash) {
+  const t = Array.isArray(dash.trailing12) ? dash.trailing12 : [];
+  const last6 = t.slice(-6);
+  if (!last6.length) return 0;
+  const sum = last6.reduce((s, r) => s + (Number(r.profit) || 0), 0);
+  return sum / last6.length;
+}
+
+function structureRows(grouped) {
+  const rows = [
+    { key: 'Покупки', color: 'var(--capex-bucket-buy)', amount: grouped.get('Покупки') || 0 },
+    { key: 'Запчасти', color: 'var(--capex-bucket-parts)', amount: grouped.get('Запчасти') || 0 },
+    { key: 'Ремонты', color: 'var(--capex-bucket-repair)', amount: grouped.get('Ремонты') || 0 },
+    { key: 'Прочее', color: 'var(--capex-bucket-other)', amount: grouped.get('Прочее') || 0 },
+  ];
+  const max = Math.max(1, ...rows.map(r => r.amount));
+  return rows
+    .map(r => {
+      const w = max > 0 ? (r.amount / max) * 100 : 0;
+      return `
+      <div class="capex2-str__row">
+        <div class="capex2-str__track">
+          <div class="capex2-str__fill" style="width:${w.toFixed(2)}%;background:${r.color}"></div>
+        </div>
+        <div class="capex2-str__meta">
+          <span class="capex2-str__name">${r.key}</span>
+          <span class="capex2-str__amt">${fmtRub(r.amount)}</span>
+        </div>
+      </div>`;
+    })
+    .join('');
+}
+
+export function revealCapexAnimations(pageEl) {
+  const root = pageEl?.querySelector?.('.analytics-capex-tab');
+  if (!root) return;
+  requestAnimationFrame(() => root.classList.add('analytics-capex-tab--inview'));
 }
 
 export function renderCapex(dash, capexMode = CAPEX_MODE.PERIOD) {
@@ -42,119 +75,113 @@ export function renderCapex(dash, capexMode = CAPEX_MODE.PERIOD) {
     return `<div class="white-card analytics-card-pad"><div class="analytics-muted">Нет данных</div></div>`;
   }
   const isAll = capexMode === CAPEX_MODE.ALL;
-  const srcCats = isAll ? dash.capexByCategoryAll : dash.capexByCategoryPeriod;
+  const structureSource =
+    Array.isArray(dash.capexStructureByCategory) && dash.capexStructureByCategory.length
+      ? dash.capexStructureByCategory
+      : dash.capexByCategoryAll || [];
+
   const grouped = new Map([
     ['Покупки', 0],
-    ['Ремонты', 0],
     ['Запчасти', 0],
+    ['Ремонты', 0],
     ['Прочее', 0],
   ]);
-  (srcCats || []).forEach(row => {
-    const b = capexBucketName(row.name);
+  structureSource.forEach(row => {
+    const b = capexStructureBucket(row.name);
     grouped.set(b, (grouped.get(b) || 0) + (Number(row.amount) || 0));
   });
-  const donutRows = [
-    { key: 'Покупки', color: 'var(--c-bar-100)', amount: grouped.get('Покупки') || 0 },
-    { key: 'Ремонты', color: 'var(--c-bar-75)', amount: grouped.get('Ремонты') || 0 },
-    { key: 'Запчасти', color: 'var(--c-bar-50)', amount: grouped.get('Запчасти') || 0 },
-    { key: 'Прочее', color: 'var(--c-bar-10)', amount: grouped.get('Прочее') || 0 },
-  ];
-  const total = Number(s.current) || 0;
-  const CIRC = 87.96;
-  let offset = 0;
-  const rings = donutRows
-    .map((row, i) => {
-      const pct = total > 0 ? row.amount / total : 0;
-      const arcDash = pct * CIRC;
-      const seg = `<circle class="donut-ring ring-${i + 1}" cx="18" cy="18" r="14" fill="none"
-        stroke="${row.color}" stroke-width="4.5"
-        stroke-dasharray="${arcDash.toFixed(2)} ${(CIRC - arcDash).toFixed(2)}"
-        stroke-dashoffset="-${offset.toFixed(2)}"
-      />`;
-      offset += arcDash;
-      return seg;
-    })
-    .join('');
-  const legend = donutRows
-    .map(
-      row => `
-      <div class="analytics-leg-row">
-        <span class="analytics-leg-dot" style="background:${row.color}"></span>
-        <span class="analytics-leg-name">${row.key}</span>
-        <span class="analytics-leg-amt">${fmtRub(row.amount)}</span>
-      </div>`,
-    )
-    .join('');
 
-  const timeline = capexPageMonthly(ctx.ops, dash.year, dash.month);
-  const maxMonth = Math.max(1, ...timeline.map(x => Number(x.amount) || 0));
-  const timelineHtml = timeline
-    .map(row => {
-      const width = ((Number(row.amount) || 0) / maxMonth) * 100;
-      return `<div class="tl-row">
-        <span class="tl-mo">${row.label}</span>
-        <div class="tl-track"><div class="tl-fill" style="width:${width.toFixed(2)}%"></div></div>
-        <span class="tl-val">${fmtRub(row.amount)}</span>
-      </div>`;
-    })
-    .join('');
+  const catTotals = Object.fromEntries(structureSource.map(r => [r.name, Number(r.amount) || 0]));
+  console.log('[CAPEX structure] уникальные категории (G, нормализовано) → ₽', catTotals);
+  console.log('[CAPEX structure] бакеты:', Object.fromEntries(grouped));
 
-  const revenueAcc = (ctx.ops || []).reduce((acc, op) => {
-    if (opClass(op) !== 'revenue') return acc;
-    return acc + (Number(op.amount) || 0);
-  }, 0);
-  const revMonths = new Set(
-    (ctx.ops || [])
-      .filter(op => opClass(op) === 'revenue')
-      .map(op => {
-        const d = toOpDate(op);
-        return d ? `${d.getFullYear()}-${d.getMonth() + 1}` : '';
-      })
-      .filter(Boolean),
-  ).size;
-  const avgMonthRev = revMonths > 0 ? revenueAcc / revMonths : 0;
-  const needX = revenueAcc > 0 ? total / revenueAcc : 0;
-  const paybackMonths = avgMonthRev > 0 ? total / avgMonthRev : 0;
+  const capexTotal = Number(dash.capexAll) || 0;
+  const cumulativeProfit = Number(dash.cumulativeProfit) || 0;
+
+  const wf = buildCapexWaterfallModel(dash.year, dash.month, 4);
+  const chartEnc = encodeURIComponent(JSON.stringify(wf));
+
+  const earned = Math.max(0, cumulativeProfit);
+  const pctDisplay = capexTotal > 0 ? Math.round((earned / capexTotal) * 100) : 0;
+  const pctBar = Math.min(100, Math.max(0, pctDisplay));
+
+  const pm = dash.paybackMonths;
+  const paybackKnown = pm !== null && pm !== undefined && !Number.isNaN(Number(pm));
+  const paybackLine = paybackKnown
+    ? `${Number(pm) === 0 ? 'окупилось' : `${Math.ceil(Number(pm))} мес`}`
+    : 'не окупается';
+
+  const avg6 = avgProfitLast6(dash);
+  const paybackFootLeft = (() => {
+    const c = Number(cumulativeProfit) || 0;
+    if (c > 0) return `${fmtRub(c)} заработано`;
+    if (c < 0) return `${fmtRub(Math.abs(c))} убыток за 12 мес`;
+    return `0 ₽ заработано`;
+  })();
+  const avgPlain = formatCompactRub(Math.abs(avg6));
+  const avgSigned =
+    avg6 > 0 ? `+${avgPlain}` : avg6 < 0 ? `−${avgPlain}` : avgPlain;
+  const avgCls =
+    avg6 > 0 ? 'capex2-grid2__val--ok' : avg6 < 0 ? 'capex2-grid2__val--bad' : '';
 
   return `
-    <div class="white-card analytics-card-pad">
-      <div class="analytics-capex-hero__label">Структура инвестиций</div>
-      <div class="analytics-donut-wrap">
-        <div class="analytics-donut">
-          <svg class="analytics-donut-svg" viewBox="0 0 36 36" style="transform:rotate(-90deg)">
-            <circle cx="18" cy="18" r="14" fill="none" stroke='var(--c-bg-page)' stroke-width="4.5" />
-            ${rings}
-          </svg>
-          <div class="analytics-donut-center">
-            <div class="analytics-donut-val">${fmtRub(total)}</div>
-            <div class="analytics-donut-lbl">CAPEX</div>
+    <div class="analytics-capex-tab">
+      <div class="white-card analytics-card-pad capex2-card">
+        <div class="capex2-kicker">Накопительно</div>
+        <div class="capex2-hint">тап по бару →</div>
+        <div class="capex2-hero-amt">${formatCompactRub(capexTotal)}</div>
+        <div class="capex2-hero-sub">за всё время</div>
+        <div id="capex-chart-mount" class="capex2-chart-mount" data-capex-chart="${chartEnc}">
+          <canvas id="capex-waterfall-canvas" width="400" height="220" aria-label="CAPEX по месяцам"></canvas>
+        </div>
+        <div class="capex2-leg">
+          <span><i class="capex2-leg__sq capex2-leg__sq--solid" aria-hidden="true"></i>в этом месяце</span>
+          <span><i class="capex2-leg__sq capex2-leg__sq--soft" aria-hidden="true"></i>накоплено</span>
+        </div>
+      </div>
+
+      <div class="white-card analytics-card-pad capex2-card">
+        <div class="capex2-kicker">Окупаемость</div>
+        <div class="capex2-pay__pct" id="capex-payback-pct">${pctDisplay}%</div>
+        <div class="capex2-pay__lbl">отбили</div>
+        <div class="capex2-pay__barwrap" id="capex-payback-bar">
+          <div class="capex2-pay__tick" style="left:${pctBar}%"></div>
+          <div
+            id="capex-payback-fill"
+            class="capex2-pay__fill"
+            data-pct="${pctBar.toFixed(2)}"
+            data-pct-display="${pctDisplay}"
+            style="width:0%"
+          ></div>
+        </div>
+        <div class="capex2-pay__foot">
+          <span>${paybackFootLeft}</span>
+          <span>${fmtRub(capexTotal)} вложено</span>
+        </div>
+        <div class="opex2-divider"></div>
+        <div class="capex2-grid2">
+          <div>
+            <div class="capex2-grid2__val ${avgCls}">${avgSigned}</div>
+            <div class="capex2-grid2__lbl">Среднемесячная прибыль</div>
+            <div class="capex2-grid2__sub">за последние 6 месяцев</div>
+          </div>
+          <div>
+            <div class="capex2-grid2__val ${paybackKnown ? 'capex2-grid2__val--ok' : 'capex2-grid2__val--bad'}">${paybackLine}</div>
+            <div class="capex2-grid2__lbl">Прогноз окупа</div>
+            <div class="capex2-grid2__sub">при текущем темпе</div>
           </div>
         </div>
-        <div class="analytics-legend">${legend}</div>
       </div>
-      <div class="capex-divider"></div>
-      <div class="sec">По месяцам</div>
-      <div class="tl">${timelineHtml}</div>
-    </div>
 
-    <div class="analytics-seg" id="analytics-capex-seg">
-      <button type="button" class="analytics-seg__btn${isAll ? ' analytics-seg__btn--active' : ''}" data-capex-mode="${CAPEX_MODE.ALL}">За всё время</button>
-      <button type="button" class="analytics-seg__btn${!isAll ? ' analytics-seg__btn--active' : ''}" data-capex-mode="${CAPEX_MODE.PERIOD}">За период</button>
-    </div>
-    <div class="roi-card">
-      <div class="roi-lbl">CAPEX в контексте P&amp;L</div>
-      <div class="roi-val">${needX.toFixed(1)}x нужно заработать</div>
-      <div class="roi-sub">при выручке ~${Math.round(avgMonthRev / 1000)}К/мес — окупаемость ~${Math.max(0, Math.round(paybackMonths))} мес</div>
-      <div class="roi-grid">
-        <div class="roi-cell">
-          <div class="roi-c-lbl">Вложено</div>
-          <div class="roi-c-val" style="color:var(--c-neutral)">${fmtRub(total)}</div>
-        </div>
-        <div class="roi-cell">
-          <div class="roi-c-lbl">Заработано</div>
-          <div class="roi-c-val" style="color:var(--c-profit)">${fmtRub(revenueAcc)}</div>
-        </div>
+      <div class="white-card analytics-card-pad capex2-card">
+        <div class="capex2-kicker">Структура инвестиций</div>
+        ${structureRows(grouped)}
       </div>
-    </div>
-    <p class="analytics-muted analytics-capex-hint">За период: ${fmtRub(dash.capexPeriod || 0)} · Всё время: ${fmtRub(dash.capexAll || 0)}</p>`;
+
+      <div class="analytics-seg" id="analytics-capex-seg">
+        <button type="button" class="analytics-seg__btn${isAll ? ' analytics-seg__btn--active' : ''}" data-capex-mode="${CAPEX_MODE.ALL}">За всё время</button>
+        <button type="button" class="analytics-seg__btn${!isAll ? ' analytics-seg__btn--active' : ''}" data-capex-mode="${CAPEX_MODE.PERIOD}">За период</button>
+      </div>
+      <p class="analytics-muted analytics-capex-hint">За период: ${fmtRub(dash.capexPeriod || 0)} · Всё время: ${fmtRub(dash.capexAll || 0)}</p>
+    </div>`;
 }

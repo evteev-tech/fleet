@@ -9,14 +9,40 @@ import {
   getOperations,
   getKassas,
   getDeposits,
+  getRentals,
   fetchDashboardAnalytics,
 } from '../api.js';
 import { getWithSWR, CACHE_KEYS, invalidateCache as invalidateLocalCache } from '../cache.js';
+
+/**
+ * Увеличивайте при изменении формы ответа API / calcDash, чтобы после F5 SWR
+ * заново подтянул операции и дашборд (иначе возможен устаревший JSON в localStorage).
+ */
+const ANALYTICS_DATA_CACHE_REVISION = 4;
+const ANALYTICS_CACHE_REV_KEY = 'fleet_analytics_model_rev';
+
+function invalidateStaleAnalyticsCachesIfNeeded() {
+  try {
+    const stored = localStorage.getItem(ANALYTICS_CACHE_REV_KEY);
+    if (stored === String(ANALYTICS_DATA_CACHE_REVISION)) return;
+    [
+      CACHE_KEYS.CASH_OPS,
+      CACHE_KEYS.CARS,
+      CACHE_KEYS.KASSAS,
+      CACHE_KEYS.DEPOSITS,
+      CACHE_KEYS.RENTALS,
+      CACHE_KEYS.DASHBOARD,
+    ].forEach(k => invalidateLocalCache(k));
+    localStorage.setItem(ANALYTICS_CACHE_REV_KEY, String(ANALYTICS_DATA_CACHE_REVISION));
+  } catch {
+    /* quota / private mode */
+  }
+}
 import { getCurrentUser } from '../auth.js';
 import { mountNavbarInContainer } from '../router.js';
 import { renderOverview, renderOverviewSkeleton } from './analytics/overview.js';
-import { renderOpex } from './analytics/opex.js';
-import { renderCapex } from './analytics/capex.js';
+import { renderOpex, revealOpexAnimations } from './analytics/opex.js';
+import { renderCapex, revealCapexAnimations } from './analytics/capex.js';
 import { renderPnL } from './analytics/pnl.js';
 import { renderKassas } from './analytics/kassas.js';
 import {
@@ -24,6 +50,11 @@ import {
   forecastLoadingHtml,
   resetForecastCache,
 } from './analytics/forecast.js';
+import {
+  hydrateCapexChart,
+  destroyCapexChart,
+  animateCapexPayback,
+} from './analytics/capexCharts.js';
 import { renderDesktopShell, renderDesktopSkeleton, isDesktop } from './analytics/desktop.js';
 import {
   PAGE_LABELS,
@@ -114,13 +145,32 @@ function calcDash({ ops, cars, kassas, deposits, allTime, year, month }) {
 
   const capexCatsPeriod = new Map();
   const capexCatsAll = new Map();
+  /** Только колонка G (категория), lowerCase + `_` → пробел: структура инвестиций за всё время. */
+  const capexStructureByNormCat = new Map();
   const capexCarsPeriod = new Map();
   const capexCarsAll = new Map();
+  /**
+   * CAPEX: opClass === 'capex' (classItog / класс_итог … → lowerCase).
+   * Категории периода/«всё время» для сегмента и машин — ключ capexOpDetailKey (G с заменой `_`).
+   * «Структура инвестиций» — только capexStructureByCategory (нормализация как в ТЗ).
+   */
+  function capexOpDetailKey(op) {
+    const category = String(op.category ?? '')
+      .replace(/_/g, ' ')
+      .trim();
+    return category || 'Прочее';
+  }
   ops.forEach(op => {
     const cls = opClass(op);
     if (cls !== 'capex') return;
     const amt = Number(op.amount) || 0;
-    const cat = String(op.category || 'Прочее').trim() || 'Прочее';
+    const cat = capexOpDetailKey(op);
+    const normG = String(op.category ?? '')
+      .toLowerCase()
+      .replace(/_/g, ' ')
+      .trim();
+    const structKey = normG || 'прочее';
+    capexStructureByNormCat.set(structKey, (capexStructureByNormCat.get(structKey) || 0) + amt);
     const car = String(op.carId || '').trim() || 'Без машины';
     capexCatsAll.set(cat, (capexCatsAll.get(cat) || 0) + amt);
     capexCarsAll.set(car, (capexCarsAll.get(car) || 0) + amt);
@@ -184,6 +234,10 @@ function calcDash({ ops, cars, kassas, deposits, allTime, year, month }) {
       .filter(([, sum]) => Number(sum) > 0)
       .sort((a, b) => (Number(b[1]) || 0) - (Number(a[1]) || 0))
       .map(([name, amount]) => ({ name, amount })),
+    capexStructureByCategory: [...capexStructureByNormCat.entries()]
+      .filter(([, sum]) => Number(sum) > 0)
+      .sort((a, b) => (Number(b[1]) || 0) - (Number(a[1]) || 0))
+      .map(([name, amount]) => ({ name, amount })),
     capexByCarsPeriod: [...capexCarsPeriod.entries()]
       .filter(([, sum]) => Number(sum) > 0)
       .sort((a, b) => (Number(b[1]) || 0) - (Number(a[1]) || 0))
@@ -242,7 +296,6 @@ function pagesHtml(dash, emptyMsg, capexMode) {
     </div>
     <div class="analytics-page" data-page="2">
       <div class="analytics-page-inner">
-        <div class="section-label">CAPEX</div>
         ${renderCapex(dash, capexMode)}
       </div>
     </div>
@@ -259,7 +312,7 @@ function pagesHtml(dash, emptyMsg, capexMode) {
     </div>
     <div class="analytics-page" data-page="5">
       <div class="analytics-page-inner">
-        <div class="section-label">Прогноз поступлений</div>
+        <div class="section-label">Прогноз прибыли</div>
         <div id="analytics-forecast-mount">${forecastLoadingHtml()}</div>
       </div>
     </div>`;
@@ -348,57 +401,10 @@ function animatePage(root, idx) {
   const page = root.querySelector(`.analytics-page[data-page="${idx}"]`);
   if (!page) return;
   if (idx === 1) {
-    const rings = page.querySelectorAll('#opex-donut-svg circle[class]');
-    rings.forEach((ring, i) => {
-      ring.style.animation = 'none';
-      ring.getBoundingClientRect();
-      ring.style.animation = '';
-      const delay = (0.1 + i * 0.2).toFixed(1);
-      ring.style.animation = `donut-draw 1.2s cubic-bezier(.4,0,.2,1) ${delay}s forwards`;
-    });
+    revealOpexAnimations(page);
   } else if (idx === 2) {
-    const rings = page.querySelectorAll('.donut-ring');
-    const delays = [0.1, 0.3, 0.5, 0.7];
-    rings.forEach((ring, i) => {
-      ring.style.animation = 'none';
-      ring.getBoundingClientRect();
-      ring.style.animation = `donut-draw 1.2s cubic-bezier(.4,0,.2,1) ${delays[i] || 0.1}s forwards`;
-    });
-    const center = page.querySelector('.analytics-donut-center');
-    if (center) {
-      center.style.opacity = '0';
-      center.style.animation = 'none';
-      center.getBoundingClientRect();
-      center.style.animation = 'fade-in 0.35s 0.9s ease forwards';
-    }
-    page.querySelectorAll('.analytics-legend .analytics-leg-row').forEach((row, i) => {
-      row.style.opacity = '0';
-      row.style.transform = 'translateX(8px)';
-      row.style.animation = 'none';
-      row.getBoundingClientRect();
-      row.style.animation = `leg-in 0.35s ${(0.4 + i * 0.15).toFixed(2)}s ease forwards`;
-    });
-    page.querySelectorAll('.tl-row').forEach((row, i) => {
-      const fill = row.querySelector('.tl-fill');
-      const val = row.querySelector('.tl-val');
-      if (fill) {
-        fill.style.animation = 'none';
-        fill.getBoundingClientRect();
-        fill.style.animation = `hbar-grow 0.7s ${(0.1 + i * 0.1).toFixed(2)}s cubic-bezier(.4,0,.2,1) forwards`;
-      }
-      if (val) {
-        val.style.opacity = '0';
-        val.style.animation = 'none';
-        val.getBoundingClientRect();
-        val.style.animation = `fade-in 0.3s ${(0.5 + i * 0.1).toFixed(2)}s forwards`;
-      }
-    });
-    const roi = page.querySelector('.roi-card');
-    if (roi) {
-      roi.style.animation = 'none';
-      roi.getBoundingClientRect();
-      roi.style.animation = 'roi-in 0.5s 0.8s cubic-bezier(.4,0,.2,1) forwards';
-    }
+    revealCapexAnimations(page);
+    void hydrateCapexChart(root).then(() => animateCapexPayback(root));
   } else if (idx === 3) {
     const cards = page.querySelectorAll('.phc');
     cards.forEach((card, i) => {
@@ -481,6 +487,7 @@ let _ops = [];
 let _cars = [];
 let _kassas = [];
 let _deposits = [];
+let _rentals = [];
 let _capexMode = CAPEX_MODE.PERIOD;
 let _currentPage = 0;
 
@@ -527,6 +534,7 @@ function applyDashToState(dash) {
 }
 
 function refreshViewOnly() {
+  invalidateStaleAnalyticsCachesIfNeeded();
   const root = document.getElementById('analytics-root');
   if (!root) return;
   let cacheHit = false;
@@ -535,14 +543,29 @@ function refreshViewOnly() {
   let cars;
   let kassas;
   let deposits;
+  let rentals;
 
   const paintIfReady = () => {
-    if (ops === undefined || cars === undefined || kassas === undefined || deposits === undefined) return;
+    if (
+      ops === undefined ||
+      cars === undefined ||
+      kassas === undefined ||
+      deposits === undefined ||
+      rentals === undefined
+    )
+      return;
     _ops = ops;
     _cars = cars;
     _kassas = kassas;
     _deposits = deposits;
-    setAnalyticsContext({ ops: _ops, cars: _cars, kassas: _kassas, deposits: _deposits });
+    _rentals = rentals;
+    setAnalyticsContext({
+      ops: _ops,
+      cars: _cars,
+      kassas: _kassas,
+      deposits: _deposits,
+      rentals: _rentals,
+    });
     const now = new Date();
     const y = _pendingYear || now.getFullYear();
     const m = _pendingMonth || now.getMonth() + 1;
@@ -556,12 +579,14 @@ function refreshViewOnly() {
       month: m,
     });
     mergeDashboardApiIntoDash_(dash);
+    setAnalyticsContext({ trailing12: dash.trailing12 });
     filled = true;
     applyDashToState(dash);
     if (isDesktop()) {
       root.innerHTML = renderDesktopShell(dash);
     } else {
       const empty = !dashboardHasContent(dash);
+      destroyCapexChart();
       root.innerHTML = successShellHTML(
         dash,
         empty ? 'Нет данных за выбранный период' : '',
@@ -635,6 +660,22 @@ function refreshViewOnly() {
     },
   });
 
+  getWithSWR(CACHE_KEYS.RENTALS, () => getRentals(), {
+    onCached: d => {
+      cacheHit = true;
+      rentals = d || [];
+      paintIfReady();
+    },
+    onFresh: d => {
+      rentals = d || [];
+      paintIfReady();
+    },
+    onFetchError: (_err, meta) => {
+      if (!meta?.hadCache) rentals = [];
+      paintIfReady();
+    },
+  });
+
   getWithSWR(CACHE_KEYS.DASHBOARD, () => fetchDashboardAnalytics(), {
     onCached: d => {
       _dashApiExtras = normalizeDashboardApi_(d);
@@ -686,13 +727,21 @@ async function applyPeriod(year, month) {
       year,
       month,
     });
-    setAnalyticsContext({ ops: _ops, cars: _cars, kassas: _kassas, deposits: _deposits });
+    setAnalyticsContext({
+      ops: _ops,
+      cars: _cars,
+      kassas: _kassas,
+      deposits: _deposits,
+      rentals: _rentals,
+    });
     mergeDashboardApiIntoDash_(dash);
+    setAnalyticsContext({ trailing12: dash.trailing12 });
     applyDashToState(dash);
     if (isDesktop()) {
       root.innerHTML = renderDesktopShell(dash);
     } else {
       const empty = !dashboardHasContent(dash);
+      destroyCapexChart();
       root.innerHTML = successShellHTML(
         dash,
         empty ? 'Нет данных за выбранный период' : '',
@@ -726,13 +775,21 @@ async function applyAllTime() {
       year: _pendingYear || now.getFullYear(),
       month: _pendingMonth || now.getMonth() + 1,
     });
-    setAnalyticsContext({ ops: _ops, cars: _cars, kassas: _kassas, deposits: _deposits });
+    setAnalyticsContext({
+      ops: _ops,
+      cars: _cars,
+      kassas: _kassas,
+      deposits: _deposits,
+      rentals: _rentals,
+    });
     mergeDashboardApiIntoDash_(dash);
+    setAnalyticsContext({ trailing12: dash.trailing12 });
     applyDashToState(dash);
     if (isDesktop()) {
       root.innerHTML = renderDesktopShell(dash);
     } else {
       const empty = !dashboardHasContent(dash);
+      destroyCapexChart();
       root.innerHTML = successShellHTML(
         dash,
         empty ? 'Нет данных за выбранный период' : '',
@@ -845,11 +902,19 @@ function onRootClick(e) {
       month: _pendingMonth || now.getMonth() + 1,
     });
     mergeDashboardApiIntoDash_(dash);
-    setAnalyticsContext({ ops: _ops, cars: _cars, kassas: _kassas, deposits: _deposits });
+    setAnalyticsContext({
+      ops: _ops,
+      cars: _cars,
+      kassas: _kassas,
+      deposits: _deposits,
+      rentals: _rentals,
+      trailing12: dash.trailing12,
+    });
     if (isDesktop()) {
       root.innerHTML = renderDesktopShell(dash);
     } else {
-      root.innerHTML = successShellHTML(dash, '', _capexMode);
+      destroyCapexChart();
+    root.innerHTML = successShellHTML(dash, '', _capexMode);
       afterShellMounted(root, dash);
     }
   }
@@ -865,6 +930,7 @@ export function initAnalytics() {
   document.addEventListener('screen:activated', e => {
     if (e.detail.screenId === 'screen-analytics') {
       resetForecastCache();
+      destroyCapexChart();
       refreshViewOnly();
     }
   });

@@ -1,0 +1,730 @@
+/* ═══ OPEX / CAPEX — шаг 2 (мобильная аналитика) ═══ */
+
+.analytics-opex-tab,
+.analytics-capex-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.analytics-opex-tab {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.opex2-card,
+.capex2-card {
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.opex2-card--main {
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.analytics-opex-tab--inview .opex2-card:nth-child(1),
+.analytics-capex-tab--inview .capex2-card:nth-child(1) {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0ms;
+}
+.analytics-opex-tab--inview .opex2-card:nth-child(2),
+.analytics-capex-tab--inview .capex2-card:nth-child(2) {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 80ms;
+}
+.analytics-capex-tab--inview .capex2-card:nth-child(3) {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 160ms;
+}
+.analytics-capex-tab--inview .analytics-seg,
+.analytics-capex-tab--inview .analytics-capex-hint {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.analytics-capex-tab .analytics-seg,
+.analytics-capex-tab .analytics-capex-hint {
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 0.4s ease,
+    transform 0.4s ease;
+  transition-delay: 200ms;
+}
+
+/* ── OPEX: карточка 1 ── */
+.opex2-kicker,
+.capex2-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-muted);
+  margin-bottom: 6px;
+}
+
+.opex2-total {
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--color-dark, #1a1a1a);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.opex2-pill-row {
+  margin-top: 8px;
+}
+
+.opex2-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 999px;
+}
+.opex2-pill--good {
+  color: var(--c-profit-pos);
+  background: rgba(15, 110, 86, 0.1);
+}
+.opex2-pill--bad {
+  color: var(--c-profit-neg);
+  background: rgba(163, 45, 45, 0.1);
+}
+.opex2-pill--na {
+  color: var(--c-muted);
+  background: rgba(17, 17, 17, 0.06);
+}
+
+.opex2-pill--new {
+  color: var(--c-muted);
+  background: rgba(17, 17, 17, 0.06);
+  font-weight: 600;
+}
+
+.opex2-sub {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--c-muted);
+  font-weight: 500;
+}
+
+.opex2-divider {
+  height: 0.5px;
+  background: rgba(17, 17, 17, 0.1);
+  margin: 14px 0 12px;
+}
+
+/* Категории */
+.opex2-cat {
+  margin-bottom: 14px;
+  min-width: 0;
+  max-width: 100%;
+}
+.opex2-cat:last-child {
+  margin-bottom: 0;
+}
+
+.opex2-cat__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.opex2-cat__sw {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.opex2-cat__mid {
+  flex: 1;
+  min-width: 0;
+}
+
+.opex2-cat__line1 {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.opex2-cat__name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-dark, #1a1a1a);
+}
+
+.opex2-cat__pct {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-muted);
+}
+
+.opex2-cat__right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.opex2-cat__amt {
+  font-size: 14px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-dark, #1a1a1a);
+}
+
+.opex2-cat__track {
+  margin-top: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--color-background-secondary, #f0f1f3);
+  overflow: hidden;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.opex2-cat__fill {
+  height: 100%;
+  width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  border-radius: 4px;
+  transition:
+    width 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+    background 0.2s ease;
+  transition-delay: var(--opex2-stagger, 0ms);
+}
+
+.analytics-opex-tab--inview .opex2-cat__fill {
+  width: var(--opex2-pct, 0%);
+}
+
+/* ── OPEX: по месяцам ── */
+.opex2-mo__hdr {
+  margin-bottom: 10px;
+}
+
+.opex2-mo__chart {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 6px;
+  --opex2-mo-label-pad: 18px;
+  min-height: calc(var(--opex2-h, 96px) + var(--opex2-mo-label-pad, 18px));
+}
+
+.opex2-mo__col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.opex2-mo__stack {
+  position: relative;
+  width: 100%;
+  max-width: 48px;
+  height: calc(var(--opex2-h, 96px) + var(--opex2-mo-label-pad, 18px));
+}
+
+.opex2-mo__val {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--opex2-bar-h, 0px) + 4px);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-text-tertiary, #8a8a8e);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  line-height: 1.2;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.opex2-mo__bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--opex2-h, 96px);
+  width: 100%;
+  max-width: 48px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.opex2-mo__fill {
+  width: 72%;
+  border-radius: 4px 4px 0 0;
+  transform-origin: bottom center;
+  transform: scaleY(0);
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  transition-delay: var(--opex2-bar-delay, 0ms);
+}
+
+.analytics-opex-tab--inview .opex2-mo__fill {
+  transform: scaleY(1);
+}
+
+.opex2-mo__lbl {
+  margin-top: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--c-muted);
+  text-transform: lowercase;
+}
+
+.opex2-mo__empty {
+  padding: 12px 0;
+}
+
+/* ── CAPEX: chart ── */
+.capex2-hint {
+  font-size: 11px;
+  color: var(--c-muted);
+  margin-bottom: 8px;
+}
+
+.capex2-hero-amt {
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-dark, #1a1a1a);
+}
+
+.capex2-hero-sub {
+  font-size: 12px;
+  color: var(--c-muted);
+  margin-bottom: 12px;
+}
+
+.capex2-chart-mount {
+  width: 100%;
+  height: 220px;
+  position: relative;
+}
+
+.capex2-chart-mount canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.capex2-leg {
+  display: flex;
+  gap: 16px;
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--c-muted);
+}
+
+.capex2-leg span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.capex2-leg__sq {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+}
+.capex2-leg__sq--solid {
+  background: var(--c-capex);
+}
+.capex2-leg__sq--soft {
+  background: var(--c-capex-light);
+  border: 1px dashed var(--c-capex);
+}
+
+/* Окупаемость */
+.capex2-pay__pct {
+  font-size: 30px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-dark, #1a1a1a);
+}
+
+.capex2-pay__lbl {
+  font-size: 13px;
+  color: var(--c-muted);
+  margin-bottom: 10px;
+}
+
+.capex2-pay__barwrap {
+  position: relative;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--color-background-secondary, #ececec);
+  overflow: hidden;
+}
+
+.capex2-pay__fill {
+  height: 100%;
+  width: 0;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #1d9e75 0%, #0f6e56 100%);
+  transition: width 1.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.capex2-pay__tick {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: rgba(17, 17, 17, 0.55);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.capex2-pay__foot {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--c-muted);
+  font-weight: 500;
+}
+
+.capex2-grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.capex2-grid2__val {
+  font-size: 15px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-dark, #1a1a1a);
+}
+
+.capex2-grid2__val--ok {
+  color: var(--c-profit-pos);
+}
+
+.capex2-grid2__val--bad {
+  color: var(--c-profit-neg);
+}
+
+.capex2-grid2__lbl {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--c-muted);
+}
+
+.capex2-grid2__sub {
+  font-size: 11px;
+  color: var(--c-muted);
+  margin-top: 2px;
+}
+
+/* Структура */
+.capex2-str__row {
+  margin-bottom: 12px;
+}
+.capex2-str__row:last-child {
+  margin-bottom: 0;
+}
+
+.capex2-str__track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-background-secondary, #f0f1f3);
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.capex2-str__fill {
+  height: 100%;
+  border-radius: 3px;
+  transform-origin: left center;
+  transform: scaleX(0);
+  transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.analytics-capex-tab--inview .capex2-str__fill {
+  transform: scaleX(1);
+}
+
+.capex2-str__meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.capex2-str__name {
+  font-weight: 500;
+  color: var(--color-dark, #1a1a1a);
+}
+
+.capex2-str__amt {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+  .opex2-cat__fill,
+  .opex2-mo__fill,
+  .capex2-str__fill {
+    transition: none !important;
+  }
+  .analytics-opex-tab--inview .opex2-cat__fill {
+    width: var(--opex2-pct, 0%) !important;
+  }
+  .opex2-card,
+  .capex2-card,
+  .analytics-capex-tab .analytics-seg,
+  .analytics-capex-tab .analytics-capex-hint {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .fcst2-line-draw {
+    transition: none !important;
+    stroke-dashoffset: 0 !important;
+  }
+}
+
+/* ═══ Forecast: ожидаемая прибыль (SVG) ═══ */
+.analytics-forecast-tab,
+.fcst2 {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fcst2-svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  font-family: inherit;
+}
+
+.fcst2-ylbl {
+  font-size: 9px;
+  fill: var(--color-text-tertiary, #8a8a8e);
+}
+
+.fcst2-xlbl {
+  font-size: 11px;
+  fill: var(--c-muted);
+  text-transform: lowercase;
+}
+
+.fcst2-xlbl--cur {
+  font-weight: 700;
+  fill: var(--color-dark, #1a1a1a);
+}
+
+.fcst2-today-cap {
+  font-size: 9px;
+  fill: var(--color-text-tertiary, #8a8a8e);
+}
+
+.fcst2-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-muted);
+  margin-bottom: 8px;
+}
+
+.fcst2-leg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--c-muted);
+}
+
+.fcst2-leg__i {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-style: normal;
+}
+
+.fcst2-leg__sw {
+  width: 12px;
+  height: 3px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.fcst2-leg__sw--fact {
+  background: #d85a30;
+}
+
+.fcst2-leg__sw--fc {
+  background: #1d9e75;
+}
+
+.fcst2-leg__sw--band {
+  width: 12px;
+  height: 8px;
+  border-radius: 2px;
+  background: rgba(29, 158, 117, 0.35);
+}
+
+.fcst2-micgrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  text-align: center;
+}
+
+.fcst2-mic__mo {
+  font-size: 10px;
+  color: var(--c-muted);
+  text-transform: lowercase;
+}
+
+.fcst2-mic__sum {
+  font-size: 15px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  margin-top: 4px;
+}
+
+.fcst2-mic__sum--pos {
+  color: var(--c-profit-pos);
+}
+
+.fcst2-mic__sum--neg {
+  color: var(--c-profit-neg);
+}
+
+.fcst2-mic__err {
+  font-size: 10px;
+  color: var(--color-text-tertiary, #8a8a8e);
+  margin-top: 4px;
+}
+
+.fcst2-breakeven__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.fcst2-breakeven__title {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-dark, #1a1a1a);
+}
+
+.fcst2-breakeven__pill {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  color: #854f0b;
+  background: #faeeda;
+}
+
+.fcst2-breakeven__txt {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--color-dark, #1a1a1a);
+}
+
+.fcst2-acc__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.fcst2-acc__title {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-dark, #1a1a1a);
+}
+
+.fcst2-acc__pct {
+  font-size: 18px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.fcst2-acc__sub {
+  font-size: 12px;
+  color: var(--c-muted);
+  margin-top: 4px;
+}
+
+.fcst2-acc__lvl {
+  display: flex;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.fcst2-acc__seg {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+}
+
+.fcst2-acc__seg--ok {
+  background: var(--c-profit-pos);
+}
+
+.fcst2-acc__seg--mid {
+  background: #ba7517;
+}
+
+.fcst2-acc__seg--muted {
+  background: rgba(17, 17, 17, 0.12);
+}
+
+.fcst2-acc__ticks {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 9px;
+  color: var(--color-text-tertiary, #8a8a8e);
+}
+
+.fcst2-empty {
+  text-align: center;
+  padding: 20px 8px;
+  font-size: 13px;
+  color: var(--c-muted);
+}

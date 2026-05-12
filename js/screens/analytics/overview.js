@@ -125,7 +125,7 @@ function sparklineMarkup(trailing12, finalCumulative) {
   const polygonPts = `${linePts} ${lastX},${bottomY} ${firstX},${bottomY}`;
 
   const positive = (Number(finalCumulative) || 0) >= 0;
-  const stroke = positive ? '#1D9E75' : '#D85A30';
+  const stroke = positive ? 'var(--c-revenue)' : 'var(--cat-parts)';
   const gradId = `ovg-${positive ? 'p' : 'n'}-${pts.length}-${Math.random().toString(36).slice(2, 9)}`;
 
   const svg =
@@ -194,9 +194,9 @@ function deltaBadgeHtml(trailing12) {
 
 function stackedBarSegments(counts) {
   const segs = [
-    { key: 'rent', n: counts.rent, color: '#1D9E75', label: 'Аренда' },
-    { key: 'idle', n: counts.idle, color: '#EF9F27', label: 'Простой' },
-    { key: 'repair', n: counts.repair, color: '#E24B4A', label: 'Ремонт' },
+    { key: 'rent', n: counts.rent, color: 'var(--c-chart-fleet-rent)', label: 'Аренда' },
+    { key: 'idle', n: counts.idle, color: 'var(--c-chart-fleet-idle)', label: 'Простой' },
+    { key: 'repair', n: counts.repair, color: 'var(--c-chart-fleet-repair)', label: 'Ремонт' },
   ].filter(s => s.n > 0);
   if (!segs.length) {
     return { bar: '', legend: '' };
@@ -320,34 +320,34 @@ export function renderOverview(dash) {
           <div class="overview-tab__bar-row">
             <div class="overview-tab__bar-head">
               <div class="overview-tab__bar-left">
-                <span class="overview-tab__swatch" style="background:#1D9E75"></span>
+                <span class="overview-tab__swatch" style="background:var(--c-chart-revenue)"></span>
                 <span class="overview-tab__bar-title">Выручка</span>
               </div>
               <span class="overview-tab__bar-sum">${fmtRub(revenue)}</span>
             </div>
-            <div class="overview-tab__bar-track"><div class="overview-tab__bar-fill" style="width:100%;background:#1D9E75"></div></div>
+            <div class="overview-tab__bar-track"><div class="overview-tab__bar-fill" style="width:100%;background:var(--c-chart-revenue)"></div></div>
           </div>
           <div class="overview-tab__bar-row">
             <div class="overview-tab__bar-head">
               <div class="overview-tab__bar-left">
-                <span class="overview-tab__swatch" style="background:#5F5E5A"></span>
+                <span class="overview-tab__swatch" style="background:var(--c-chart-opex-agg)"></span>
                 <span class="overview-tab__bar-title">OPEX</span>
                 ${revenue > 0 ? `<span class="overview-tab__bar-pct">${opexPctRev}% от выручки</span>` : ''}
               </div>
               <span class="overview-tab__bar-sum">${fmtRub(opex)}</span>
             </div>
-            <div class="overview-tab__bar-track"><div class="overview-tab__bar-fill" style="width:${opexPctRev}%;background:#5F5E5A"></div></div>
+            <div class="overview-tab__bar-track"><div class="overview-tab__bar-fill" style="width:${opexPctRev}%;background:var(--c-chart-opex-agg)"></div></div>
           </div>
           <div class="overview-tab__bar-row">
             <div class="overview-tab__bar-head">
               <div class="overview-tab__bar-left">
-                <span class="overview-tab__swatch" style="background:#378ADD"></span>
+                <span class="overview-tab__swatch" style="background:var(--c-chart-capex)"></span>
                 <span class="overview-tab__bar-title">CAPEX</span>
                 ${capexPeriod > 0 ? `<span class="overview-tab__bar-pct">за период</span>` : ''}
               </div>
               <span class="overview-tab__bar-sum">${fmtRub(capexPeriod)}</span>
             </div>
-            <div class="overview-tab__bar-track">${capexPeriod > 0 ? `<div class="overview-tab__bar-fill" style="width:${capexPctRev}%;background:#378ADD"></div>` : ''}</div>
+            <div class="overview-tab__bar-track">${capexPeriod > 0 ? `<div class="overview-tab__bar-fill" style="width:${capexPctRev}%;background:var(--c-chart-capex)"></div>` : ''}</div>
           </div>
         </div>
       </div>

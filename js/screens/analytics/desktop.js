@@ -3,6 +3,7 @@
  */
 
 import { analyticsCtx as ctx } from './context.js';
+import { capexStructureBucket } from './capex.js';
 import { fmtRub, getOpexColor, monthLabelFull, opClass, pillMonths, pillShortLabel, toOpDate } from './utils.js';
 
 export const isDesktop = () => typeof window !== 'undefined' && window.innerWidth >= 1024;
@@ -152,43 +153,21 @@ export function renderDesktopShell(dash) {
   const fTotal = Math.max(1, fleet.length);
   const rentPct = Math.round((fRent / fTotal) * 100);
 
-  const capexCatsAll = dash.capexByCategoryAll || [];
+  const capexStructureSrc =
+    Array.isArray(dash.capexStructureByCategory) && dash.capexStructureByCategory.length
+      ? dash.capexStructureByCategory
+      : dash.capexByCategoryAll || [];
+  const capexBucketTotals = { Покупки: 0, Запчасти: 0, Ремонты: 0, Прочее: 0 };
+  capexStructureSrc.forEach(function (r) {
+    const b = capexStructureBucket(r.name);
+    capexBucketTotals[b] = (capexBucketTotals[b] || 0) + (Number(r.amount) || 0);
+  });
   const capexSlices = [
-    {
-      color: 'var(--c-bar-75)',
-      amount: capexCatsAll
-        .filter(function (r) {
-          return r.name.toLowerCase().includes('запч');
-        })
-        .reduce(function (s, r) {
-          return s + (Number(r.amount) || 0);
-        }, 0),
-    },
-    {
-      color: 'var(--c-bar-75)',
-      amount: capexCatsAll
-        .filter(function (r) {
-          return r.name.toLowerCase().includes('ремонт');
-        })
-        .reduce(function (s, r) {
-          return s + (Number(r.amount) || 0);
-        }, 0),
-    },
-    {
-      color: 'var(--c-bar-100)',
-      amount: capexCatsAll
-        .filter(function (r) {
-          return r.name.toLowerCase().includes('покуп');
-        })
-        .reduce(function (s, r) {
-          return s + (Number(r.amount) || 0);
-        }, 0),
-    },
+    { color: 'var(--c-bar-75)', amount: capexBucketTotals['Запчасти'] },
+    { color: 'var(--c-bar-75)', amount: capexBucketTotals['Ремонты'] },
+    { color: 'var(--c-bar-100)', amount: capexBucketTotals['Покупки'] },
+    { color: 'var(--c-bar-10)', amount: capexBucketTotals['Прочее'] },
   ];
-  const capexKnown = capexSlices.reduce(function (s, x) {
-    return s + x.amount;
-  }, 0);
-  capexSlices.push({ color: 'var(--c-bar-10)', amount: Math.max(0, capexAll - capexKnown) });
   const capexLabels = ['Запчасти', 'Ремонты', 'Покупки', 'Прочее'];
 
   const pnlRows = (dash.pnl || []).slice(0, 6);

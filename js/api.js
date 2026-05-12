@@ -551,7 +551,3 @@ function _parseFlexDate(raw) {
   }
   return null;
 }
-
-export async function getActiveRentals() {
-  return postAction({ action: 'GET_ACTIVE_RENTALS' });
-}
