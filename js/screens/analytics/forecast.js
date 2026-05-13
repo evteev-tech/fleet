@@ -4,7 +4,7 @@
 
 import { analyticsCtx as ctx } from './context.js';
 import { formatCompactRub } from '../../utils/format.js';
-import { monthLabelShort, monthYearDative, fmtRub, parseDate } from './utils.js';
+import { monthLabelShort, monthYearDative } from './utils.js';
 
 /**
  * SMAPE % → отображаемая accuracy 0…100 (при smape > 100 не уходит в минус).
@@ -370,169 +370,6 @@ function pluralMesApprox(n) {
   return `~${n} ${pluralMes(n)}`;
 }
 
-function startOfDay(d) {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-}
-
-function dayTs(d) {
-  return startOfDay(d).getTime();
-}
-
-/** Даты из API / localStorage SWR могут быть строками; поддержка snake_case. */
-function toDateMaybe(v) {
-  if (v == null) return null;
-  if (v instanceof Date && !Number.isNaN(v.getTime())) return v;
-  if (typeof v === 'number' && Number.isFinite(v)) {
-    const d = new Date(v);
-    return Number.isNaN(d.getTime()) ? null : d;
-  }
-  const s = String(v).trim();
-  if (!s) return null;
-  if (/^\d{1,2}\.\d{1,2}\.\d{4}$/.test(s)) {
-    const p = parseDate(s);
-    return p instanceof Date && !Number.isNaN(p.getTime()) ? p : null;
-  }
-  const d = new Date(s);
-  return Number.isNaN(d.getTime()) ? null : d;
-}
-
-function normalizeRentalRecord(r) {
-  if (!r || typeof r !== 'object') return null;
-  return {
-    rentalId: String(r.rentalId ?? r.rental_id ?? '').trim(),
-    carId: String(r.carId ?? r.car_id ?? '').trim(),
-    driverId: String(r.driverId ?? r.driver_id ?? '').trim(),
-    dateStart: toDateMaybe(r.dateStart ?? r.date_start),
-    dateEnd: toDateMaybe(r.dateEnd ?? r.date_end),
-    rateDay: Number(r.rateDay ?? r.rate_day) || 0,
-    note: r.note,
-  };
-}
-
-/**
- * Активные для cash-flow: rateDay > 0, есть dateStart, dateEnd >= сегодня или срок не задан (открытая аренда).
- */
-function rentalsEligibleForCashflow(rentals, now = new Date()) {
-  const tToday = dayTs(startOfDay(now));
-  return (rentals || [])
-    .map(normalizeRentalRecord)
-    .filter(Boolean)
-    .filter(r => {
-      if ((Number(r.rateDay) || 0) <= 0) return false;
-      if (!r.dateStart) return false;
-      const de = r.dateEnd;
-      if (!de) return true;
-      return dayTs(de) >= tToday;
-    });
-}
-
-/** День day (полночь) попадает в [dateStart, dateEnd] по календарю. */
-function rentalCoversCalendarDay(r, day) {
-  if (!r.dateStart) return false;
-  const t = dayTs(day);
-  if (t < dayTs(r.dateStart)) return false;
-  if (r.dateEnd && t > dayTs(r.dateEnd)) return false;
-  return true;
-}
-
-function formatDayMonthRu(d) {
-  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
-}
-
-function pluralCars(n) {
-  const k = Math.abs(n) % 100;
-  const d = k % 10;
-  if (k > 10 && k < 20) return 'машин';
-  if (d === 1) return 'машина';
-  if (d >= 2 && d <= 4) return 'машины';
-  return 'машин';
-}
-
-/**
- * 14 дней от «сегодня»: сумма rateDay по отфильтрованным арендам на каждый день.
- */
-function buildIncoming14FromRentals(rentals, now = new Date()) {
-  const raw = rentals || [];
-  const eligible = rentalsEligibleForCashflow(raw, now);
-  console.log(
-    '[Forecast cashflow] rentals всего:',
-    raw.length,
-    'после фильтра (rateDay>0, dateEnd≥сегодня или без dateEnd):',
-    eligible.length,
-  );
-  if (raw[0]) console.log('[Forecast cashflow] rentals[0] (как в кэше):', JSON.stringify(raw[0]));
-  if (eligible[0]) console.log('[Forecast cashflow] eligible[0]:', JSON.stringify(eligible[0]));
-
-  const base = startOfDay(now);
-  const days = [];
-  for (let i = 0; i < 14; i++) {
-    const date = new Date(base.getFullYear(), base.getMonth(), base.getDate() + i);
-    let sum = 0;
-    const cars = new Set();
-    eligible.forEach(r => {
-      if (!rentalCoversCalendarDay(r, date)) return;
-      const rate = Number(r.rateDay) || 0;
-      if (rate <= 0) return;
-      sum += rate;
-      const cid = String(r.carId || '').trim();
-      if (cid) cars.add(cid);
-    });
-    days.push({ date, sum, carIds: cars });
-  }
-  const total = days.reduce((s, x) => s + x.sum, 0);
-  const unionCars = new Set();
-  days.forEach(d => d.carIds.forEach(id => unionCars.add(id)));
-  const carN = unionCars.size;
-  const paid = days.filter(d => d.sum > 0);
-  const cards = [];
-  for (let i = 0; i < 3; i++) {
-    if (paid[i]) cards.push(paid[i]);
-    else cards.push(days[i]);
-  }
-  return {
-    days,
-    total,
-    carN,
-    cards,
-    labelStart: formatDayMonthRu(days[0].date),
-    labelEnd: formatDayMonthRu(days[13].date),
-  };
-}
-
-function incomingCashflowHtml(rentals) {
-  const data = buildIncoming14FromRentals(rentals || []);
-  const badge = data.carN > 0 ? `${data.carN} ${pluralCars(data.carN)}` : 'нет активных';
-  const segs = data.days
-    .map(
-      d => `
-    <div class="fcst2-cash__seg${d.sum > 0 ? ' fcst2-cash__seg--paid' : ''}" title="${formatDayMonthRu(d.date)} · ${fmtRub(d.sum)}"></div>`,
-    )
-    .join('');
-  const cardsHtml = data.cards
-    .map(d => {
-      const has = d.sum > 0;
-      const cls = has ? 'fcst2-cash__card-val fcst2-cash__card-val--pos' : 'fcst2-cash__card-val fcst2-cash__card-val--muted';
-      return `<div class="fcst2-cash__card"><div class="fcst2-cash__card-d">${formatDayMonthRu(d.date)}</div><div class="${cls}">${has ? fmtRub(d.sum) : '—'}</div></div>`;
-    })
-    .join('');
-  return `
-  <div class="white-card analytics-card-pad fcst2-card fcst2-cash">
-    <div class="fcst2-cash__kicker">Ближайшие поступления</div>
-    <div class="fcst2-cash__hero">
-      <div class="fcst2-cash__hero-line">
-        <span class="fcst2-cash__hero-amt">${fmtRub(data.total)}</span>
-        <span class="fcst2-cash__hero-period">за 14 дней</span>
-      </div>
-      <span class="fcst2-cash__badge">${badge}</span>
-    </div>
-    <div class="fcst2-cash__strip-wrap" aria-hidden="true">
-      <div class="fcst2-cash__strip">${segs}</div>
-      <div class="fcst2-cash__strip-lbl"><span>${data.labelStart}</span><span>${data.labelEnd}</span></div>
-    </div>
-    <div class="fcst2-cash__cards">${cardsHtml}</div>
-  </div>`;
-}
-
 /** SVG path M+L… из точек {x,y}[] */
 function pathFromPoints(pts) {
   if (!pts.length) return '';
@@ -734,8 +571,6 @@ function forecastHtml(trailing12, forecastAccuracy) {
 
   const breakeven = breakevenCopy(now, avg);
 
-  const incomingBlock = incomingCashflowHtml(ctx.rentals);
-
   const heroProfit = Number(model.micro[0]?.value ?? model.avg) || 0;
   const heroMo = addCalendarMonths(now.getFullYear(), now.getMonth() + 1, 1);
   const heroAmtCls =
@@ -760,7 +595,6 @@ function forecastHtml(trailing12, forecastAccuracy) {
       <span class="fcst2-leg__i"><i class="fcst2-leg__sw fcst2-leg__sw--band" aria-hidden="true"></i>диапазон</span>
     </div>
   </div>
-  ${incomingBlock}
   <div class="white-card analytics-card-pad fcst2-card fcst2-microw">
     <div class="fcst2-micgrid">${microCols}</div>
   </div>
@@ -779,7 +613,6 @@ export function forecastLoadingHtml() {
   return `
     <div class="fcst2-loading">
       <div class="skeleton" style="height:120px;border-radius:14px;margin-bottom:10px"></div>
-      <div class="skeleton" style="height:96px;border-radius:14px;margin-bottom:10px"></div>
       <div class="skeleton" style="height:72px;border-radius:14px;margin-bottom:10px"></div>
       <div class="skeleton" style="height:88px;border-radius:14px;margin-bottom:10px"></div>
       <div class="skeleton" style="height:96px;border-radius:14px"></div>

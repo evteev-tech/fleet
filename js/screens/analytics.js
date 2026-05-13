@@ -18,7 +18,7 @@ import { getWithSWR, CACHE_KEYS, invalidateCache as invalidateLocalCache } from 
  * Увеличивайте при изменении формы ответа API / calcDash, чтобы после F5 SWR
  * заново подтянул операции и дашборд (иначе возможен устаревший JSON в localStorage).
  */
-const ANALYTICS_DATA_CACHE_REVISION = 5;
+const ANALYTICS_DATA_CACHE_REVISION = 6;
 const ANALYTICS_CACHE_REV_KEY = 'fleet_analytics_model_rev';
 
 function invalidateStaleAnalyticsCachesIfNeeded() {
@@ -44,7 +44,7 @@ import { renderOverview, renderOverviewSkeleton } from './analytics/overview.js'
 import { renderOpex, revealOpexAnimations } from './analytics/opex.js';
 import { renderCapex, revealCapexAnimations } from './analytics/capex.js';
 import { renderPnL } from './analytics/pnl.js';
-import { renderKassas } from './analytics/kassas.js';
+import { renderKassas, revealKassasAnimations } from './analytics/kassas.js';
 import {
   hydrateForecast,
   forecastLoadingHtml,
@@ -307,7 +307,7 @@ function pagesHtml(dash, emptyMsg, capexMode) {
     <div class="analytics-page" data-page="4">
       <div class="analytics-page-inner">
         <div class="section-label">Балансы касс</div>
-        <div class="white-card analytics-card-pad" id="analytics-kassas-mount">Загрузка…</div>
+        <div id="analytics-kassas-mount" class="analytics-kassas-outer">Загрузка…</div>
       </div>
     </div>
     <div class="analytics-page" data-page="5">
@@ -412,6 +412,8 @@ function animatePage(root, idx) {
       card.getBoundingClientRect();
       card.style.animation = `heat-in 0.4s cubic-bezier(.34,1.56,.64,1) ${(0.05 + i * 0.07).toFixed(2)}s forwards`;
     });
+  } else if (idx === 4) {
+    revealKassasAnimations(page);
   } else if (idx === 5) {
     void hydrateForecast(root);
   }
@@ -528,6 +530,17 @@ function normalizeForecastAccuracyBlock_(fa) {
   };
 }
 
+function normalizeKassaTurnover_(rows) {
+  if (!Array.isArray(rows)) return [];
+  return rows
+    .map(r => ({
+      kassaId: String(r.kassaId ?? r.kassa_id ?? '').trim(),
+      inflow: Number(r.inflow) || 0,
+      outflow: Number(r.outflow) || 0,
+    }))
+    .filter(r => r.kassaId);
+}
+
 function normalizeDashboardApi_(d) {
   if (!d || typeof d !== 'object') {
     return {
@@ -537,6 +550,7 @@ function normalizeDashboardApi_(d) {
       paybackMonths: null,
       forecastNextMonth: 0,
       forecastAccuracy: defaultForecastAccuracyPack_(),
+      kassaTurnover: [],
     };
   }
   const pm = d.paybackMonths;
@@ -549,6 +563,7 @@ function normalizeDashboardApi_(d) {
     paybackMonths,
     forecastNextMonth: Number(d.forecastNextMonth) || 0,
     forecastAccuracy: normalizeForecastAccuracyBlock_(d.forecastAccuracy),
+    kassaTurnover: normalizeKassaTurnover_(d.kassaTurnover),
   };
 }
 
@@ -560,6 +575,7 @@ function mergeDashboardApiIntoDash_(dash) {
   dash.paybackMonths = pack.paybackMonths;
   dash.forecastNextMonth = pack.forecastNextMonth;
   dash.forecastAccuracy = pack.forecastAccuracy;
+  dash.kassaTurnover = pack.kassaTurnover;
   dash.overviewExtrasError = _dashApiExtrasError;
 }
 

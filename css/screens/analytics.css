@@ -385,6 +385,244 @@
   color: var(--color-muted);
 }
 
+/* ── Вкладка «Кассы»: колонка карточек + ожидаемые поступления (fcst2-cash) ── */
+.analytics-kassas-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fcst2-cash__kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-muted);
+  margin-bottom: 8px;
+}
+
+.fcst2-cash__hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin-bottom: 12px;
+}
+
+.fcst2-cash__hero-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 8px;
+  min-width: 0;
+}
+
+.fcst2-cash__hero-amt {
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-dark, #1a1a1a);
+}
+
+.fcst2-cash__hero-period {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-tertiary, #8a8a8e);
+}
+
+.fcst2-cash__badge {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(17, 17, 17, 0.06);
+  color: var(--c-muted);
+}
+
+.fcst2-cash__strip-wrap {
+  margin-bottom: 10px;
+}
+
+.fcst2-cash__strip {
+  display: flex;
+  gap: 2px;
+  height: 18px;
+  width: 100%;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--color-background-secondary, #ececec);
+  padding: 2px;
+  box-sizing: border-box;
+}
+
+.fcst2-cash__seg {
+  flex: 1 1 0;
+  min-width: 0;
+  border-radius: 3px;
+  background: rgba(17, 17, 17, 0.08);
+}
+
+.fcst2-cash__seg--paid {
+  background: var(--c-profit-pos, #0f6e56);
+}
+
+.fcst2-cash__strip-lbl {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-text-tertiary, #8a8a8e);
+  text-transform: lowercase;
+}
+
+.fcst2-cash__cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.fcst2-cash__card {
+  padding: 8px 6px;
+  border-radius: 10px;
+  background: var(--color-background-secondary, #f4f4f2);
+  text-align: center;
+  min-width: 0;
+}
+
+.fcst2-cash__card-d {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--c-muted);
+  margin-bottom: 4px;
+  line-height: 1.25;
+}
+
+.fcst2-cash__card-val {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.fcst2-cash__card-val--pos {
+  color: var(--c-profit-pos);
+}
+
+.fcst2-cash__card-val--muted {
+  color: var(--color-text-tertiary, #8a8a8e);
+}
+
+/* Оборот по кассам (stacked in/out) */
+.kassa-turnover-card {
+  overflow: hidden;
+}
+
+.kassa-turnover__kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-muted);
+  margin-bottom: 4px;
+}
+
+.kassa-turnover__sub {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-tertiary, #8a8a8e);
+  margin-bottom: 12px;
+}
+
+.kassa-turnover__list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.kassa-turnover__row {
+  min-width: 0;
+}
+
+.kassa-turnover__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.kassa-turnover__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.kassa-turnover__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--color-dark);
+}
+
+.kassa-turnover__nums {
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-muted);
+  white-space: nowrap;
+}
+
+.kassa-turnover__track {
+  display: flex;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: var(--color-background-secondary, #ececec);
+  max-width: 100%;
+}
+
+.kassa-turnover__seg {
+  display: block;
+  min-width: 0;
+  height: 100%;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+  transition-delay: var(--kassa-turnover-delay, 0ms);
+}
+
+.kassa-turnover__seg--in {
+  background: var(--c-profit-pos, #0f6e56);
+}
+
+.kassa-turnover__seg--out {
+  transform-origin: right center;
+  background: var(--c-loss, #c2410c);
+}
+
+.kassa-turnover__empty {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-tertiary, #8a8a8e);
+  padding: 4px 0 2px;
+}
+
+.analytics-kassas-tab--inview .kassa-turnover__seg {
+  transform: scaleX(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kassa-turnover__seg {
+    transition: none;
+    transform: scaleX(1);
+  }
+}
+
 .analytics-tiles {
   display: grid;
   grid-template-columns: 1fr 1fr;

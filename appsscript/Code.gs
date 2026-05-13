@@ -564,6 +564,64 @@ function handleAddRental(ss, body) {
 // GET_DASHBOARD / UPDATE_PERIOD
 // -----------------------------------------------------------------------------
 
+/**
+ * Обороты по кассам за период (лист «Касса_операции»).
+ * B — дата, C — касса_id, D — направление, E — сумма, M — klass_itog.
+ * Переводы (transfer) и CAPEX не входят в оборот — только operational деньги.
+ *
+ * @param {Spreadsheet} ss
+ * @param {number} year
+ * @param {number} month — 1..12
+ * @param {boolean} allTime
+ * @returns {Array<{kassaId:string, inflow:number, outflow:number}>}
+ */
+function computeKassaTurnover_(ss, year, month, allTime) {
+  var opsSheet = ss.getSheetByName(SHEET.OPERATIONS);
+  if (!opsSheet) return [];
+
+  var y = Number(year);
+  var mo = Number(month);
+  if (!allTime && (!y || !mo || mo < 1 || mo > 12)) return [];
+
+  var data = opsSheet.getDataRange().getValues();
+  var turnover = {};
+
+  for (var i = 1; i < data.length; i++) {
+    var dateRaw = data[i][1];
+    var kassaId = String(data[i][2] || '').trim();
+    var direction = String(data[i][3] || '').toLowerCase().trim();
+    var amtRaw = cellNum_(data[i][4]);
+    var amount = amtRaw === null ? 0 : Math.abs(Number(amtRaw));
+    var klass = String(data[i][12] || '').toLowerCase().trim();
+
+    if (!kassaId) continue;
+    if (klass === 'transfer' || klass === 'capex') continue;
+
+    if (!allTime) {
+      var d = parseDate(dateRaw);
+      if (!d) continue;
+      if (d.getFullYear() !== y || d.getMonth() + 1 !== mo) continue;
+    }
+
+    if (!turnover[kassaId]) turnover[kassaId] = { kassaId: kassaId, inflow: 0, outflow: 0 };
+
+    if (direction === '\u043f\u0440\u0438\u0445\u043e\u0434' || direction === 'income') {
+      turnover[kassaId].inflow += amount;
+    } else if (direction === '\u0440\u0430\u0441\u0445\u043e\u0434' || direction === 'outcome') {
+      turnover[kassaId].outflow += amount;
+    }
+  }
+
+  var result = [];
+  for (var k in turnover) {
+    if (Object.prototype.hasOwnProperty.call(turnover, k)) result.push(turnover[k]);
+  }
+  result.sort(function (a, b) {
+    return b.inflow + b.outflow - (a.inflow + a.outflow);
+  });
+  return result;
+}
+
 function handleGetDashboard(ss) {
   var sheet = ss.getSheetByName('\u0414\u0430\u0448\u0431\u043e\u0440\u0434');
 
@@ -647,6 +705,7 @@ function handleGetDashboard(ss) {
 
   var accuracy3 = computeForecastAccuracy_(ss, 3, 'simple');
   var accuracy6 = computeForecastAccuracy_(ss, 6, 'simple');
+  var kassaTurnover = computeKassaTurnover_(ss, year, month, allTime);
 
   return ok({
     dashboard: {
@@ -667,6 +726,7 @@ function handleGetDashboard(ss) {
         window6: accuracy6,
         model: 'simple',
       },
+      kassaTurnover: kassaTurnover,
     },
   });
 }
@@ -1235,4 +1295,20 @@ function testOverviewDashboard() {
   Logger.log('opex entries: ' + (dash.opex || []).length);
   Logger.log('pnl entries: ' + (dash.pnl || []).length);
   Logger.log('=== testOverviewDashboard END ===');
+}
+
+function testKassaTurnover() {
+  var ss = SpreadsheetApp.openById(SS_ID);
+  var t = computeKassaTurnover_(ss, 2026, 4, false);
+  Logger.log('April: ' + JSON.stringify(t));
+  var tAll = computeKassaTurnover_(ss, null, null, true);
+  Logger.log('All time: ' + JSON.stringify(tAll));
+  var yulia = null;
+  for (var j = 0; j < tAll.length; j++) {
+    if (String(tAll[j].kassaId || '').trim() === 'K_YULIA') {
+      yulia = tAll[j];
+      break;
+    }
+  }
+  Logger.log('K_YULIA all-time (no transfer/capex): ' + (yulia ? JSON.stringify(yulia) : 'not in list'));
 }
