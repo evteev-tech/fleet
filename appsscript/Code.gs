@@ -29,6 +29,7 @@ const SHEET = {
   USERS:      '\u041f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u0438',
   FAIL_LOG:   '\u041b\u043e\u0433_\u043e\u0448\u0438\u0431\u043e\u043a',
   DASHBOARD:  '\u0414\u0430\u0448\u0431\u043e\u0440\u0434',
+  FORECAST_LOG: 'Forecast_log',
 };
 
 // -----------------------------------------------------------------------------
@@ -644,6 +645,9 @@ function handleGetDashboard(ss) {
 
   var extras = computeOverviewExtras_(ss);
 
+  var accuracy3 = computeForecastAccuracy_(ss, 3, 'simple');
+  var accuracy6 = computeForecastAccuracy_(ss, 6, 'simple');
+
   return ok({
     dashboard: {
       year: year,
@@ -658,6 +662,11 @@ function handleGetDashboard(ss) {
       capexTotal:        extras.capexTotal,
       paybackMonths:     extras.paybackMonths,
       forecastNextMonth: extras.forecastNextMonth,
+      forecastAccuracy: {
+        window3: accuracy3,
+        window6: accuracy6,
+        model: 'simple',
+      },
     },
   });
 }

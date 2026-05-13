@@ -236,6 +236,157 @@
   color: var(--c-muted);
 }
 
+/* Карточка «Точность модели» (GET_DASHBOARD.forecastAccuracy) */
+.fcst2-acc__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.fcst2-acc__toggles {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.fcst2-acc__pill {
+  font-size: 12px;
+  padding: 4px 10px;
+}
+
+/* Пилюли на белой карточке: иначе наследуются стили шапки (светлый текст на светлом фоне). */
+.fcst2-acc .analytics-pill {
+  color: var(--color-dark, #1a1a1a);
+  background: rgba(17, 17, 17, 0.05);
+  border: 1px solid rgba(17, 17, 17, 0.14);
+}
+
+.fcst2-acc .analytics-pill--active {
+  color: #1a1a1a;
+  background: #ffdd2d;
+  border-color: rgba(17, 17, 17, 0.12);
+}
+
+.fcst2-acc .analytics-pill:not(.analytics-pill--active):hover {
+  background: rgba(17, 17, 17, 0.09);
+  border-color: rgba(17, 17, 17, 0.2);
+}
+
+.fcst2-acc__stack {
+  position: relative;
+  min-height: 148px;
+}
+
+.fcst2-acc__pane {
+  transition: opacity 0.22s ease;
+}
+
+.fcst2-acc__pane--off {
+  opacity: 0;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fcst2-acc__pane {
+    transition: none;
+  }
+}
+
+.fcst2-acc__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px 10px;
+  align-items: start;
+}
+
+.fcst2-acc__cell {
+  min-width: 0;
+}
+
+.fcst2-acc__metric-val {
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.fcst2-acc__metric-lbl {
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+  margin-top: 3px;
+  letter-spacing: 0.02em;
+}
+
+.fcst2-acc__foot {
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+}
+
+.fcst2-acc__foot--muted {
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.accuracy-insight {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--color-dark, #1a1a1a);
+}
+
+.accuracy-insight__ico {
+  flex-shrink: 0;
+  font-size: 18px;
+  line-height: 1.25;
+  margin-top: 1px;
+}
+
+.accuracy-insight__txt {
+  margin: 0;
+}
+
+.accuracy-insight--success {
+  background: rgba(15, 110, 86, 0.06);
+  border-color: rgba(15, 110, 86, 0.2);
+}
+
+.accuracy-insight--success .accuracy-insight__ico {
+  color: var(--c-profit-pos);
+}
+
+.accuracy-insight--warning {
+  background: rgba(186, 117, 23, 0.06);
+  border-color: rgba(186, 117, 23, 0.2);
+}
+
+.accuracy-insight--warning .accuracy-insight__ico {
+  color: var(--c-warn);
+}
+
+.accuracy-insight--neutral {
+  background: rgba(138, 138, 142, 0.06);
+  border-color: rgba(138, 138, 142, 0.18);
+}
+
+.accuracy-insight--neutral .accuracy-insight__ico {
+  color: var(--color-text-secondary, var(--c-muted));
+}
+
 .fcst2-empty {
   padding: 20px 8px;
   text-align: center;

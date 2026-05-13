@@ -6,8 +6,205 @@ import { analyticsCtx as ctx } from './context.js';
 import { formatCompactRub } from '../../utils/format.js';
 import { monthLabelShort, monthYearDative, fmtRub, parseDate } from './utils.js';
 
-/** Захардкожено: пересчитать когда соберём 3+ месяца факт vs прогноз. */
-const MODEL_ACCURACY_PCT = 72;
+/**
+ * SMAPE % → отображаемая accuracy 0…100 (при smape > 100 не уходит в минус).
+ * @param {number|null|undefined} smape
+ * @returns {number|null}
+ */
+function accuracyFromSmape_(smape) {
+  if (smape == null || !Number.isFinite(Number(smape))) return null;
+  return Math.max(0, Math.min(100, Math.round(100 - Number(smape))));
+}
+
+/**
+ * Интерпретация метрик точности для одного окна (3 или 6 мес.).
+ * @param {{ smape: number|null, hitRate: number|null, bias: number|null, sampleSize?: number|null }} data
+ * @returns {{ text: string, level: 'success' | 'warning' | 'neutral' } | null}
+ */
+export function getAccuracyInsight(data) {
+  if (!data || typeof data !== 'object') return null;
+  const nRaw = data.sampleSize;
+  const sampleSize =
+    nRaw == null || nRaw === '' || Number.isNaN(Number(nRaw)) ? 0 : Math.max(0, Math.floor(Number(nRaw)));
+
+  if (sampleSize < 2) {
+    return {
+      text:
+        'Недостаточно завершённых периодов для оценки. Модель начнёт показывать точность через 2-3 месяца.',
+      level: 'neutral',
+    };
+  }
+
+  const smape = data.smape;
+  const hitRate = data.hitRate;
+  const bias = data.bias;
+  if (smape == null || !Number.isFinite(Number(smape))) return null;
+  if (hitRate == null || !Number.isFinite(Number(hitRate))) return null;
+  if (bias == null || !Number.isFinite(Number(bias))) return null;
+
+  const accuracy = accuracyFromSmape_(smape);
+  if (accuracy == null) return null;
+  const hit = Number(hitRate);
+  const b = Number(bias);
+  const absB = Math.abs(b);
+
+  if (accuracy < 50 && hit >= 70 && absB >= 20000) {
+    const absK = Math.round(absB / 1000);
+    const over = b > 0;
+    const verb = over ? 'переоценивает' : 'недооценивает';
+    const tail = over ? 'ниже прогноза' : 'выше прогноза';
+    return {
+      text: `Модель уверенно угадывает направление, но систематически ${verb} прибыль примерно на ${absK}К ₽/мес. Реальный результат обычно ${tail}.`,
+      level: 'warning',
+    };
+  }
+
+  if (accuracy >= 70 && hit >= 70 && absB < 5000) {
+    return {
+      text:
+        'Модель работает хорошо: направление и величина обычно совпадают с фактом, систематического смещения нет.',
+      level: 'success',
+    };
+  }
+
+  if (accuracy < 50 && hit < 50) {
+    return {
+      text: 'Модель пока не справляется с прогнозированием — нужно больше данных или другая модель.',
+      level: 'neutral',
+    };
+  }
+
+  return null;
+}
+
+function pluralTochki(n) {
+  const k = Math.abs(n) % 100;
+  const d = k % 10;
+  if (k > 10 && k < 20) return 'точек';
+  if (d === 1) return 'точку';
+  if (d >= 2 && d <= 4) return 'точки';
+  return 'точек';
+}
+
+function forecastAccuracyInsightHtml(w) {
+  const ins = getAccuracyInsight(w);
+  if (!ins) return '';
+  const iconClass = ins.level === 'success' ? 'ti-check' : 'ti-info-circle';
+  return `
+    <div class="accuracy-insight accuracy-insight--${ins.level}">
+      <i class="ti ${iconClass} accuracy-insight__ico" aria-hidden="true"></i>
+      <p class="accuracy-insight__txt">${ins.text}</p>
+    </div>`;
+}
+
+/** @param {{ smape: number|null, hitRate: number|null, bias: number|null, sampleSize: number }} w */
+function forecastAccuracyPaneInnerHtml(w) {
+  const n = Number(w?.sampleSize) || 0;
+  const insufficient = n === 0 || w == null || w.smape == null;
+  const accPct =
+    w != null && w.smape != null && Number.isFinite(Number(w.smape)) ? accuracyFromSmape_(w.smape) : null;
+  const hitPct =
+    w != null && w.hitRate != null && Number.isFinite(Number(w.hitRate)) ? Math.round(Number(w.hitRate)) : null;
+  const biasVal =
+    w != null && w.bias != null && Number.isFinite(Number(w.bias)) ? Math.round(Number(w.bias)) : null;
+
+  const accDisp = accPct == null ? '—' : `${accPct}%`;
+  const hitDisp = hitPct == null ? '—' : `${hitPct}%`;
+  const biasDisp = biasVal == null ? '—' : fmtSignedCompactRub(biasVal);
+
+  const accCol =
+    accPct == null
+      ? 'var(--color-text-tertiary)'
+      : accPct > 70
+        ? 'var(--c-profit-pos)'
+        : accPct >= 50
+          ? 'var(--c-warn)'
+          : 'var(--color-text-tertiary)';
+  const hitCol =
+    hitPct == null
+      ? 'var(--color-text-tertiary)'
+      : hitPct > 70
+        ? 'var(--c-profit-pos)'
+        : hitPct >= 50
+          ? 'var(--c-warn)'
+          : 'var(--c-profit-neg)';
+  const biasCol =
+    biasVal == null
+      ? 'var(--color-text-tertiary)'
+      : Math.abs(biasVal) < 5000
+        ? 'var(--c-profit-pos)'
+        : Math.abs(biasVal) < 20000
+          ? 'var(--color-text-tertiary)'
+          : 'var(--c-warn)';
+
+  const insight = forecastAccuracyInsightHtml(w);
+  const foot =
+    n < 2
+      ? ''
+      : insufficient
+        ? '<div class="fcst2-acc__foot fcst2-acc__foot--muted">недостаточно данных для оценки</div>'
+        : `<div class="fcst2-acc__foot">на ${n} ${pluralTochki(n)}</div>`;
+
+  return `
+    <div class="fcst2-acc__grid">
+      <div class="fcst2-acc__cell">
+        <div class="fcst2-acc__metric-val" style="color:${accCol}">${accDisp}</div>
+        <div class="fcst2-acc__metric-lbl">accuracy</div>
+      </div>
+      <div class="fcst2-acc__cell">
+        <div class="fcst2-acc__metric-val" style="color:${hitCol}">${hitDisp}</div>
+        <div class="fcst2-acc__metric-lbl">hit-rate</div>
+      </div>
+      <div class="fcst2-acc__cell">
+        <div class="fcst2-acc__metric-val" style="color:${biasCol}">${biasDisp}</div>
+        <div class="fcst2-acc__metric-lbl">смещение</div>
+      </div>
+    </div>
+    ${foot}
+    ${insight}`;
+}
+
+function forecastAccuracyCardHtml(fa) {
+  const w3 = fa?.window3 ?? {};
+  const w6 = fa?.window6 ?? {};
+  const pan3 = forecastAccuracyPaneInnerHtml(w3);
+  const pan6 = forecastAccuracyPaneInnerHtml(w6);
+  return `
+  <div class="white-card analytics-card-pad fcst2-card fcst2-acc" data-fcst-acc-root="1">
+    <div class="fcst2-acc__head">
+      <span class="fcst2-acc__title">Точность модели</span>
+      <div class="fcst2-acc__toggles" role="tablist" aria-label="Окно оценки">
+        <button type="button" class="analytics-pill fcst2-acc__pill analytics-pill--active" data-fcst-acc-w="3">3 мес</button>
+        <button type="button" class="analytics-pill fcst2-acc__pill" data-fcst-acc-w="6">6 мес</button>
+      </div>
+    </div>
+    <div class="fcst2-acc__stack">
+      <div class="fcst2-acc__pane" data-pane="3">${pan3}</div>
+      <div class="fcst2-acc__pane fcst2-acc__pane--off" data-pane="6">${pan6}</div>
+    </div>
+  </div>`;
+}
+
+/**
+ * Переключатель 3 / 6 мес на карточке точности.
+ * @param {HTMLElement} mount
+ */
+export function bindForecastAccuracyCard(mount) {
+  const root = mount.querySelector('[data-fcst-acc-root]');
+  if (!root) return;
+  const pills = root.querySelectorAll('[data-fcst-acc-w]');
+  const panes = root.querySelectorAll('[data-pane]');
+  pills.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const w = btn.getAttribute('data-fcst-acc-w');
+      pills.forEach(b => b.classList.toggle('analytics-pill--active', b === btn));
+      panes.forEach(p => {
+        const on = p.getAttribute('data-pane') === w;
+        p.classList.toggle('fcst2-acc__pane--off', !on);
+      });
+    });
+  });
+}
 
 function ymKey(y, m) {
   return Number(y) * 12 + Number(m);
@@ -495,9 +692,10 @@ function renderChartSvg({ months, currentIdx, pMap, model, now, colors = {} }) {
 </svg>`;
 }
 
-function forecastHtml(trailing12) {
+function forecastHtml(trailing12, forecastAccuracy) {
   const now = new Date();
   const t = Array.isArray(trailing12) ? trailing12 : [];
+  const fa = forecastAccuracy ?? ctx.forecastAccuracy;
   const pMap = profitMap(t);
   const { months, currentIdx } = sevenMonthWindow(now);
   const model = buildForecastModel(t, now);
@@ -506,9 +704,6 @@ function forecastHtml(trailing12) {
 
   const pillN = avg > 0 ? 1 : monthsUntilPositiveLinear(avg);
   const pillMes = pillN == null ? '—' : pluralMesApprox(pillN);
-
-  const accuracyColor =
-    MODEL_ACCURACY_PCT > 60 ? 'var(--c-profit-pos)' : 'var(--c-warn)';
 
   const microCols = model.micro
     .map(row => {
@@ -576,24 +771,7 @@ function forecastHtml(trailing12) {
     </div>
     <p class="fcst2-breakeven__txt">${breakeven}</p>
   </div>
-  <div class="white-card analytics-card-pad fcst2-card fcst2-acc">
-    <div class="fcst2-acc__row">
-      <span class="fcst2-acc__title">Точность модели</span>
-      <span class="fcst2-acc__pct" style="color:${accuracyColor}">${MODEL_ACCURACY_PCT}%</span>
-    </div>
-    <div class="fcst2-acc__sub">средняя ошибка прогноза за 3 месяца</div>
-    <div class="fcst2-acc__lvl" role="img" aria-label="Уровень точности: высокий">
-      <span class="fcst2-acc__seg fcst2-acc__seg--ok"></span>
-      <span class="fcst2-acc__seg fcst2-acc__seg--ok"></span>
-      <span class="fcst2-acc__seg fcst2-acc__seg--mid"></span>
-      <span class="fcst2-acc__seg fcst2-acc__seg--muted"></span>
-      <span class="fcst2-acc__seg fcst2-acc__seg--muted"></span>
-    </div>
-    <div class="fcst2-acc__ticks">
-      <span>низкая</span>
-      <span>высокая</span>
-    </div>
-  </div>
+  ${forecastAccuracyCardHtml(fa)}
 </div>`;
 }
 
@@ -638,6 +816,7 @@ export async function hydrateForecast(root) {
   mount.innerHTML = forecastLoadingHtml();
   await Promise.resolve();
   const trailing12 = Array.isArray(ctx.trailing12) ? ctx.trailing12 : [];
-  mount.innerHTML = forecastHtml(trailing12);
+  mount.innerHTML = forecastHtml(trailing12, ctx.forecastAccuracy);
+  bindForecastAccuracyCard(mount);
   animateForecast(mount);
 }

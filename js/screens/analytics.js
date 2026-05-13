@@ -18,7 +18,7 @@ import { getWithSWR, CACHE_KEYS, invalidateCache as invalidateLocalCache } from 
  * Увеличивайте при изменении формы ответа API / calcDash, чтобы после F5 SWR
  * заново подтянул операции и дашборд (иначе возможен устаревший JSON в localStorage).
  */
-const ANALYTICS_DATA_CACHE_REVISION = 4;
+const ANALYTICS_DATA_CACHE_REVISION = 5;
 const ANALYTICS_CACHE_REV_KEY = 'fleet_analytics_model_rev';
 
 function invalidateStaleAnalyticsCachesIfNeeded() {
@@ -495,6 +495,39 @@ let _currentPage = 0;
 let _dashApiExtras = null;
 let _dashApiExtrasError = false;
 
+function defaultForecastAccuracyPack_() {
+  return {
+    window3: { smape: null, hitRate: null, bias: null, sampleSize: 0 },
+    window6: { smape: null, hitRate: null, bias: null, sampleSize: 0 },
+    model: 'simple',
+  };
+}
+
+function normalizeForecastAccuracyWindow_(w) {
+  if (!w || typeof w !== 'object') return { smape: null, hitRate: null, bias: null, sampleSize: 0 };
+  const sm = w.smape;
+  const hr = w.hitRate;
+  const bi = w.bias;
+  const n = Number(w.sampleSize);
+  const nz = Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
+  return {
+    smape: sm === null || sm === undefined || Number.isNaN(Number(sm)) ? null : Number(sm),
+    hitRate: hr === null || hr === undefined || Number.isNaN(Number(hr)) ? null : Number(hr),
+    bias: bi === null || bi === undefined || Number.isNaN(Number(bi)) ? null : Number(bi),
+    sampleSize: nz,
+  };
+}
+
+function normalizeForecastAccuracyBlock_(fa) {
+  if (!fa || typeof fa !== 'object') return defaultForecastAccuracyPack_();
+  const m = fa.model === 'trend' ? 'trend' : 'simple';
+  return {
+    window3: normalizeForecastAccuracyWindow_(fa.window3),
+    window6: normalizeForecastAccuracyWindow_(fa.window6),
+    model: m,
+  };
+}
+
 function normalizeDashboardApi_(d) {
   if (!d || typeof d !== 'object') {
     return {
@@ -503,6 +536,7 @@ function normalizeDashboardApi_(d) {
       capexTotal: 0,
       paybackMonths: null,
       forecastNextMonth: 0,
+      forecastAccuracy: defaultForecastAccuracyPack_(),
     };
   }
   const pm = d.paybackMonths;
@@ -514,6 +548,7 @@ function normalizeDashboardApi_(d) {
     capexTotal: Number(d.capexTotal) || 0,
     paybackMonths,
     forecastNextMonth: Number(d.forecastNextMonth) || 0,
+    forecastAccuracy: normalizeForecastAccuracyBlock_(d.forecastAccuracy),
   };
 }
 
@@ -524,6 +559,7 @@ function mergeDashboardApiIntoDash_(dash) {
   dash.capexTotal = pack.capexTotal;
   dash.paybackMonths = pack.paybackMonths;
   dash.forecastNextMonth = pack.forecastNextMonth;
+  dash.forecastAccuracy = pack.forecastAccuracy;
   dash.overviewExtrasError = _dashApiExtrasError;
 }
 
@@ -579,7 +615,7 @@ function refreshViewOnly() {
       month: m,
     });
     mergeDashboardApiIntoDash_(dash);
-    setAnalyticsContext({ trailing12: dash.trailing12 });
+    setAnalyticsContext({ trailing12: dash.trailing12, forecastAccuracy: dash.forecastAccuracy });
     filled = true;
     applyDashToState(dash);
     if (isDesktop()) {
@@ -735,7 +771,7 @@ async function applyPeriod(year, month) {
       rentals: _rentals,
     });
     mergeDashboardApiIntoDash_(dash);
-    setAnalyticsContext({ trailing12: dash.trailing12 });
+    setAnalyticsContext({ trailing12: dash.trailing12, forecastAccuracy: dash.forecastAccuracy });
     applyDashToState(dash);
     if (isDesktop()) {
       root.innerHTML = renderDesktopShell(dash);
@@ -783,7 +819,7 @@ async function applyAllTime() {
       rentals: _rentals,
     });
     mergeDashboardApiIntoDash_(dash);
-    setAnalyticsContext({ trailing12: dash.trailing12 });
+    setAnalyticsContext({ trailing12: dash.trailing12, forecastAccuracy: dash.forecastAccuracy });
     applyDashToState(dash);
     if (isDesktop()) {
       root.innerHTML = renderDesktopShell(dash);
@@ -909,6 +945,7 @@ function onRootClick(e) {
       deposits: _deposits,
       rentals: _rentals,
       trailing12: dash.trailing12,
+      forecastAccuracy: dash.forecastAccuracy,
     });
     if (isDesktop()) {
       root.innerHTML = renderDesktopShell(dash);
