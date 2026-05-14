@@ -6,6 +6,7 @@ import { CAR_STATUSES, KASSA_ID, ROLES, USE_MOCK } from '../config.js';
 import { calcPaidUntil, parseRatePerDay, latestRentalByCarMap } from '../utils/rent.js';
 import { parseRuDate } from './history.js';
 import { fmtRuInt } from '../utils/format.js';
+import { filterOpsForHistoryUI } from '../utils/ops.js';
 
 const HOME_KASSA_ORDER = [KASSA_ID.AZAMAT, KASSA_ID.VLADIMIR, KASSA_ID.YULIA];
 
@@ -53,7 +54,7 @@ export function renderHome() {
 
   const paint = () => {
     if (!ops || !cars || !drivers || !rentalsLoaded) return;
-    _render(body, ops, cars, drivers, rentalRows);
+    _render(body, filterOpsForHistoryUI(ops), cars, drivers, rentalRows);
   };
 
   getWithSWR(CACHE_KEYS.CASH_OPS, () => getOperations(), {

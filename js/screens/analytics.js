@@ -18,7 +18,7 @@ import { getWithSWR, CACHE_KEYS, invalidateCache as invalidateLocalCache } from 
  * Увеличивайте при изменении формы ответа API / calcDash, чтобы после F5 SWR
  * заново подтянул операции и дашборд (иначе возможен устаревший JSON в localStorage).
  */
-const ANALYTICS_DATA_CACHE_REVISION = 6;
+const ANALYTICS_DATA_CACHE_REVISION = 7;
 const ANALYTICS_CACHE_REV_KEY = 'fleet_analytics_model_rev';
 
 function invalidateStaleAnalyticsCachesIfNeeded() {
@@ -406,7 +406,7 @@ function animatePage(root, idx) {
     revealCapexAnimations(page);
     void hydrateCapexChart(root).then(() => animateCapexPayback(root));
   } else if (idx === 3) {
-    const cards = page.querySelectorAll('.phc');
+    const cards = page.querySelectorAll('.pnl-car');
     cards.forEach((card, i) => {
       card.style.animation = 'none';
       card.getBoundingClientRect();
@@ -541,6 +541,34 @@ function normalizeKassaTurnover_(rows) {
     .filter(r => r.kassaId);
 }
 
+function normalizePnlByCarMonthly_(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+  const out = {};
+  for (const [carId, arr] of Object.entries(raw)) {
+    const id = String(carId || '').trim();
+    if (!id || !Array.isArray(arr)) continue;
+    out[id] = arr.map(p => ({
+      year: Number(p?.year) || 0,
+      month: Number(p?.month) || 0,
+      profit: Number(p?.profit) || 0,
+    }));
+  }
+  return out;
+}
+
+function normalizeUtilizationByCar_(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+  const out = {};
+  for (const [carId, v] of Object.entries(raw)) {
+    const id = String(carId || '').trim();
+    if (!id) continue;
+    const n = Number(v);
+    if (!Number.isFinite(n)) continue;
+    out[id] = Math.min(100, Math.max(0, Math.round(n)));
+  }
+  return out;
+}
+
 function normalizeDashboardApi_(d) {
   if (!d || typeof d !== 'object') {
     return {
@@ -551,6 +579,8 @@ function normalizeDashboardApi_(d) {
       forecastNextMonth: 0,
       forecastAccuracy: defaultForecastAccuracyPack_(),
       kassaTurnover: [],
+      pnlByCarMonthly: {},
+      utilizationByCar: {},
     };
   }
   const pm = d.paybackMonths;
@@ -564,6 +594,8 @@ function normalizeDashboardApi_(d) {
     forecastNextMonth: Number(d.forecastNextMonth) || 0,
     forecastAccuracy: normalizeForecastAccuracyBlock_(d.forecastAccuracy),
     kassaTurnover: normalizeKassaTurnover_(d.kassaTurnover),
+    pnlByCarMonthly: normalizePnlByCarMonthly_(d.pnlByCarMonthly),
+    utilizationByCar: normalizeUtilizationByCar_(d.utilizationByCar),
   };
 }
 
@@ -576,6 +608,8 @@ function mergeDashboardApiIntoDash_(dash) {
   dash.forecastNextMonth = pack.forecastNextMonth;
   dash.forecastAccuracy = pack.forecastAccuracy;
   dash.kassaTurnover = pack.kassaTurnover;
+  dash.pnlByCarMonthly = pack.pnlByCarMonthly;
+  dash.utilizationByCar = pack.utilizationByCar;
   dash.overviewExtrasError = _dashApiExtrasError;
 }
 

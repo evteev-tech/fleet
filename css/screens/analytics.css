@@ -912,7 +912,8 @@
   border-bottom: 0.5px solid var(--color-border);
 }
 
-.pnl-car {
+/* Имя машины в строке таблицы PnL (десктоп), не карточки heatmap */
+.pnl-row .pnl-car {
   font-size: 13px;
   font-weight: 700;
   flex: 0 0 auto;
@@ -924,7 +925,7 @@
   text-overflow: ellipsis;
 }
 
-.pnl-car--full {
+.pnl-row .pnl-car--full {
   max-width: none;
   overflow: visible;
   text-overflow: clip;
@@ -1478,6 +1479,164 @@
 .roi-cell { background:#fff; border-radius:10px; padding:9px 10px; }
 .roi-c-lbl { font-size:9px; font-weight:700; color:#8A8A8E; text-transform:uppercase; letter-spacing:.05em; margin-bottom:3px; }
 .roi-c-val { font-size:14px; font-weight:800; letter-spacing:-.02em; }
+
+/* PnL по машинам: сетка 2 колонки + спарклайн + утилизация */
+.pnl-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 6px 8px;
+}
+
+.pnl-grid > .pnl-car {
+  border-radius: 12px;
+  padding: 8px 8px 7px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  max-width: none;
+  overflow: visible;
+  opacity: 0;
+  transform: scale(0.94);
+}
+
+.pnl-car--wide {
+  grid-column: span 2;
+}
+
+.pnl-car__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  min-width: 0;
+}
+
+.pnl-car__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pnl-car__sparkline {
+  flex-shrink: 0;
+  width: 36px;
+  height: 14px;
+}
+
+.pnl-car--wide .pnl-car__sparkline {
+  width: 76px;
+}
+
+.pnl-car--dark .pnl-car__name,
+.pnl-car--dark .pnl-car__details,
+.pnl-car--dark .pnl-car__util-pct {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.pnl-car--dark .pnl-car__sparkline {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.pnl-car--light .pnl-car__name,
+.pnl-car--light .pnl-car__details {
+  color: rgba(26, 26, 26, 0.82);
+}
+
+.pnl-car--light .pnl-car__sparkline {
+  color: rgba(26, 26, 26, 0.7);
+}
+
+.pnl-car__profit {
+  font-size: 15px;
+  font-weight: 900;
+  margin-top: 6px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.pnl-car--dark.pnl-car--pos .pnl-car__profit {
+  color: #c8ffe8;
+}
+
+.pnl-car--dark.pnl-car--neg .pnl-car__profit {
+  color: #ffd4d4;
+}
+
+.pnl-car--dark.pnl-car--zero .pnl-car__profit {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.pnl-car--light.pnl-car--pos .pnl-car__profit {
+  color: var(--c-profit, #0f6e56);
+}
+
+.pnl-car--light.pnl-car--neg .pnl-car__profit {
+  color: var(--c-loss, #c2410c);
+}
+
+.pnl-car--light.pnl-car--zero .pnl-car__profit {
+  color: var(--color-text-secondary, #6b6b6f);
+}
+
+.pnl-car__details {
+  font-size: 9px;
+  font-weight: 600;
+  margin-top: 4px;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+}
+
+.pnl-car__util {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.pnl-car__util-bar {
+  flex: 1 1 auto;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  min-width: 0;
+}
+
+.pnl-car--dark .pnl-car__util-bar {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.pnl-car__util-fill {
+  height: 100%;
+  border-radius: 999px;
+  max-width: 100%;
+}
+
+.pnl-car--dark .pnl-car__util-fill {
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.pnl-car--light .pnl-car__util-fill {
+  background: rgba(92, 31, 31, 0.7);
+}
+
+.pnl-car__util-pct {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.pnl-car--light .pnl-car__util-pct {
+  color: rgba(26, 26, 26, 0.75);
+}
 
 .pnl-heat3 {
   display: grid; grid-template-columns: repeat(3, 1fr);

@@ -622,6 +622,140 @@ function computeKassaTurnover_(ss, year, month, allTime) {
   return result;
 }
 
+/**
+ * Возвращает по каждой машине массив прибыли по месяцам за последние 6 мес.
+ * @param {Spreadsheet} ss
+ * @param {Date} [now]
+ * @returns {Object<string, Array<{year:number, month:number, profit:number}>>}
+ */
+function computePnlByCarMonthly_(ss, now) {
+  if (!now) now = new Date();
+  var opsSheet = ss.getSheetByName(SHEET.OPERATIONS);
+  if (!opsSheet) return {};
+
+  var months = [];
+  for (var k = 5; k >= 0; k--) {
+    var d = new Date(now.getFullYear(), now.getMonth() - k, 1);
+    months.push({ year: d.getFullYear(), month: d.getMonth() + 1 });
+  }
+
+  var byCar = {};
+  var data = opsSheet.getDataRange().getValues();
+
+  for (var i = 1; i < data.length; i++) {
+    var dateRaw = data[i][1];
+    var carId = String(data[i][7] || '').trim();
+    var amtRaw = cellNum_(data[i][4]);
+    var amount = amtRaw === null ? 0 : Number(amtRaw);
+    var klass = String(data[i][12] || '').toLowerCase().trim();
+
+    if (!carId) continue;
+    if (klass !== 'revenue' && klass !== 'opex') continue;
+
+    var d = parseDate(dateRaw);
+    if (!d) continue;
+
+    var key = null;
+    for (var m = 0; m < months.length; m++) {
+      if (d.getFullYear() === months[m].year && d.getMonth() + 1 === months[m].month) {
+        key = months[m].year + '-' + months[m].month;
+        break;
+      }
+    }
+    if (!key) continue;
+
+    if (!byCar[carId]) byCar[carId] = {};
+    if (!byCar[carId][key]) byCar[carId][key] = { revenue: 0, opex: 0 };
+
+    if (klass === 'revenue') byCar[carId][key].revenue += Math.abs(amount);
+    else byCar[carId][key].opex += Math.abs(amount);
+  }
+
+  var result = {};
+  var carIds = Object.keys(byCar);
+  for (var ci = 0; ci < carIds.length; ci++) {
+    var cid = carIds[ci];
+    var arr = [];
+    for (var mj = 0; mj < months.length; mj++) {
+      var mk = months[mj].year + '-' + months[mj].month;
+      var entry = byCar[cid][mk] || { revenue: 0, opex: 0 };
+      arr.push({
+        year: months[mj].year,
+        month: months[mj].month,
+        profit: entry.revenue - entry.opex,
+      });
+    }
+    result[cid] = arr;
+  }
+  return result;
+}
+
+/**
+ * % дней в аренде = (дней аренды в периоде) / (всего дней в периоде) × 100
+ * @param {Spreadsheet} ss
+ * @param {number} year
+ * @param {number} month
+ * @param {boolean} allTime
+ * @param {Date} [now]
+ * @returns {Object<string, number>}
+ */
+function computeUtilizationByCar_(ss, year, month, allTime, now) {
+  if (!now) now = new Date();
+  if (allTime) return {};
+
+  var rentSheet = ss.getSheetByName(SHEET.RENTALS);
+  if (!rentSheet) return {};
+
+  var y = Number(year);
+  var mo = Number(month);
+  if (!y || !mo || mo < 1 || mo > 12) return {};
+
+  var periodStart = new Date(y, mo - 1, 1);
+  periodStart.setHours(0, 0, 0, 0);
+  var periodEnd = new Date(y, mo, 0);
+  periodEnd.setHours(0, 0, 0, 0);
+
+  if (y === now.getFullYear() && mo === now.getMonth() + 1) {
+    periodEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    periodEnd.setHours(0, 0, 0, 0);
+  }
+
+  var periodDays = Math.round((periodEnd - periodStart) / (1000 * 60 * 60 * 24)) + 1;
+  if (periodDays <= 0) return {};
+
+  var daysByCar = {};
+  var rdata = rentSheet.getDataRange().getValues();
+
+  for (var ri = 1; ri < rdata.length; ri++) {
+    var carId = String(rdata[ri][1] || '').trim();
+    var dStart = parseDate(rdata[ri][3]);
+    var dEnd = parseDate(rdata[ri][4]);
+
+    if (!carId || !dStart) continue;
+    dStart.setHours(0, 0, 0, 0);
+    if (!dEnd) {
+      dEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    }
+    dEnd.setHours(0, 0, 0, 0);
+
+    var overlapStart = dStart > periodStart ? dStart : periodStart;
+    var overlapEnd = dEnd < periodEnd ? dEnd : periodEnd;
+
+    if (overlapEnd < overlapStart) continue;
+
+    var overlapDays = Math.round((overlapEnd - overlapStart) / (1000 * 60 * 60 * 24)) + 1;
+    daysByCar[carId] = (daysByCar[carId] || 0) + overlapDays;
+  }
+
+  var result = {};
+  var dids = Object.keys(daysByCar);
+  for (var di = 0; di < dids.length; di++) {
+    var id = dids[di];
+    result[id] = Math.min(100, Math.round(daysByCar[id] / periodDays * 100));
+  }
+  return result;
+}
+
 function handleGetDashboard(ss) {
   var sheet = ss.getSheetByName('\u0414\u0430\u0448\u0431\u043e\u0440\u0434');
 
@@ -706,6 +840,9 @@ function handleGetDashboard(ss) {
   var accuracy3 = computeForecastAccuracy_(ss, 3, 'simple');
   var accuracy6 = computeForecastAccuracy_(ss, 6, 'simple');
   var kassaTurnover = computeKassaTurnover_(ss, year, month, allTime);
+  var nowDash = new Date();
+  var pnlByCarMonthly = computePnlByCarMonthly_(ss, nowDash);
+  var utilizationByCar = allTime ? {} : computeUtilizationByCar_(ss, year, month, allTime, nowDash);
 
   return ok({
     dashboard: {
@@ -716,6 +853,8 @@ function handleGetDashboard(ss) {
       opex: opex,
       pnl: pnl,
       utilization: utilization,
+      pnlByCarMonthly: pnlByCarMonthly,
+      utilizationByCar: utilizationByCar,
       trailing12:        extras.trailing12,
       cumulativeProfit:  extras.cumulativeProfit,
       capexTotal:        extras.capexTotal,
@@ -1311,4 +1450,18 @@ function testKassaTurnover() {
     }
   }
   Logger.log('K_YULIA all-time (no transfer/capex): ' + (yulia ? JSON.stringify(yulia) : 'not in list'));
+}
+
+function testPnlExtras() {
+  var ss = SpreadsheetApp.openById(SS_ID);
+  var byCar = computePnlByCarMonthly_(ss, new Date());
+  Logger.log('pnlByCarMonthly cars: ' + Object.keys(byCar).length);
+  var keys = Object.keys(byCar);
+  var maxS = Math.min(3, keys.length);
+  for (var si = 0; si < maxS; si++) {
+    var carId = keys[si];
+    Logger.log(carId + ': ' + JSON.stringify(byCar[carId]));
+  }
+  var util = computeUtilizationByCar_(ss, 2026, 4, false, new Date());
+  Logger.log('utilizationByCar (April 2026): ' + JSON.stringify(util));
 }

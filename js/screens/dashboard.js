@@ -12,6 +12,7 @@ import { parseRuDate }             from './history.js';
 import { showScreen }              from '../router.js';
 import { KASSA_ID, KASSA_NAMES, CAR_STATUSES, ROLES } from '../config.js';
 import { fmtRuInt } from '../utils/format.js';
+import { filterOpsForHistoryUI } from '../utils/ops.js';
 
 const _now = new Date();
 let _month = _now.getMonth() + 1;
@@ -122,7 +123,7 @@ export async function renderDashboard() {
 
   const finishPaint = () => {
     if (ops === undefined || fleet === undefined) return;
-    _allOps = ops;
+    _allOps = filterOpsForHistoryUI(ops);
     _fleet = fleet;
 
     const data = {

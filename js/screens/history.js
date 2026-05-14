@@ -17,6 +17,7 @@ import {
   MINUS,
 } from '../lib/kassa-money.js';
 import { fmtRuInt } from '../utils/format.js';
+import { filterOpsForHistoryUI } from '../utils/ops.js';
 import {
   EXPENSE_CATEGORY_PRESETS,
   normalizeType,
@@ -411,11 +412,11 @@ export async function renderHistory() {
   getWithSWR(CACHE_KEYS.CASH_OPS, () => getOperations(), {
     onCached: d => {
       cacheHit = true;
-      _rawOpsAll = d;
+      _rawOpsAll = filterOpsForHistoryUI(d);
       paintHistoryShell();
     },
     onFresh: d => {
-      _rawOpsAll = d;
+      _rawOpsAll = filterOpsForHistoryUI(d);
       paintHistoryShell();
     },
     onFetchError: (_e, meta) => {

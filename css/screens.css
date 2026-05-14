@@ -4048,7 +4048,7 @@
   border-bottom: 0.5px solid var(--color-border);
 }
 
-.pnl-car {
+.pnl-row .pnl-car {
   font-size: var(--text-sm);
   font-weight: 700;
   flex: 0 0 auto;
@@ -4060,7 +4060,7 @@
   text-overflow: ellipsis;
 }
 
-.pnl-car--full {
+.pnl-row .pnl-car--full {
   max-width: none;
   overflow: visible;
   text-overflow: clip;
