@@ -1513,6 +1513,15 @@
   min-width: 0;
 }
 
+.pnl-car__title-row {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
 .pnl-car__name {
   flex: 1 1 auto;
   min-width: 0;
@@ -1522,6 +1531,28 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.pnl-car__warn-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  margin-left: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.pnl-car--dark .pnl-car__warn-badge {
+  background: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.pnl-car--light .pnl-car__warn-badge {
+  background: #faeeda;
+  color: #854f0b;
 }
 
 .pnl-car__sparkline {

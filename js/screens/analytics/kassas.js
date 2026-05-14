@@ -275,8 +275,11 @@ export function renderKassas(dash) {
   const activeDeposits = (dash.deposits || [])
     .filter(d => String(d.status || '').toLowerCase().includes('актив'))
     .reduce((acc, d) => acc + (Number(d.amount) || 0), 0);
-  const coverageBase = Number(dash.summary?.find(s => s.key === 'opex')?.current) || 0;
-  const coveragePct = coverageBase > 0 ? (activeDeposits / coverageBase) * 100 : 0;
+  // Покрытие = залоги / стоимость парка
+const coverageBase = Number(dash.capexTotal) || 0;
+const coveragePct = coverageBase > 0
+  ? Math.min(100, (activeDeposits / coverageBase) * 100)
+  : 0;
   const depositRow = `
     <div class="analytics-kassa-row analytics-kassa-row--deposits">
       <div class="analytics-kassa-row__name">Залоги (DP* АКТИВЕН)</div>

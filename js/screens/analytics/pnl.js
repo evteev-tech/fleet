@@ -79,6 +79,14 @@ function sparklineSvg(series, wide) {
   return `<svg class="pnl-car__sparkline" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" points="${pts}" /></svg>`;
 }
 
+function pnlEscText(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 function pnlHeatmapHtml(dash, pnl) {
   const rows = pnl
     .filter(r => r.car !== 'Общие' && r.car !== 'Итого')
@@ -131,9 +139,16 @@ function pnlHeatmapHtml(dash, pnl) {
 
       const profitStr = `${profit > 0 ? '+' : ''}${pnlShortK(profit)}`;
 
+      const hasRevenueButNoUtil = utilHasDataset && rev > 0 && utilPct === 0;
+      const warnBadgeHtml = hasRevenueButNoUtil
+        ? '<span class="pnl-car__warn-badge" title="Аренда не зафиксирована в системе">⚠ нет в Аренде</span>'
+        : '';
+
       return `<div class="pnl-car ${toneCls} ${clsPos}${wideCls}" style="background:${bg}">
     <div class="pnl-car__header">
-      <span class="pnl-car__name">${r.car}</span>
+      <div class="pnl-car__title-row">
+        <span class="pnl-car__name">${pnlEscText(r.car)}</span>${warnBadgeHtml}
+      </div>
       ${spark}
     </div>
     <div class="pnl-car__profit">${profitStr}</div>
