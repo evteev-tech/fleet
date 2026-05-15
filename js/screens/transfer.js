@@ -9,6 +9,9 @@ import { invalidateCache as invalidateLocalCache, CACHE_KEYS } from '../cache.js
 /** Механик (Азамат) переводит только между операционными кассами, без инвест-счетов. */
 const MECHANIC_TRANSFER_TO = new Set([KASSA_ID.VLADIMIR, KASSA_ID.YULIA]);
 
+/** Операционный директор (Владимир): переводы между кассами участников проекта. */
+const OPERATIONS_TRANSFER_KASSAS = [KASSA_ID.YULIA, KASSA_ID.VLADIMIR, KASSA_ID.AZAMAT];
+
 const _state = {
   amount: 0,
   numpadBuf: '',
@@ -24,17 +27,71 @@ export function initTransfer() {
   });
 }
 
+function _defaultFromKassaId(user) {
+  if (user?.role === ROLES.OPERATIONS) return KASSA_ID.VLADIMIR;
+  if (user?.role === ROLES.INVESTOR) return KASSA_ID.YULIA;
+  return KASSA_ID.AZAMAT;
+}
+
+function _transferTargets(user, fromId) {
+  if (user?.role === ROLES.OPERATIONS) {
+    return OPERATIONS_TRANSFER_KASSAS.filter(id => id !== fromId).map(id => [id, KASSA_NAMES[id]]);
+  }
+  let targets = Object.entries(KASSA_NAMES).filter(([id]) => id !== fromId);
+  if (user?.role === ROLES.MECHANIC) {
+    targets = targets.filter(([id]) => MECHANIC_TRANSFER_TO.has(id));
+  }
+  return targets;
+}
+
+function _fromKassaBlockHtml(user, fromId) {
+  if (user?.role === ROLES.OPERATIONS) {
+    const options = OPERATIONS_TRANSFER_KASSAS.map(
+      id =>
+        `<option value="${_escapeAttr(id)}"${id === fromId ? ' selected' : ''}>${_escapeHtml(KASSA_NAMES[id])}</option>`,
+    ).join('');
+    return `
+        <div class="transfer-from">
+          <label class="transfer-from__label" for="transfer-from-select">Из кассы</label>
+          <select class="transfer-from__select" id="transfer-from-select" aria-label="Касса-источник">${options}</select>
+        </div>`;
+  }
+  const fromKassaName = KASSA_NAMES[fromId] || fromId;
+  return `
+        <div class="transfer-from">
+          <div class="transfer-from__label">Из кассы</div>
+          <div class="transfer-from__name">${_escapeHtml(fromKassaName)}</div>
+        </div>`;
+}
+
+function _toListHtml(targets) {
+  return targets
+    .map(
+      ([id, name]) =>
+        `<button type="button" class="transfer-to-btn" data-kassa-id="${_escapeAttr(id)}">${_escapeHtml(name)}</button>`,
+    )
+    .join('');
+}
+
+function _refreshToList(root, user) {
+  const list = root.querySelector('#transfer-to-list');
+  if (!list) return;
+  if (_state.toKassaId === _fromKassaId) _state.toKassaId = null;
+  list.innerHTML = _toListHtml(_transferTargets(user, _fromKassaId));
+  if (_state.toKassaId) {
+    list.querySelectorAll('.transfer-to-btn').forEach(el => {
+      el.classList.toggle('transfer-to-btn--active', el.dataset.kassaId === _state.toKassaId);
+    });
+  }
+  _updateSubmit(root);
+}
+
 function _renderTransfer() {
   const root = document.getElementById('transfer-root');
   if (!root) return;
 
   const user = getCurrentUser();
-  _fromKassaId =
-    user?.role === ROLES.OPERATIONS
-      ? KASSA_ID.VLADIMIR
-      : user?.role === ROLES.INVESTOR
-        ? KASSA_ID.YULIA
-        : KASSA_ID.AZAMAT;
+  _fromKassaId = _defaultFromKassaId(user);
 
   Object.assign(_state, {
     amount: 0,
@@ -43,11 +100,7 @@ function _renderTransfer() {
     comment: '',
   });
 
-  let targets = Object.entries(KASSA_NAMES).filter(([id]) => id !== _fromKassaId);
-  if (user?.role === ROLES.MECHANIC) {
-    targets = targets.filter(([id]) => MECHANIC_TRANSFER_TO.has(id));
-  }
-  const fromKassaName = KASSA_NAMES[_fromKassaId] || _fromKassaId;
+  const targets = _transferTargets(user, _fromKassaId);
 
   root.innerHTML = `
     <div class="transfer-root">
@@ -62,10 +115,7 @@ function _renderTransfer() {
       </header>
 
       <div class="transfer-scroll">
-        <div class="transfer-from">
-          <div class="transfer-from__label">Из кассы</div>
-          <div class="transfer-from__name">${_escapeHtml(fromKassaName)}</div>
-        </div>
+        ${_fromKassaBlockHtml(user, _fromKassaId)}
 
         <button type="button" class="transfer-sum-wrap" id="transfer-sum-btn" aria-label="Сумма">
           <span class="transfer-sum" id="transfer-sum-display">0 ₽</span>
@@ -73,12 +123,7 @@ function _renderTransfer() {
 
         <div class="transfer-to-label">В кассу</div>
         <div class="transfer-to-list" id="transfer-to-list">
-          ${targets
-            .map(
-              ([id, name]) =>
-                `<button type="button" class="transfer-to-btn" data-kassa-id="${_escapeAttr(id)}">${_escapeHtml(name)}</button>`,
-            )
-            .join('')}
+          ${_toListHtml(targets)}
         </div>
 
         <label class="transfer-comment-label">
@@ -99,6 +144,11 @@ function _renderTransfer() {
   `;
 
   root.querySelector('#transfer-back')?.addEventListener('click', () => showScreen('screen-home'));
+
+  root.querySelector('#transfer-from-select')?.addEventListener('change', e => {
+    _fromKassaId = e.target.value || _fromKassaId;
+    _refreshToList(root, user);
+  });
 
   root.querySelector('#transfer-to-list')?.addEventListener('click', e => {
     const btn = e.target.closest('.transfer-to-btn');

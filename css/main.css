@@ -14,11 +14,8 @@
   --text-2xl:  24px;
   --text-3xl:  32px;
 
-  /* Unified colors (без --color-green / --color-red — используйте --c-profit / --c-loss) */
-  --c-profit: #2E8B6F;
-  --c-loss: #D14848;
-  --c-neutral: #111111;
-  --c-muted: #8A8A8E;
+  /* Семантические цвета определены в colors.css.
+     Здесь оставлены только light-варианты, которых нет там. */
   --c-profit-light: #E3F9F0;
   --c-loss-light: #FFF0EE;
 
