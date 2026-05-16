@@ -171,7 +171,7 @@ function _paint(body, fleet, tabId) {
 
       <div class="fleet-page__tabs">
         ${TABS.map(t => `
-          <button type="button" class="fleet-tab ${t.id === tabId ? 'fleet-tab--active' : ''}"
+          <button type="button" class="pill pill--light pill--stretch ${t.id === tabId ? 'pill--active' : ''}"
             data-tab="${t.id}">${t.label}</button>
         `).join('')}
       </div>
@@ -182,13 +182,13 @@ function _paint(body, fleet, tabId) {
     </div>
   `;
 
-  body.querySelectorAll('.fleet-tab').forEach(btn => {
+  body.querySelectorAll('.pill[data-tab]').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = btn.dataset.tab;
       if (!id || id === _activeTab) return;
       _activeTab = id;
-      body.querySelectorAll('.fleet-tab').forEach(b =>
-        b.classList.toggle('fleet-tab--active', b.dataset.tab === id));
+      body.querySelectorAll('.pill[data-tab]').forEach(b =>
+        b.classList.toggle('pill--active', b.dataset.tab === id));
       const root = document.getElementById('fleet-list-root');
       if (root) {
         const next = _lastFleet.filter(c => {
