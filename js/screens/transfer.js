@@ -5,6 +5,7 @@ import { showScreen } from '../router.js';
 import { showToast } from '../ui.js';
 import { fmtDate, fmtRub, fmtRuInt } from '../utils/format.js';
 import { invalidateCache as invalidateLocalCache, CACHE_KEYS } from '../cache.js';
+import { renderAppHeader } from '../ui-components.js?v=7';
 
 /** Механик (Азамат) переводит только между операционными кассами, без инвест-счетов. */
 const MECHANIC_TRANSFER_TO = new Set([KASSA_ID.VLADIMIR, KASSA_ID.YULIA]);
@@ -104,15 +105,7 @@ function _renderTransfer() {
 
   root.innerHTML = `
     <div class="transfer-root">
-      <header class="transfer-header">
-        <button type="button" class="btn-icon transfer-header__back" id="transfer-back" aria-label="Назад">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-        <h1 class="transfer-header__title">Перевод</h1>
-        <div class="transfer-header__spacer"></div>
-      </header>
+      ${renderAppHeader({ title: 'Перевод', back: { id: 'transfer-back-btn' } })}
 
       <div class="transfer-scroll">
         ${_fromKassaBlockHtml(user, _fromKassaId)}
@@ -143,7 +136,11 @@ function _renderTransfer() {
     </div>
   `;
 
-  root.querySelector('#transfer-back')?.addEventListener('click', () => showScreen('screen-home'));
+ root.querySelector('#transfer-back-btn')?.addEventListener('click', () => {
+    const u = getCurrentUser();
+    showScreen(u?.role === ROLES.INVESTOR ? 'screen-dashboard' : 'screen-home');
+  });
+  
 
   root.querySelector('#transfer-from-select')?.addEventListener('change', e => {
     _fromKassaId = e.target.value || _fromKassaId;

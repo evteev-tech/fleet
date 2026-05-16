@@ -2,45 +2,14 @@
    КОМПОНЕНТЫ: хедер, карточки, кнопки,
    поля, пиллы, navbar, bottomsheet, skeleton, toast
 ════════════════════════════════════════════════ */
-
 /* ─────────────────────────────────────────────
-   ХЕДЕР
+   ЛОГОТИП И БРЕНДИНГ ШАПКИ
 ───────────────────────────────────────────── */
-.app-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 var(--space-lg);
-  min-height: var(--header-height);
-  background: var(--color-dark);
-}
-
-.app-header--light {
-  background: var(--color-white);
-  border-bottom: 0.5px solid var(--color-border);
-}
-
-.app-header--light .btn-icon {
-  color: var(--color-dark);
-}
-
 .app-logo {
   font-size: var(--text-base);
   font-weight: 900;
   color: var(--color-yellow);
   letter-spacing: -0.02em;
-}
-
-.app-header__title {
-  font-size: var(--text-base);
-  font-weight: 700;
-  color: var(--color-dark);
-  letter-spacing: -0.01em;
 }
 
 .header-right {
@@ -781,3 +750,83 @@ select.field-input {
 .fleet-rented { background-color: #E3F9F0; color: var(--c-profit); }
 .fleet-idle   { background-color: var(--color-bg); color: #6C757D;    }
 .fleet-repair { background-color: #FFF3E0; color: #F97316;            }
+
+/* ═══════════════════════════════════════════════
+   APP HEADER — универсальный хедер экрана
+════════════════════════════════════════════════ */
+
+.app-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  height: var(--header-height);
+  padding: 0 var(--space-sm);
+  padding-top: max(8px, env(safe-area-inset-top));
+}
+
+.app-header--dark {
+  background: var(--color-dark);
+  color: var(--color-white);
+}
+
+.app-header--light {
+  background: var(--color-white);
+  color: var(--color-dark);
+  border-bottom: 0.5px solid var(--color-border);
+}
+
+/* Кнопка-иконка слева (back и т.п.) */
+.app-header__btn {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.app-header__btn:active {
+  opacity: 0.7;
+}
+
+/* Центральный слот: заголовок */
+.app-header__center {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+}
+.app-header__title {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: inherit;
+}
+
+/* Подзаголовок-счётчик справа (для fleet/drivers — «8 машин») */
+.app-header__subtitle {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: currentColor;
+  opacity: 0.55;
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding-right: var(--space-md);
+}
+
+/* Пустой спейсер 44px — балансирует кнопку слева, чтобы title был ровно по центру */
+.app-header__spacer {
+  width: 44px;
+  flex-shrink: 0;
+}

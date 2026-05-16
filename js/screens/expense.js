@@ -9,6 +9,7 @@ import { showScreen } from '../router.js';
 import { showBottomSheet, hideBottomSheet, showToast } from '../ui.js';
 import { KASSA_ID, ROLES, SHEETS } from '../config.js';
 import { fmtDate, fmtRub, fmtRuInt } from '../utils/format.js';
+import { renderAppHeader } from '../ui-components.js?v=7';
 
 const EXPENSE_CATEGORIES = [
   { key: 'ремонт', label: 'Ремонт' },
@@ -96,16 +97,8 @@ export async function renderExpense() {
     isCapex: false,
   };
 
-  root.innerHTML = `
-    <header class="expense-header">
-      <button type="button" class="btn-icon expense-header__back" id="expense-back-btn" aria-label="Назад">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
-      <h1 class="expense-header__title">Расход</h1>
-      <div class="expense-header__spacer"></div>
-    </header>
+ root.innerHTML = `
+    ${renderAppHeader({ title: 'Расход', back: { id: 'expense-back-btn' } })}
     <div class="expense-loading">Загрузка…</div>
   `;
 
@@ -133,15 +126,9 @@ export async function renderExpense() {
       if (!meta?.hadCache) {
         console.error('expense load');
         root.innerHTML = `
-      <header class="expense-header">
-        <button type="button" class="btn-icon expense-header__back" id="expense-back-err">
-          <svg width="20" height="20" viewBox="0 0 20 20"><path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
-        </button>
-        <h1 class="expense-header__title">Расход</h1>
-        <div class="expense-header__spacer"></div>
-      </header>
-      <div class="expense-error">Не удалось загрузить данные</div>
-    `;
+          ${renderAppHeader({ title: 'Расход', back: { id: 'expense-back-err' } })}
+          <div class="expense-error">Не удалось загрузить данные</div>
+        `;
         document.getElementById('expense-back-err')?.addEventListener('click', () => showScreen('screen-home'));
       }
     },
@@ -204,15 +191,7 @@ function _renderExpenseShell(root) {
   ].join('');
 
   root.innerHTML = `
-    <header class="expense-header">
-      <button type="button" class="btn-icon expense-header__back" id="expense-back-btn2">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
-      <h1 class="expense-header__title">Расход</h1>
-      <div class="expense-header__spacer"></div>
-    </header>
+   ${renderAppHeader({ title: 'Расход', back: { id: 'expense-back-btn' } })}
 
     <div class="expense-scroll">
       <button type="button" class="expense-sum-wrap" id="expense-sum-btn" aria-label="Сумма">
@@ -246,7 +225,7 @@ ${opsKassaCapexHtml}
     </div>
   `;
 
-  document.getElementById('expense-back-btn2')?.addEventListener('click', () => {
+  document.getElementById('expense-back-btn')?.addEventListener('click', () => {
     _closeNumpad(root);
     showScreen('screen-home');
   });

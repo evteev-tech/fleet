@@ -9,6 +9,7 @@ import { showScreen } from '../router.js';
 import { showBottomSheet, hideBottomSheet, showToast } from '../ui.js';
 import { CAR_STATUSES, SHEETS } from '../config.js';
 import { fmtRub, fmtRuInt } from '../utils/format.js';
+import { renderAppHeader } from '../ui-components.js?v=7';
 
 const TABS = [
   { id: 'all', label: 'Все', match: () => true },
@@ -112,10 +113,10 @@ function _paint(body, drivers, tabId) {
 
   body.innerHTML = `
     <div class="drivers-page">
-      <header class="drivers-page__header">
-        <h1 class="drivers-page__title">Водители</h1>
-        <button type="button" class="drivers-add-btn" id="drivers-add-btn">+ Добавить</button>
-      </header>
+      ${renderAppHeader({
+  title: 'Водители',
+  rightHtml: `<button type="button" class="drivers-add-btn" id="drivers-add-btn">+ Добавить</button>`,
+})}
 
       <div class="drivers-page__tabs">
         ${TABS.map(t => `
@@ -260,10 +261,7 @@ function _skeletonHTML() {
     </div>`;
   return `
     <div class="drivers-page">
-      <header class="drivers-page__header drivers-page__header--skel">
-        <div class="skeleton skeleton-line" style="width:120px;height:24px"></div>
-        <div class="skeleton skeleton-line" style="width:90px;height:14px"></div>
-      </header>
+      ${renderAppHeader({ title: 'Водители' })}
       <div class="drivers-page__tabs drivers-page__tabs--skel">
         ${[1, 2, 3].map(() => `<div class="skeleton" style="height:36px;flex:1;border-radius:10px"></div>`).join('')}
       </div>

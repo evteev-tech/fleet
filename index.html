@@ -137,19 +137,21 @@
        ЭКРАН: ДОБАВИТЬ ОПЕРАЦИЮ
   ════════════════════════════════════════════════ -->
   <section id="screen-add" class="screen">
-    <header class="app-header app-header--light">
-      <button class="btn-icon" id="add-back">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
+  <header class="app-header app-header--light">
+    <button type="button" class="app-header__btn" id="add-back" aria-label="Назад">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <div class="app-header__center">
       <span class="app-header__title">Новая операция</span>
-      <div class="w-20"></div>
-    </header>
-    <div class="screen-body pb-navbar" id="add-body">
-      <!-- Динамически рендерится в add.js -->
     </div>
-  </section>
+    <div class="app-header__spacer"></div>
+  </header>
+  <div class="screen-body pb-navbar" id="add-body">
+    <!-- Динамически рендерится в add.js -->
+  </div>
+</section>
 
   <!-- ═══════════════════════════════════════════════
        ЭКРАН: АНАЛИТИКА (investor, operations)
@@ -188,20 +190,22 @@
   <!-- ═══════════════════════════════════════════════
        ЭКРАН: КАРТОЧКА ВОДИТЕЛЯ
   ════════════════════════════════════════════════ -->
-  <section id="screen-driver" class="screen">
-    <header class="app-header app-header--light">
-      <button class="btn-icon" id="driver-back">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
+<section id="screen-driver" class="screen">
+  <header class="app-header app-header--light">
+    <button type="button" class="app-header__btn" id="driver-back" aria-label="Назад">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <div class="app-header__center">
       <span class="app-header__title" id="driver-header-name">Водитель</span>
-      <div class="w-20"></div>
-    </header>
-    <div class="screen-body pb-navbar" id="driver-body">
-      <!-- Полностью рендерится в driver.js -->
     </div>
-  </section>
+    <div class="app-header__spacer"></div>
+  </header>
+  <div class="screen-body pb-navbar" id="driver-body">
+    <!-- Полностью рендерится в driver.js -->
+  </div>
+</section>
 
   <!-- ═══════════════════════════════════════════════
        ЭКРАН: НАСТРОЙКИ

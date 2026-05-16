@@ -7,6 +7,7 @@ import { getWithSWR, CACHE_KEYS, invalidateCache as invalidateLocalCache } from 
 import { showBottomSheet, hideBottomSheet, showToast } from '../ui.js';
 import { CAR_STATUSES, SHEETS } from '../config.js';
 import { fmtRuInt } from '../utils/format.js';
+import { renderAppHeader } from '../ui-components.js?v=7';
 
 const TABS = [
   { id: 'all', label: 'Все', match: () => true },
@@ -166,10 +167,7 @@ function _paint(body, fleet, tabId) {
 
   body.innerHTML = `
     <div class="fleet-page">
-      <header class="fleet-page__header">
-        <h1 class="fleet-page__title">Парк</h1>
-        <span class="fleet-page__count">${pluralCars(fleet.length)}</span>
-      </header>
+      ${renderAppHeader({ title: 'Парк', subtitle: pluralCars(fleet.length) })}
 
       <div class="fleet-page__tabs">
         ${TABS.map(t => `
@@ -623,10 +621,7 @@ function _skeletonHTML() {
     </div>`;
   return `
     <div class="fleet-page">
-      <header class="fleet-page__header fleet-page__header--skel">
-        <div class="skeleton skeleton-line" style="width:100px;height:24px"></div>
-        <div class="skeleton skeleton-line" style="width:90px;height:14px"></div>
-      </header>
+      ${renderAppHeader({ title: 'Парк' })}
       <div class="fleet-page__tabs fleet-page__tabs--skel">
         ${[1, 2, 3, 4].map(() => `<div class="skeleton" style="height:36px;flex:1;border-radius:10px"></div>`).join('')}
       </div>

@@ -17,32 +17,6 @@
   min-height: 60vh;
 }
 
-/* ─── Хедер ─── */
-.fleet-page__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: max(44px, calc(env(safe-area-inset-top) + 28px)) var(--space-lg) var(--space-md);
-  background: var(--color-dark);
-}
-
-.fleet-page__header--skel {
-  align-items: flex-start;
-}
-
-.fleet-page__title {
-  margin: 0;
-  font-size: var(--text-2xl);
-  font-weight: 700;
-  color: var(--color-white);
-  letter-spacing: -0.02em;
-}
-
-.fleet-page__count {
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.55);
-}
 
 /* ─── Табы статусов ─── */
 .fleet-page__tabs {

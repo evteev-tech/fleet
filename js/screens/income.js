@@ -17,6 +17,7 @@ import { showScreen } from '../router.js';
 import { showToast } from '../ui.js';
 import { CAR_STATUSES, KASSA_ID, ROLES } from '../config.js';
 import { fmtRub, fmtRuInt } from '../utils/format.js';
+import { renderAppHeader } from '../ui-components.js?v=7';
 
 /** @type {{ cars: object[], selectedId: string|null, amount: number, period: '1w'|'2w'|'1m'|null, numpadOpen: boolean, numpadBuf: string, comment: string, mileage: string }} */
 let _state = {
@@ -52,17 +53,9 @@ export function renderIncome() {
     comment: '',
     mileage: '',
   };
-
-  root.innerHTML = `
-    <header class="income-header">
-      <button type="button" class="btn-icon income-header__back" id="income-back-btn" aria-label="Назад">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
-      <h1 class="income-header__title">Принять платёж</h1>
-      <div class="income-header__spacer"></div>
-    </header>
+  
+root.innerHTML = `
+    ${renderAppHeader({ title: 'Принять платёж', back: { id: 'income-back-btn' } })}
     <div class="income-loading">Загрузка…</div>
   `;
 
@@ -168,15 +161,7 @@ export function renderIncome() {
 function _renderIncomeShell(root) {
   const cars = _state.cars;
   root.innerHTML = `
-    <header class="income-header">
-      <button type="button" class="btn-icon income-header__back" id="income-back-btn2">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
-      <h1 class="income-header__title">Принять платёж</h1>
-      <div class="income-header__spacer"></div>
-    </header>
+    ${renderAppHeader({ title: 'Принять платёж', back: { id: 'income-back-btn2' } })}
 
     <div class="income-cards-wrap income-cards-wrap--scroll" id="income-cards-wrap">
       ${cars.length === 0
