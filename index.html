@@ -117,11 +117,19 @@
         </div>
       </div>
 
-      <div class="month-switcher">
-        <button type="button" class="month-chevron" id="dashMonthPrev" aria-label="Предыдущий месяц">‹</button>
-        <span class="month-text" id="dashMonthLabel"></span>
-        <button type="button" class="month-chevron" id="dashMonthNext" aria-label="Следующий месяц">›</button>
-      </div>
+      <div class="period-switcher period-switcher--dark">
+  <button type="button" class="period-switcher__btn" id="dashMonthPrev" aria-label="Предыдущий период">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+  <span class="period-switcher__label" id="dashMonthLabel"></span>
+  <button type="button" class="period-switcher__btn" id="dashMonthNext" aria-label="Следующий период">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+</div>
     </div>
 
     <div class="dashboard-body">

@@ -52,3 +52,48 @@ export function renderAppHeader({
     </header>
   `;
 }
+// ─── PERIOD SWITCHER ──────────────────────────────────────────────────────────
+
+const ICON_CHEVRON_LEFT = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+  <path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+
+const ICON_CHEVRON_RIGHT = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+  <path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+
+/**
+ * Универсальный переключатель периода (месяца).
+ *
+ * @param {object} opts
+ * @param {string} opts.label              Текст в центре (например, "Май 2026").
+ * @param {object} [opts.prev]             Конфигурация кнопки «‹».
+ * @param {string} opts.prev.id            id кнопки.
+ * @param {boolean} [opts.prev.disabled]   true → кнопка серая, неактивна.
+ * @param {object} [opts.next]             Конфигурация кнопки «›».
+ * @param {string} opts.next.id            id кнопки.
+ * @param {boolean} [opts.next.disabled]   true → кнопка серая, неактивна.
+ * @param {'dark'|'light'} [opts.variant='dark']  Тема под фон.
+ * @returns {string}
+ */
+export function renderPeriodSwitcher({
+  label,
+  prev = null,
+  next = null,
+  variant = 'dark',
+} = {}) {
+  const btn = (cfg, icon, aria) => {
+    if (!cfg) return `<div class="period-switcher__spacer"></div>`;
+    const dis = cfg.disabled ? ' disabled' : '';
+    const disClass = cfg.disabled ? ' period-switcher__btn--disabled' : '';
+    return `<button type="button" class="period-switcher__btn${disClass}" id="${cfg.id}" aria-label="${aria}"${dis}>${icon}</button>`;
+  };
+
+  return `
+    <div class="period-switcher period-switcher--${variant}">
+      ${btn(prev, ICON_CHEVRON_LEFT, 'Предыдущий период')}
+      <span class="period-switcher__label">${label}</span>
+      ${btn(next, ICON_CHEVRON_RIGHT, 'Следующий период')}
+    </div>
+  `;
+}

@@ -274,8 +274,11 @@ function _updateNextBtn() {
   const btn = document.getElementById('dashMonthNext');
   if (!btn) return;
   const isCurrentMonth = _month === _now.getMonth() + 1 && _year === _now.getFullYear();
-  btn.style.opacity       = isCurrentMonth ? '0.35' : '1';
-  btn.style.pointerEvents = isCurrentMonth ? 'none' : '';
+  btn.disabled = isCurrentMonth;
+  btn.classList.toggle('period-switcher__btn--disabled', isCurrentMonth);
+  // Сбрасываем старые inline-стили на случай если они остались с прошлой версии
+  btn.style.opacity = '';
+  btn.style.pointerEvents = '';
 }
 
 export function formatAmount(n) {

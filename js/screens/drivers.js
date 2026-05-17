@@ -120,8 +120,8 @@ function _paint(body, drivers, tabId) {
 
       <div class="drivers-page__tabs">
         ${TABS.map(t => `
-          <button type="button" class="drivers-tab ${t.id === tabId ? 'drivers-tab--active' : ''}"
-            data-tab="${t.id}">${t.label}</button>
+          <button type="button" class="pill pill--light pill--stretch ${t.id === tabId ? 'pill--active' : ''}"
+  data-tab="${t.id}">${t.label}</button>
         `).join('')}
       </div>
 
@@ -131,13 +131,13 @@ function _paint(body, drivers, tabId) {
     </div>
   `;
 
-  body.querySelectorAll('.drivers-tab').forEach(btn => {
+  body.querySelectorAll('.pill[data-tab]').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = btn.dataset.tab;
       if (!id || id === _activeTab) return;
       _activeTab = id;
-      body.querySelectorAll('.drivers-tab').forEach(b =>
-        b.classList.toggle('drivers-tab--active', b.dataset.tab === id));
+      body.querySelectorAll('.pill[data-tab]').forEach(b =>
+        b.classList.toggle('pill--active', b.dataset.tab === id));
       const root = document.getElementById('drivers-list-root');
       if (root) {
         const next = _lastDrivers.filter(c => {
@@ -150,15 +150,15 @@ function _paint(body, drivers, tabId) {
     });
   });
 
-  _bindRows(body, filtered);
+_bindRows(body, filtered);
 
-  document.getElementById('drivers-add-btn')?.addEventListener('click', async () => {
-    let fleet, drivers;
-    try { [fleet, drivers] = await Promise.all([getFleet(), getDrivers()]); }
-    catch { showToast('Ошибка загрузки', 'error'); return; }
-    openDriverForm(null, fleet, drivers);
+  document.getElementById('drivers-add-btn')?.addEventListener('click', () => {
+    // Форма «Новый водитель» не использует fleet/drivers — открываем мгновенно.
+    // getFleet() понадобится позже в _openAssignCarSheet после сохранения.
+    openDriverForm(null, [], _lastDrivers);
   });
 }
+
 
 function _listHTML(list, driversWasEmpty) {
   if (driversWasEmpty) {

@@ -830,3 +830,143 @@ select.field-input {
   width: 44px;
   flex-shrink: 0;
 }
+/* ═══════════════════════════════════════════════
+   PERIOD SWITCHER — переключатель периода (месяца)
+════════════════════════════════════════════════ */
+
+.period-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  user-select: none;
+}
+
+.period-switcher__btn {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--transition-fast);
+  color: inherit;
+}
+
+.period-switcher__btn:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.period-switcher__btn--disabled,
+.period-switcher__btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.period-switcher__spacer {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.period-switcher__label {
+  font-size: var(--text-base);
+  font-weight: 600;
+  text-align: center;
+  min-width: 110px;
+  color: inherit;
+}
+
+/* Тёмная тема (на тёмной шапке) */
+.period-switcher--dark .period-switcher__btn {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-white);
+}
+
+.period-switcher--dark .period-switcher__btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.period-switcher--dark .period-switcher__label {
+  color: var(--color-white);
+}
+
+/* Светлая тема (на светлом фоне) */
+.period-switcher--light .period-switcher__btn {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--color-dark);
+}
+
+.period-switcher--light .period-switcher__btn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.09);
+}
+
+.period-switcher--light .period-switcher__label {
+  color: var(--color-dark);
+}
+/* ═══════════════════════════════════════════════
+   PILL — выбираемый таб-фильтр
+   Используется для табов статусов/типов в списках.
+════════════════════════════════════════════════ */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: var(--space-sm) var(--space-md);
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.pill:active {
+  opacity: 0.85;
+}
+
+/* Тёмная тема (на тёмном фоне — например, в шапке истории) */
+.pill--dark {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.pill--dark:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.pill--dark.pill--active {
+  background: var(--color-yellow);
+  color: var(--color-dark);
+  font-weight: 500;
+}
+
+/* Светлая тема (на светлом фоне — табы в парке/водителях) */
+.pill--light {
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--color-muted);
+}
+
+.pill--light:hover {
+  background: rgba(0, 0, 0, 0.09);
+}
+
+.pill--light.pill--active {
+  background: var(--color-yellow);
+  color: var(--color-dark);
+  font-weight: 500;
+}
+
+/* Растягивающийся (flex: 1) — для табов на всю ширину контейнера */
+.pill--stretch {
+  flex: 1;
+  min-width: 0;
+}
