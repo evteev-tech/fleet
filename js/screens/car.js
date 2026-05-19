@@ -25,15 +25,17 @@ import {
 } from '../api/car-files.js';
 
 // ─── Состояние ────────────────────────────────────────────────────────────────
-let _currentCarId = null;
-let _filesData    = null; // { files, actualDocs }
+let _currentCarId  = null;
+let _currentCarObj = null;
+let _filesData     = null; // { files, actualDocs }
 
 // ─── Инициализация ────────────────────────────────────────────────────────────
 
 export function initCar() {
   document.addEventListener('car:open', e => {
-    _currentCarId = e.detail?.carId ?? null;
-    _filesData    = null;
+    _currentCarId  = e.detail?.carId ?? null;
+    _currentCarObj = e.detail?.car   ?? null;
+    _filesData     = null;
   });
 
   document.addEventListener('screen:activated', e => {
@@ -52,6 +54,40 @@ export async function renderCar(carId) {
   const titleEl = document.getElementById('car-header-title');
   if (!body) return;
   if (titleEl) titleEl.textContent = carId || 'Машина';
+
+  const user     = getCurrentUser();
+  const canWrite = user?.role === ROLES.MECHANIC || user?.role === ROLES.OPERATIONS;
+
+  if (_currentCarObj && String(_currentCarObj.carId) === String(carId)) {
+    if (titleEl) titleEl.textContent = _currentCarObj.carId;
+    body.innerHTML = _carBodyHTML(_currentCarObj, null, canWrite);
+
+    Promise.all([getDrivers(), listCarFiles(carId)]).then(([drivers, filesResult]) => {
+      _filesData = filesResult;
+      const cid    = String(_currentCarObj.carId ?? '').trim();
+      const driver = drivers.find(d => String(d.currentCar ?? '').trim() === cid);
+      if (driver && _currentCarObj.status === CAR_STATUSES.RENT) {
+        const driverEl = body.querySelector('.car-driver');
+        if (driverEl) {
+          driverEl.outerHTML = `
+            <div class="car-driver">
+              <div class="car-driver__avatar">${_initials(driver.name)}</div>
+              <div class="car-driver__info">
+                <div class="car-driver__name">${_esc(driver.name)}</div>
+                ${driver.phone ? `<a class="car-driver__phone" href="tel:${_esc(driver.phone)}">${_esc(driver.phone)}</a>` : ''}
+              </div>
+            </div>`;
+        }
+      }
+      _renderActualDocs(filesResult.actualDocs);
+      _renderDocsList(filesResult.files.filter(f => f.kind === 'docs'), carId, canWrite);
+      _renderPhotosGrid(filesResult.files.filter(f => f.kind === 'photos'), carId, canWrite);
+      _bindFileButtons(carId, canWrite);
+    }).catch(() => {});
+
+    _bindActionButtons(_currentCarObj, null, canWrite);
+    return;
+  }
 
   body.innerHTML = _skeletonHTML();
 
@@ -74,8 +110,6 @@ export async function renderCar(carId) {
 
   const cid    = String(car.carId ?? '').trim();
   const driver = drivers.find(d => String(d.currentCar ?? '').trim() === cid);
-  const user   = getCurrentUser();
-  const canWrite = user?.role === ROLES.MECHANIC || user?.role === ROLES.OPERATIONS;
 
   body.innerHTML = _carBodyHTML(car, driver, canWrite);
 
@@ -168,7 +202,7 @@ function _carBodyHTML(car, driver, canWrite) {
       ${actionBtns}
     </div>
 
-    <input type="file" id="car-input-photo" accept="image/*" capture="environment" style="display:none">
+    <input type="file" id="car-input-photo" accept="image/*" style="display:none">
     <input type="file" id="car-input-doc" accept=".pdf,image/*" style="display:none">
   `;
 }

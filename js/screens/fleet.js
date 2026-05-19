@@ -340,6 +340,12 @@ function _fmtDateForApi(d) {
 
 function _bindCardClicks(body, cars) {
   body.querySelectorAll('.fleet-car[data-car-id]').forEach(el => {
+    el.addEventListener('touchstart', () => {
+      const car = cars.find(c => c.carId === el.dataset.carId);
+      if (!car) return;
+      import('../api/car-files.js').then(m => m.listCarFiles(car.carId)).catch(() => {});
+    }, { passive: true });
+
     el.addEventListener('click', e => {
 
       /* ── Тап по триггеру попапа ── */
@@ -370,14 +376,13 @@ function _bindCardClicks(body, cars) {
         return;
       }
 
-      /* ── Обычный тап по карточке → bottomsheet ── */
+      /* ── Обычный тап по карточке → screen-car ── */
       const card = e.target.closest('.fleet-car[data-car-id]');
       if (card && !e.target.closest('.fleet-quick-wrap')) {
         const car = cars.find(c => c.carId === card.dataset.carId);
-        if (car) {
-          document.dispatchEvent(new CustomEvent('car:open', { detail: { carId: car.carId } }));
-          showScreen('screen-car');
-        }
+        if (!car) return;
+        document.dispatchEvent(new CustomEvent('car:open', { detail: { carId: car.carId, car } }));
+        showScreen('screen-car');
       }
     });
   });

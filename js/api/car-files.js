@@ -17,9 +17,9 @@ import { postAction } from '../api.js';
 import { getCurrentUser } from '../auth.js';
 
 // ─── In-memory кэш списков файлов ────────────────────────────────────────────
-// Ключ: car_id, значение: { data, ts }. TTL 60 секунд (совпадает с CacheService).
+// Ключ: car_id, значение: { data, ts }. TTL 5 минут.
 const _filesCache = new Map();
-const FILES_CACHE_TTL = 60_000;
+const FILES_CACHE_TTL = 300_000;
 
 function _invalidateFilesCache(carId) {
   if (carId) _filesCache.delete(String(carId));
@@ -28,7 +28,8 @@ function _invalidateFilesCache(carId) {
 // ─── Читаемые label'ы для тегов ──────────────────────────────────────────────
 export const DOC_TAG_LABELS = {
   osago:      'ОСАГО',
-  sts:        'СТС',
+  sts_front:  'СТС (лицевая)',
+  sts_back:   'СТС (оборот)',
   pts:        'ПТС',
   contract:   'Договор',
   diagnostic: 'Диагностика',
