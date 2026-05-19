@@ -257,7 +257,7 @@ function _render(body, allOps, fleet, drivers, rentalRows) {
       <div class="home-action-row home-action-row--3">
         <button id="home-btn-income" class="btn-primary">＋ Платёж</button>
         <button id="home-btn-expense" class="btn-secondary">− Расход</button>
-        <button id="home-btn-transfer" class="btn-secondary">⇄ Перевод</button>
+        <button id="home-btn-transfer" class="btn-secondary">⇄&nbsp;Перевод</button>
       </div>
     </div>
     <div class="home-content-sheet">
