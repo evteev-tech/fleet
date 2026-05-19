@@ -171,6 +171,13 @@ function _formatSignedAmt(n) {
   return `${sign}${fmtRuInt(Math.abs(rounded))} ₽`;
 }
 
+/** То же, но ₽ как на кассе Азамата — <span class="rub">. */
+function _formatSignedAmtHTML(n) {
+  const rounded = Math.round(Number(n) || 0);
+  const sign = rounded < 0 ? '−' : '';
+  return `${sign}${fmtRuInt(Math.abs(rounded))}<span class="rub">₽</span>`;
+}
+
 function _operationsCashSummaryHtml(allOps) {
   const now = new Date();
   const month = now.getMonth() + 1;
@@ -192,7 +199,7 @@ function _operationsCashSummaryHtml(allOps) {
   return `
     <div class="home-cash-card home-cash-card--ops-overview">
       <div class="home-ops-fin__label">ИТОГО В КАССАХ</div>
-      <div class="home-ops-fin__total">${_formatSignedAmt(total)}</div>
+      <div class="home-ops-fin__total">${_formatSignedAmtHTML(total)}</div>
       <div class="home-ops-fin__subtitle">За ${monthTitle} ${year} г.</div>
       <div class="home-ops-fin__tiles">
         <div class="home-ops-fin__tile">

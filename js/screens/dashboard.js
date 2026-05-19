@@ -27,6 +27,13 @@ const KASSA_META = {
   [KASSA_ID.YULIA]:    { color: 'var(--color-orange)' },
 };
 
+/** Маппинг роли пользователя на ID его кассы (для подсветки аватара). */
+const ROLE_TO_KASSA = {
+  [ROLES.MECHANIC]:   KASSA_ID.AZAMAT,
+  [ROLES.OPERATIONS]: KASSA_ID.VLADIMIR,
+  [ROLES.INVESTOR]:   KASSA_ID.YULIA,
+};
+
 const FLEET_META = [
   { status: CAR_STATUSES.RENT,   label: 'В аренде',   letter: 'А', bg: '#E3F9F0', color: '#00A86B' },
   { status: CAR_STATUSES.IDLE,   label: 'Простой',    letter: 'П', bg: '#F0F1F3', color: '#8A8A8E' },
@@ -215,7 +222,15 @@ function _showDashboardError(isNoConn) {
 function _fillUserHeader() {
   const user = getCurrentUser();
   const av = document.getElementById('dashAvatar');
-  if (av) av.textContent = (user?.name ?? '?')[0].toUpperCase();
+  if (!av) return;
+  av.textContent = (user?.name ?? '?')[0].toUpperCase();
+  const kassaId = ROLE_TO_KASSA[user?.role];
+  const color = kassaId ? KASSA_META[kassaId]?.color : null;
+  av.style.background = color || 'var(--color-yellow)';
+  // Тёмный текст на жёлтом, белый на синем/оранжевом
+  av.style.color = kassaId === KASSA_ID.AZAMAT
+    ? 'var(--color-dark)'
+    : '#fff';
 }
 
 function _setAmountSkeleton(on) {
@@ -261,7 +276,7 @@ function _updateHeaderStats() {
   const monthNet = monthIncome - monthExpense;
 
   const ta = document.getElementById('dashTotalAmount');
-  if (ta) ta.textContent = formatAmount(total);
+  if (ta) ta.innerHTML = formatAmountHTML(total);
   const inc = document.getElementById('dashIncome');
   const exp = document.getElementById('dashExpense');
   const prf = document.getElementById('dashProfit');
@@ -285,6 +300,13 @@ export function formatAmount(n) {
   const rounded = Math.round(n);
   const sign = rounded < 0 ? '−' : '';
   return `${sign}${fmtRuInt(Math.abs(rounded))} ₽`;
+}
+
+/** То же, но ₽ как на главной Азамата — <span class="rub">. */
+export function formatAmountHTML(n) {
+  const rounded = Math.round(n);
+  const sign = rounded < 0 ? '−' : '';
+  return `${sign}${fmtRuInt(Math.abs(rounded))}<span class="rub">₽</span>`;
 }
 
 function _kassasHTML() {
