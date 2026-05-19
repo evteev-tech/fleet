@@ -242,7 +242,7 @@ function _render(body, allOps, fleet, drivers, rentalRows) {
       </div>`;
   const rentCars = fleet.filter(c => _bucketStatus(c.status) === 'rent');
   const latestByCar = latestRentalByCarMap(rentalRows || []);
-  const allTasks = _buildTasks(allOps, rentCars, drivers, latestByCar);
+  const allTasks = _buildTasks(allOps, rentCars, drivers, latestByCar, rentalRows || []);
   const taskViewTasks = allTasks.tasks.filter(_isTaskVisibleInPayments);
   const dueSoon = _buildDueSoonRows(allOps, rentCars, drivers, rentalRows);
   const park = _parkStats(fleet);
@@ -604,7 +604,7 @@ function _resolveTaskStatus({ paidInfo, paidUntil, promiseDate }) {
   return 'neutral';
 }
 
-function _buildTasks(ops, rentCars, drivers, latestByCar) {
+function _buildTasks(ops, rentCars, drivers, latestByCar, rentalRows) {
   const byCarDriver = new Map();
   drivers.forEach(d => {
     if (d.currentCar) byCarDriver.set(String(d.currentCar).trim(), d);
@@ -624,6 +624,8 @@ function _buildTasks(ops, rentCars, drivers, latestByCar) {
     const paidInfo = _sessionState.paidByCar.get(carId);
 
     let paidUntil = null;
+    let paidUntilFromRental = false;
+
     if (paidInfo) {
       const paySrc =
         paidInfo.date instanceof Date
@@ -636,7 +638,14 @@ function _buildTasks(ops, rentCars, drivers, latestByCar) {
         payDt.setHours(0, 0, 0, 0);
         paidUntil = calcPaidUntil(payDt, Number(paidInfo.amount) || 0, rate);
       }
-    } else if (op) {
+    }
+
+    if (paidUntil == null) {
+      paidUntil = _paidUntilDayFromLatestRentalEnd(rentalRows, carId);
+      if (paidUntil != null) paidUntilFromRental = true;
+    }
+
+    if (paidUntil == null && op) {
       const opD = _toDate(op);
       if (opD && !Number.isNaN(opD.getTime())) {
         opD.setHours(0, 0, 0, 0);
@@ -645,7 +654,7 @@ function _buildTasks(ops, rentCars, drivers, latestByCar) {
     }
 
     const bonusDaysTotal = Number(latestRental?.bonusDays) || 0;
-    if (paidUntil && bonusDaysTotal > 0) {
+    if (paidUntil && bonusDaysTotal > 0 && !paidUntilFromRental) {
       paidUntil = new Date(paidUntil.getTime() + bonusDaysTotal * 86400000);
     }
 
@@ -712,16 +721,17 @@ function _paidUntilDayFromRentalDateEnd(dateEnd) {
 }
 
 /**
- * «Оплачено до» для блока «Ближайшие 3 дня»: дата_окончания последней строки аренды
- * с непустым dateEnd (источник правды в таблице). Иначе null → fallback на calcPaidUntil.
+ * «Оплачено до»: последняя аренда по rentalId DESC (при равенстве — dateStart DESC).
+ * dateEnd заполнен → paidUntil = dateEnd; dateEnd пуст → paidUntil = dateStart.
+ * Иначе null → fallback на calcPaidUntil.
  */
 function _paidUntilDayFromLatestRentalEnd(rentalRows, carId) {
   const cid = String(carId || '').trim();
-  const candidates = (rentalRows || []).filter(r => {
-    if (String(r.carId || '').trim() !== cid) return false;
-    return _paidUntilDayFromRentalDateEnd(r.dateEnd) != null;
-  });
+  const candidates = (rentalRows || []).filter(r =>
+    String(r.carId || '').trim() === cid
+  );
   if (!candidates.length) return null;
+
   candidates.sort((a, b) => {
     const nb = _rentalIdTailNum(b.rentalId);
     const na = _rentalIdTailNum(a.rentalId);
@@ -730,9 +740,20 @@ function _paidUntilDayFromLatestRentalEnd(rentalRows, carId) {
     const sb = b.dateStart instanceof Date && !Number.isNaN(b.dateStart.getTime()) ? b.dateStart.getTime() : 0;
     return sb - sa;
   });
-  let pt = _paidUntilDayFromRentalDateEnd(candidates[0].dateEnd);
-  const bonus = Number(candidates[0].bonusDays) || 0;
-  if (pt && bonus > 0) pt = _addDays(pt, bonus);
+
+  const latest = candidates[0];
+
+  let pt = _paidUntilDayFromRentalDateEnd(latest.dateEnd);
+  if (pt == null) {
+    if (latest.dateStart instanceof Date && !Number.isNaN(latest.dateStart.getTime())) {
+      const ds = latest.dateStart;
+      pt = new Date(ds.getFullYear(), ds.getMonth(), ds.getDate());
+    }
+  }
+  if (pt == null) return null;
+
+  const bonus = Number(latest.bonusDays) || 0;
+  if (bonus > 0) pt = _addDays(pt, bonus);
   return pt;
 }
 

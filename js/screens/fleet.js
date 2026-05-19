@@ -2,7 +2,7 @@
  * fleet.js — экран «Парк»: данные GET_FLEET, фильтр по статусу, карточки Т-Банка.
  */
 
-import { getFleet, getDrivers, postAction, invalidateCache } from '../api.js';
+import { getFleet, getDrivers, getRentals, postAction, invalidateCache } from '../api.js';
 import { getWithSWR, CACHE_KEYS, invalidateCache as invalidateLocalCache } from '../cache.js';
 import { showScreen } from '../router.js';
 import { showBottomSheet, hideBottomSheet, showToast } from '../ui.js';
@@ -338,6 +338,53 @@ function _fmtDateForApi(d) {
   return `${dd}.${mm}.${yyyy}`;
 }
 
+function _todayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function _isoToDDMMYYYY(iso) {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-');
+  return `${d}.${m}.${y}`;
+}
+
+function _ddmmyyyyToISO(s) {
+  if (!s) return '';
+  const [d, m, y] = String(s).split('.');
+  if (!d || !m || !y) return '';
+  return `${y}-${m}-${d}`;
+}
+
+async function _getMinDateStartISO(carId) {
+  try {
+    const rentals = await getRentals();
+    const cid = String(carId || '').trim();
+    const closed = rentals
+      .filter(r => String(r.carId || '').trim() === cid && r.dateEnd)
+      .map(r => (r.dateEnd instanceof Date && !Number.isNaN(r.dateEnd.getTime()) ? r.dateEnd : null))
+      .filter(Boolean)
+      .sort((a, b) => b.getTime() - a.getTime());
+    if (!closed.length) return null;
+    const lastEnd = closed[0];
+    const min = new Date(lastEnd.getFullYear(), lastEnd.getMonth(), lastEnd.getDate() + 1);
+    return min.toISOString().slice(0, 10);
+  } catch {
+    return null;
+  }
+}
+
+async function _hasOpenRental(carId) {
+  try {
+    const rentals = await getRentals();
+    const cid = String(carId || '').trim();
+    return rentals.some(r =>
+      String(r.carId || '').trim() === cid && !r.dateEnd,
+    );
+  } catch {
+    return false;
+  }
+}
+
 function _bindCardClicks(body, cars) {
   body.querySelectorAll('.fleet-car[data-car-id]').forEach(el => {
     el.addEventListener('touchstart', () => {
@@ -515,6 +562,7 @@ async function _openCarSheet(car) {
 
 async function _openDriverSelectSheet(car) {
   invalidateCache(SHEETS.DRIVERS);
+  invalidateCache(SHEETS.RENTALS);
   let drivers;
   try {
     drivers = await getDrivers();
@@ -526,6 +574,10 @@ async function _openDriverSelectSheet(car) {
   const active = drivers.filter(d =>
     (d.status === 'активный' || d.status === 'активен') && !d.currentCar
   );
+
+  const minDateISO = await _getMinDateStartISO(car.carId);
+  const maxDateISO = _todayISO();
+  const todayISO   = _todayISO();
 
   showBottomSheet(`
     <div class="fleet-bs-back" id="fleet-bs-back">
@@ -544,6 +596,15 @@ async function _openDriverSelectSheet(car) {
         </div>
       `).join('')}
     </div>
+    <label class="add-label" for="fleet-rent-date" style="margin-top:12px;display:block">Дата выдачи</label>
+    <input
+      id="fleet-rent-date"
+      class="field-input"
+      type="date"
+      value="${todayISO}"
+      ${minDateISO ? `min="${minDateISO}"` : ''}
+      max="${maxDateISO}"
+    />
     <button class="fleet-bs-confirm" id="fleet-bs-confirm" disabled>Перевести в аренду</button>
   `);
 
@@ -570,12 +631,29 @@ async function _openDriverSelectSheet(car) {
 
     document.getElementById('fleet-bs-confirm')?.addEventListener('click', async () => {
       if (!selectedDriverId) return;
-      await _changeStatusWithDriver(car, CAR_STATUSES.RENT, selectedDriverId);
+
+      const dateISO = document.getElementById('fleet-rent-date')?.value || todayISO;
+
+      if (dateISO > maxDateISO) {
+        showToast('Дата не может быть в будущем', 'error');
+        return;
+      }
+
+      if (minDateISO && dateISO < minDateISO) {
+        showToast(`Дата не может быть раньше ${_isoToDDMMYYYY(minDateISO)}`, 'error');
+        return;
+      }
+
+      if (await _hasOpenRental(car.carId)) {
+        showToast('Внимание: у машины есть незакрытая аренда', 'warning');
+      }
+
+      await _changeStatusWithDriver(car, CAR_STATUSES.RENT, selectedDriverId, dateISO);
     });
   }, 0);
 }
 
-async function _changeStatusWithDriver(car, newStatus, driverId) {
+async function _changeStatusWithDriver(car, newStatus, driverId, dateStartISO) {
   const btn = document.getElementById('fleet-bs-confirm');
   if (btn) {
     btn.disabled = true;
@@ -585,11 +663,14 @@ async function _changeStatusWithDriver(car, newStatus, driverId) {
   try {
     await postAction('UPDATE_CAR_STATUS', { car_id: car.carId, new_status: newStatus });
 
-    const today = _fmtDateForApi(new Date());
+    const dateStart = dateStartISO
+      ? _isoToDDMMYYYY(dateStartISO)
+      : _fmtDateForApi(new Date());
+
     await postAction('ADD_RENTAL', {
       car_id: car.carId,
       driver_id: driverId,
-      date_start: today,
+      date_start: dateStart,
       rate_day: car.rateDay,
       comment: 'выдача из Парка',
     });
