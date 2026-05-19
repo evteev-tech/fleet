@@ -18,7 +18,7 @@ import { getWithSWR, CACHE_KEYS, invalidateCache as invalidateLocalCache } from 
  * Увеличивайте при изменении формы ответа API / calcDash, чтобы после F5 SWR
  * заново подтянул операции и дашборд (иначе возможен устаревший JSON в localStorage).
  */
-const ANALYTICS_DATA_CACHE_REVISION = 7;
+const ANALYTICS_DATA_CACHE_REVISION = 9;
 const ANALYTICS_CACHE_REV_KEY = 'fleet_analytics_model_rev';
 
 function invalidateStaleAnalyticsCachesIfNeeded() {
@@ -41,6 +41,11 @@ function invalidateStaleAnalyticsCachesIfNeeded() {
 import { getCurrentUser } from '../auth.js';
 import { mountNavbarInContainer } from '../router.js';
 import { renderOverview, renderOverviewSkeleton } from './analytics/overview.js';
+import {
+  bindDesktopLostInteractions,
+  bindParkLoadToggle,
+  renderParkLoadBlock,
+} from './analytics/parkLoad.js';
 import { renderOpex, revealOpexAnimations } from './analytics/opex.js';
 import { renderCapex, revealCapexAnimations } from './analytics/capex.js';
 import { renderPnL } from './analytics/pnl.js';
@@ -453,10 +458,53 @@ function hydrateKassas(root, dash) {
   mount.innerHTML = renderKassas(dash);
 }
 
+function buildCurrentDash_() {
+  const now = new Date();
+  const dash = calcDash({
+    ops: _ops,
+    cars: _cars,
+    kassas: _kassas,
+    deposits: _deposits,
+    allTime: _pendingAllTime,
+    year: _pendingYear || now.getFullYear(),
+    month: _pendingMonth || now.getMonth() + 1,
+  });
+  mergeDashboardApiIntoDash_(dash);
+  return dash;
+}
+
+function refreshParkLoadBlock_(root) {
+  if (!root || isDesktop()) return;
+  const page = root.querySelector('.analytics-page[data-page="0"] .overview-tab');
+  if (!page) return;
+  const dash = buildCurrentDash_();
+  const html = renderParkLoadBlock(dash);
+  const existing = page.querySelector('.park-load-card');
+  if (!html) {
+    existing?.remove();
+    return;
+  }
+  if (existing) {
+    const wrap = document.createElement('div');
+    wrap.innerHTML = html.trim();
+    const next = wrap.firstElementChild;
+    if (next) existing.replaceWith(next);
+  } else {
+    const fleet = page.querySelector('.overview-tab__fleet-card');
+    if (fleet) fleet.insertAdjacentHTML('beforebegin', html);
+  }
+  bindParkLoadToggle(root);
+}
+
 function afterShellMounted(root, dash) {
+  if (isDesktop()) {
+    bindDesktopLostInteractions(root);
+    return;
+  }
   bindCarouselScroll(root);
   void mountInlineNavbar(root);
   hydrateKassas(root, dash);
+  bindParkLoadToggle(root);
   const car = root.querySelector('#analytics-carousel');
   if (car) {
     const safe = Math.max(0, Math.min(PAGE_LABELS.length - 1, _currentPage));
@@ -581,11 +629,14 @@ function normalizeDashboardApi_(d) {
       kassaTurnover: [],
       pnlByCarMonthly: {},
       utilizationByCar: {},
+      lostRevenue: null,
     };
   }
   const pm = d.paybackMonths;
   const paybackMonths =
     pm === null || pm === undefined || Number.isNaN(Number(pm)) ? null : Number(pm);
+  const lostRevenue =
+    d.lostRevenue && typeof d.lostRevenue === 'object' ? d.lostRevenue : null;
   return {
     trailing12: Array.isArray(d.trailing12) ? d.trailing12 : [],
     cumulativeProfit: Number(d.cumulativeProfit) || 0,
@@ -596,6 +647,7 @@ function normalizeDashboardApi_(d) {
     kassaTurnover: normalizeKassaTurnover_(d.kassaTurnover),
     pnlByCarMonthly: normalizePnlByCarMonthly_(d.pnlByCarMonthly),
     utilizationByCar: normalizeUtilizationByCar_(d.utilizationByCar),
+    lostRevenue,
   };
 }
 
@@ -610,6 +662,7 @@ function mergeDashboardApiIntoDash_(dash) {
   dash.kassaTurnover = pack.kassaTurnover;
   dash.pnlByCarMonthly = pack.pnlByCarMonthly;
   dash.utilizationByCar = pack.utilizationByCar;
+  dash.lostRevenue = pack.lostRevenue;
   dash.overviewExtrasError = _dashApiExtrasError;
 }
 
@@ -670,6 +723,7 @@ function refreshViewOnly() {
     applyDashToState(dash);
     if (isDesktop()) {
       root.innerHTML = renderDesktopShell(dash);
+      afterShellMounted(root, dash);
     } else {
       const empty = !dashboardHasContent(dash);
       destroyCapexChart();
@@ -825,6 +879,7 @@ async function applyPeriod(year, month) {
     applyDashToState(dash);
     if (isDesktop()) {
       root.innerHTML = renderDesktopShell(dash);
+      afterShellMounted(root, dash);
     } else {
       const empty = !dashboardHasContent(dash);
       destroyCapexChart();
@@ -873,6 +928,7 @@ async function applyAllTime() {
     applyDashToState(dash);
     if (isDesktop()) {
       root.innerHTML = renderDesktopShell(dash);
+      afterShellMounted(root, dash);
     } else {
       const empty = !dashboardHasContent(dash);
       destroyCapexChart();
@@ -999,6 +1055,7 @@ function onRootClick(e) {
     });
     if (isDesktop()) {
       root.innerHTML = renderDesktopShell(dash);
+      afterShellMounted(root, dash);
     } else {
       destroyCapexChart();
     root.innerHTML = successShellHTML(dash, '', _capexMode);
@@ -1020,5 +1077,10 @@ export function initAnalytics() {
       destroyCapexChart();
       refreshViewOnly();
     }
+  });
+
+  document.addEventListener('analytics:park-load-toggle', () => {
+    const root = document.getElementById('analytics-root');
+    refreshParkLoadBlock_(root);
   });
 }

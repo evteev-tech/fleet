@@ -260,6 +260,7 @@ function doPost(e) {
       case 'ADD_DEPOSIT':       return handleAddDeposit(SS, body);
       case 'ADD_RENTAL':        return handleAddRental(SS, body);
       case 'GET_DASHBOARD':     return handleGetDashboard(SS);
+      case 'GET_LOST_REVENUE':  return handleGetLostRevenue(SS, body);
       case 'UPDATE_PERIOD':     return handleUpdatePeriod(SS, body);
       case 'GET_FLEET':         return handleGetFleet(SS);
       case 'GET_DRIVERS':       return handleGetDrivers(SS);
@@ -757,6 +758,318 @@ function computeUtilizationByCar_(ss, year, month, allTime, now) {
   return result;
 }
 
+// -----------------------------------------------------------------------------
+// GET_LOST_REVENUE — упущенная выручка (ремонт / простой / бонусы)
+// -----------------------------------------------------------------------------
+
+function getDashboardPeriodBounds_(year, month, allTime, now) {
+  if (!now) now = new Date();
+  now = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (allTime) {
+    var psAll = new Date(2020, 0, 1);
+    psAll.setHours(0, 0, 0, 0);
+    var pdAll = Math.round((now - psAll) / 86400000) + 1;
+    return {
+      periodStart: psAll,
+      periodEnd: now,
+      year: Number(year) || now.getFullYear(),
+      month: Number(month) || (now.getMonth() + 1),
+      allTime: true,
+      periodDays: Math.max(1, pdAll),
+    };
+  }
+  var y = Number(year);
+  var mo = Number(month);
+  if (!y || !mo || mo < 1 || mo > 12) {
+    y = now.getFullYear();
+    mo = now.getMonth() + 1;
+  }
+  var periodStart = new Date(y, mo - 1, 1);
+  periodStart.setHours(0, 0, 0, 0);
+  var periodEnd = new Date(y, mo, 0);
+  periodEnd.setHours(0, 0, 0, 0);
+  if (y === now.getFullYear() && mo === now.getMonth() + 1) {
+    periodEnd = new Date(now);
+  }
+  var periodDays = Math.round((periodEnd - periodStart) / 86400000) + 1;
+  return {
+    periodStart: periodStart,
+    periodEnd: periodEnd,
+    year: y,
+    month: mo,
+    allTime: false,
+    periodDays: Math.max(1, periodDays),
+  };
+}
+
+function daysInclusive_(d0, d1) {
+  if (!d0 || !d1) return 0;
+  var a = new Date(d0.getFullYear(), d0.getMonth(), d0.getDate());
+  var b = new Date(d1.getFullYear(), d1.getMonth(), d1.getDate());
+  if (b < a) return 0;
+  return Math.round((b - a) / 86400000) + 1;
+}
+
+function overlapRangeDays_(lossStart, lossEnd, periodStart, periodEnd) {
+  if (!lossStart) return 0;
+  var s = new Date(lossStart);
+  s.setHours(0, 0, 0, 0);
+  var e = lossEnd ? new Date(lossEnd) : new Date(periodEnd);
+  e.setHours(0, 0, 0, 0);
+  var ps = new Date(periodStart);
+  var pe = new Date(periodEnd);
+  var start = s > ps ? s : ps;
+  var end = e < pe ? e : pe;
+  return daysInclusive_(start, end);
+}
+
+function normStatus_(raw) {
+  return String(raw || '').toLowerCase().trim();
+}
+
+function isRepairCategory_(cat) {
+  var c = normStatus_(cat);
+  if (!c) return false;
+  if (c === '\u0440\u0435\u043c\u043e\u043d\u0442' || c === '\u0442\u043e') return true;
+  if (c.indexOf('\u0437\u0430\u043f\u0447\u0430\u0441\u0442') >= 0) return true;
+  return false;
+}
+
+function isRentType_(typ) {
+  return normStatus_(typ).indexOf('\u0430\u0440\u0435\u043d\u0434') >= 0;
+}
+
+function rentPaidDays_(amount, rateDay) {
+  var rate = Number(rateDay) || 0;
+  if (rate <= 0) return 0;
+  return Math.max(0, Math.floor(Number(amount) / rate));
+}
+
+function buildCarsIndex_(ss) {
+  var sheet = ss.getSheetByName(SHEET.CARS);
+  var map = {};
+  if (!sheet) return map;
+  var data = sheet.getDataRange().getValues();
+  for (var i = 1; i < data.length; i++) {
+    var id = String(data[i][0] || '').trim();
+    if (!id) continue;
+    map[id] = {
+      carId: id,
+      status: String(data[i][3] || '').trim(),
+      rateDay: Number(data[i][6]) || 0,
+      dateBuy: parseDate(data[i][4]),
+    };
+  }
+  return map;
+}
+
+function readDashboardPeriod_(ss) {
+  var now = new Date();
+  var year = now.getFullYear();
+  var month = now.getMonth() + 1;
+  var allTime = false;
+  var sheet = ss.getSheetByName(SHEET.DASHBOARD);
+  if (sheet) {
+    year = Number(sheet.getRange('B2').getValue()) || year;
+    month = Number(sheet.getRange('B3').getValue()) || month;
+    var periodAllRaw = sheet.getRange('E99').getValue();
+    allTime = String(periodAllRaw || '').trim().toUpperCase() === 'ALL';
+  }
+  return { year: year, month: month, allTime: allTime };
+}
+
+/**
+ * @returns {object} lostRevenue payload (period, parkLoad, summary, byCarSorted)
+ */
+function computeLostRevenue_(ss, year, month, allTime, now) {
+  var bounds = getDashboardPeriodBounds_(year, month, allTime, now);
+  var periodStart = bounds.periodStart;
+  var periodEnd = bounds.periodEnd;
+  var carsMap = buildCarsIndex_(ss);
+  var carIds = Object.keys(carsMap);
+
+  var inactive = { '\u043f\u0440\u043e\u0434\u0430\u043d\u0430': true, '\u0441\u043f\u0438\u0441\u0430\u043d\u0430': true };
+  var activeCount = 0;
+  for (var ac = 0; ac < carIds.length; ac++) {
+    var st0 = normStatus_(carsMap[carIds[ac]].status);
+    if (!inactive[st0]) activeCount++;
+  }
+
+  var rentMachineDays = 0;
+  var rentSheet = ss.getSheetByName(SHEET.RENTALS);
+  if (rentSheet) {
+    var rdata = rentSheet.getDataRange().getValues();
+    for (var ri = 1; ri < rdata.length; ri++) {
+      var rcar = String(rdata[ri][1] || '').trim();
+      if (!rcar) continue;
+      var dStart = parseDate(rdata[ri][3]);
+      var dEnd = parseDate(rdata[ri][4]);
+      if (!dStart) continue;
+      rentMachineDays += overlapRangeDays_(dStart, dEnd || periodEnd, periodStart, periodEnd);
+    }
+  }
+
+  var totalCarDays = activeCount * bounds.periodDays;
+  var summary = {
+    repair: { days: 0, rub: 0 },
+    idle: { days: 0, rub: 0 },
+    bonus: { days: 0, rub: 0 },
+    total: { days: 0, rub: 0 },
+  };
+  var carBuckets = {};
+
+  function ensureCar_(id) {
+    if (!carBuckets[id]) {
+      carBuckets[id] = {
+        repair: { d: 0, r: 0 },
+        idle: { d: 0, r: 0 },
+        bonus: { d: 0, r: 0 },
+      };
+    }
+    return carBuckets[id];
+  }
+
+  function addLoss_(id, kind, days, rub) {
+    if (days <= 0 || rub <= 0) return;
+    var b = ensureCar_(id);
+    b[kind].d += days;
+    b[kind].r += rub;
+    summary[kind].days += days;
+    summary[kind].rub += rub;
+  }
+
+  if (rentSheet) {
+    var rBonus = rentSheet.getDataRange().getValues();
+    for (var bi = 1; bi < rBonus.length; bi++) {
+      var bcar = String(rBonus[bi][1] || '').trim();
+      var endDt = parseDate(rBonus[bi][4]);
+      var bonus = Number(rBonus[bi][9]) || 0;
+      if (!bcar || bonus <= 0 || !endDt) continue;
+      endDt.setHours(0, 0, 0, 0);
+      if (endDt < periodStart || endDt > periodEnd) continue;
+      var rateB = Number(carsMap[bcar] && carsMap[bcar].rateDay) || 0;
+      if (rateB <= 0) {
+        logFailure(ss, 'GET_LOST_REVENUE', 'NO_RATE', bcar);
+        continue;
+      }
+      addLoss_(bcar, 'bonus', bonus, bonus * rateB);
+    }
+  }
+
+  var lastRepairOp = {};
+  var lastRentOp = {};
+  var opsSheet = ss.getSheetByName(SHEET.OPERATIONS);
+  if (opsSheet) {
+    var odata = opsSheet.getDataRange().getValues();
+    for (var oi = 1; oi < odata.length; oi++) {
+      var ocar = String(odata[oi][7] || '').trim();
+      if (!ocar) continue;
+      var odt = parseDate(odata[oi][1]);
+      if (!odt) continue;
+      var cat = String(odata[oi][6] || '');
+      var typ = String(odata[oi][5] || '');
+      var amt = Number(odata[oi][4]) || 0;
+      if (isRepairCategory_(cat)) {
+        if (!lastRepairOp[ocar] || odt > lastRepairOp[ocar].date) {
+          lastRepairOp[ocar] = { date: odt };
+        }
+      }
+      if (isRentType_(typ)) {
+        if (!lastRentOp[ocar] || odt > lastRentOp[ocar].date) {
+          lastRentOp[ocar] = { date: odt, amount: amt };
+        }
+      }
+    }
+  }
+
+  for (var ci = 0; ci < carIds.length; ci++) {
+    var cid = carIds[ci];
+    var car = carsMap[cid];
+    var rate = Number(car.rateDay) || 0;
+    var st = normStatus_(car.status);
+
+    if (st.indexOf('\u0440\u0435\u043c\u043e\u043d\u0442') >= 0) {
+      var rop = lastRepairOp[cid];
+      if (!rop) {
+        logFailure(ss, 'GET_LOST_REVENUE', 'NO_REPAIR_OPS', 'car_id=' + cid);
+        continue;
+      }
+      if (rate <= 0) {
+        logFailure(ss, 'GET_LOST_REVENUE', 'NO_RATE', cid);
+        continue;
+      }
+      var rDays = overlapRangeDays_(rop.date, periodEnd, periodStart, periodEnd);
+      addLoss_(cid, 'repair', rDays, rDays * rate);
+    }
+
+    if (st.indexOf('\u043f\u0440\u043e\u0441\u0442') >= 0 && st.indexOf('\u0440\u0435\u043c\u043e\u043d\u0442') < 0) {
+      if (rate <= 0) continue;
+      var idleStart = null;
+      var lrent = lastRentOp[cid];
+      if (lrent) {
+        idleStart = new Date(lrent.date);
+        idleStart.setHours(0, 0, 0, 0);
+        idleStart.setDate(idleStart.getDate() + rentPaidDays_(lrent.amount, rate));
+      } else if (car.dateBuy) {
+        idleStart = new Date(car.dateBuy);
+        idleStart.setHours(0, 0, 0, 0);
+      }
+      if (!idleStart) continue;
+      var iDays = overlapRangeDays_(idleStart, periodEnd, periodStart, periodEnd);
+      addLoss_(cid, 'idle', iDays, iDays * rate);
+    }
+  }
+
+  summary.total.days = summary.repair.days + summary.idle.days + summary.bonus.days;
+  summary.total.rub = summary.repair.rub + summary.idle.rub + summary.bonus.rub;
+
+  var pri = { bonus: 3, repair: 2, idle: 1 };
+  var byCarSorted = [];
+  for (var bk in carBuckets) {
+    if (!Object.prototype.hasOwnProperty.call(carBuckets, bk)) continue;
+    var bucket = carBuckets[bk];
+    var pick = null;
+    var kinds = ['bonus', 'repair', 'idle'];
+    for (var ki = 0; ki < kinds.length; ki++) {
+      var kind = kinds[ki];
+      if (bucket[kind].r <= 0) continue;
+      if (!pick || pri[kind] > pri[pick]) pick = kind;
+    }
+    if (!pick) continue;
+    byCarSorted.push({
+      carId: bk,
+      days: bucket[pick].d,
+      rub: Math.round(bucket[pick].r),
+      reason: pick,
+    });
+  }
+  byCarSorted.sort(function (a, b) {
+    return b.rub - a.rub;
+  });
+
+  return {
+    period: { from: formatDate(periodStart), to: formatDate(periodEnd) },
+    parkLoad: {
+      totalCarDays: totalCarDays,
+      rentDays: rentMachineDays,
+      rentPct: totalCarDays > 0 ? Math.round((rentMachineDays / totalCarDays) * 1000) / 10 : 0,
+    },
+    summary: {
+      repair: { days: summary.repair.days, rub: Math.round(summary.repair.rub) },
+      idle: { days: summary.idle.days, rub: Math.round(summary.idle.rub) },
+      bonus: { days: summary.bonus.days, rub: Math.round(summary.bonus.rub) },
+      total: { days: summary.total.days, rub: Math.round(summary.total.rub) },
+    },
+    byCarSorted: byCarSorted,
+  };
+}
+
+function handleGetLostRevenue(ss, body) {
+  var p = readDashboardPeriod_(ss);
+  var lost = computeLostRevenue_(ss, p.year, p.month, p.allTime, new Date());
+  return ok({ lostRevenue: lost });
+}
+
 function handleGetDashboard(ss) {
   var sheet = ss.getSheetByName('\u0414\u0430\u0448\u0431\u043e\u0440\u0434');
 
@@ -844,6 +1157,18 @@ function handleGetDashboard(ss) {
   var nowDash = new Date();
   var pnlByCarMonthly = computePnlByCarMonthly_(ss, nowDash);
   var utilizationByCar = allTime ? {} : computeUtilizationByCar_(ss, year, month, allTime, nowDash);
+  var lostRevenue = computeLostRevenue_(ss, year, month, allTime, nowDash);
+  if (!allTime && year && month) {
+    var prevY = Number(year);
+    var prevM = Number(month) - 1;
+    if (prevM < 1) {
+      prevM = 12;
+      prevY -= 1;
+    }
+    var prevEnd = new Date(prevY, prevM, 0);
+    var lostPrev = computeLostRevenue_(ss, prevY, prevM, false, prevEnd);
+    lostRevenue.previous = { summary: { total: lostPrev.summary.total } };
+  }
 
   return ok({
     dashboard: {
@@ -856,6 +1181,7 @@ function handleGetDashboard(ss) {
       utilization: utilization,
       pnlByCarMonthly: pnlByCarMonthly,
       utilizationByCar: utilizationByCar,
+      lostRevenue: lostRevenue,
       trailing12:        extras.trailing12,
       cumulativeProfit:  extras.cumulativeProfit,
       capexTotal:        extras.capexTotal,

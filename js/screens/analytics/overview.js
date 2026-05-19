@@ -4,6 +4,7 @@
 
 import { fmtRub, fmtRuInt, formatCompactRub } from '../../utils/format.js';
 import { analyticsCtx as ctx } from './context.js';
+import { renderParkLoadBlock } from './parkLoad.js';
 
 const MONTHS_DATIVE = [
   'январю',
@@ -235,6 +236,7 @@ export function renderOverviewSkeleton() {
   return `
     <div class="overview-tab overview-tab--skeleton">
       <div class="white-card overview-tab__card">${sk(120)}${sk(72, 8)}</div>
+      <div class="white-card overview-tab__card">${sk(140)}</div>
       <div class="white-card overview-tab__card">${sk(88)}</div>
       <div class="overview-tab__shortcuts-skel">
         ${[1, 2, 3, 4].map(() => `<div class="skeleton" style="height:92px;border-radius:12px"></div>`).join('')}
@@ -351,6 +353,8 @@ export function renderOverview(dash) {
           </div>
         </div>
       </div>
+
+      ${renderParkLoadBlock(dash)}
 
       <div class="white-card overview-tab__card overview-tab__fleet-card">
         <div class="overview-tab__fleet-head">

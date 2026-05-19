@@ -5,6 +5,45 @@
 import { analyticsCtx as ctx } from './context.js';
 import { capexStructureBucket } from './capex.js';
 import { fmtRub, getOpexColor, monthLabelFull, opClass, pillMonths, pillShortLabel, toOpDate } from './utils.js';
+import { prevLostTotalRub, resolveLostRevenue } from './parkLoad.js';
+
+const LS_DT_LOST_OPEN = 'analytics_lost_open_dt';
+const DT_LOST_BYCAR_LIMIT = 20;
+
+function isDesktopLostOpen() {
+  try {
+    return localStorage.getItem(LS_DT_LOST_OPEN) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function reasonRowHtml(label, color, rub, days) {
+  return (
+    '<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px">' +
+    '<div style="display:flex;align-items:center;gap:8px">' +
+    `<span style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0"></span>` +
+    `<span style="color:var(--dt-muted)">${label}</span>` +
+    '</div>' +
+    `<span><span style="font-weight:500;color:var(--dt-text)">${fmtRub(rub)}</span> ` +
+    `<span style="color:var(--dt-muted)">· ${days} дн</span></span>` +
+    '</div>'
+  );
+}
+
+function byCarRowHtml(item) {
+  const reasonLabels = { repair: 'ремонт', idle: 'простой', bonus: 'бонус' };
+  const reasonColors = { repair: 'var(--c-bar-100)', idle: 'var(--c-bar-75)', bonus: 'var(--c-bar-50)' };
+  const reason = item.reason || 'repair';
+  return (
+    '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:12px;border-top:0.5px solid var(--dt-border)">' +
+    `<span style="font-weight:500;color:var(--dt-text);min-width:60px">${item.carId}</span>` +
+    `<span style="color:var(--dt-muted);flex:1;text-align:center">${item.days} дн</span>` +
+    `<span style="font-weight:500;color:var(--dt-text);min-width:80px;text-align:right">${fmtRub(item.rub)}</span>` +
+    `<span style="font-size:10px;color:${reasonColors[reason] || 'var(--dt-muted)'};text-transform:uppercase;letter-spacing:.05em;min-width:60px;text-align:right">${reasonLabels[reason] || reason}</span>` +
+    '</div>'
+  );
+}
 
 export const isDesktop = () => typeof window !== 'undefined' && window.innerWidth >= 1024;
 
@@ -77,6 +116,7 @@ function dtDelta(key, cur, prev) {
   const p = Number(prev) || 0;
   const diff = c - p;
   if (Math.abs(diff) < 1) return '';
+  // revenue/profit: больше = лучше; opex/lost (else): меньше = лучше
   const better = key === 'revenue' || key === 'profit' ? diff > 0 : diff < 0;
   const color = better ? 'var(--c-profit)' : 'var(--c-loss)';
   const sign = diff > 0 ? '+' : '−';
@@ -240,6 +280,40 @@ export function renderDesktopShell(dash) {
       return s + (Number(d.amount) || 0);
     }, 0);
 
+  const lr = resolveLostRevenue(dash);
+  const lost = lr?.summary || {};
+  const lostTotal = Number(lost.total?.rub) || 0;
+  const totalDays = Number(lost.total?.days) || 0;
+  const prevLostTotal = prevLostTotalRub(lr);
+  const lostOpen = isDesktopLostOpen();
+  const byCarList = (lr?.byCarSorted || []).slice(0, DT_LOST_BYCAR_LIMIT);
+  const byCarRowsHtml = byCarList.map(byCarRowHtml).join('');
+  const lostKpiHtml = lr
+    ? `<div class="dt-kpi dt-kpi--clickable" data-scroll-to="lost" style="animation-delay:.25s;cursor:pointer" title="Перейти к карточке">
+      <div class="dt-kpi-lbl">Упущено</div>
+      <div class="dt-kpi-val" style="color:var(--c-loss)">${fmtRub(lostTotal)}</div>
+      ${dtDelta('lost', lostTotal, prevLostTotal)}
+    </div>`
+    : '';
+  const lostCardHtml = lr
+    ? '<div class="dt-card dt-card--loss" style="animation-delay:.10s">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">' +
+      '<div class="dt-card-title" style="margin-bottom:0">Упущенная выручка</div>' +
+      `<span style="font-size:11px;color:var(--dt-muted)">${totalDays} машино-дней</span>` +
+      '</div>' +
+      `<div class="dt-big" style="color:var(--c-loss);margin-bottom:14px">${fmtRub(lostTotal)}</div>` +
+      '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">' +
+      reasonRowHtml('Ремонт', 'var(--c-bar-100)', lost.repair?.rub || 0, lost.repair?.days || 0) +
+      reasonRowHtml('Простой', 'var(--c-bar-75)', lost.idle?.rub || 0, lost.idle?.days || 0) +
+      reasonRowHtml('Бонусы', 'var(--c-bar-50)', lost.bonus?.rub || 0, lost.bonus?.days || 0) +
+      '</div>' +
+      `<button type="button" class="dt-lost-toggle" data-lost-toggle="1" aria-expanded="${lostOpen ? 'true' : 'false'}">` +
+      'Разобрать по машинам <i class="ti ti-chevron-down" style="font-size:11px"></i>' +
+      '</button>' +
+      `<div class="dt-lost-bycar" data-lost-bycar="1" data-open="${lostOpen ? '1' : '0'}">${byCarRowsHtml}</div>` +
+      '</div>'
+    : '';
+
   return (
     '<style>' +
     ':root{--dt-text:var(--c-neutral);--dt-muted:var(--c-muted);--dt-card:var(--c-surface);--dt-bg:var(--c-bg-page);--dt-border:rgba(0,0,0,.08)}' +
@@ -265,8 +339,15 @@ export function renderDesktopShell(dash) {
     '.dt-kpi{background:rgba(255,255,255,.07);border-radius:10px;padding:10px 14px;min-width:110px;animation:dt-kpi-in .4s ease backwards}' +
     '.dt-kpi-lbl{font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}' +
     '.dt-kpi-val{font-size:16px;font-weight:600;color:var(--c-on-dark)}' +
+    '.dt-kpi--clickable:hover{background:rgba(255,255,255,.12);transition:background .15s}' +
     '.dt-body{flex:1;overflow-y:auto;overflow-x:hidden;padding:20px 24px 24px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;align-content:start}' +
     '.dt-card{background:var(--dt-card);border-radius:14px;padding:18px 20px;border:0.5px solid var(--dt-border);animation:dt-fade-up .4s ease backwards}' +
+    '.dt-card--loss{border-left:2px solid var(--c-loss);border-top-left-radius:0;border-bottom-left-radius:0}' +
+    '.dt-lost-toggle{width:100%;padding:8px;font-size:11px;background:transparent;border:0.5px dashed var(--dt-border);border-radius:var(--border-radius-md,12px);color:var(--dt-muted);cursor:pointer;transition:all .15s;font-family:inherit}' +
+    '.dt-lost-toggle:hover{color:var(--dt-text);border-color:var(--dt-text)}' +
+    '.dt-lost-bycar{max-height:0;overflow:hidden;transition:max-height .3s ease;margin-top:0}' +
+    '.dt-lost-bycar[data-open="1"]{max-height:320px;overflow-y:auto;margin-top:10px}' +
+    '.dt-lost-toggle[aria-expanded="true"] i{transform:rotate(180deg);transition:transform .2s;display:inline-block}' +
     '.dt-card-title{font-size:11px;font-weight:600;color:var(--dt-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px}' +
     '.dt-big{font-size:28px;font-weight:700;color:var(--dt-text);letter-spacing:-.02em;line-height:1.1}' +
     '.dt-fleet-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}' +
@@ -296,6 +377,7 @@ export function renderDesktopShell(dash) {
     `<div class="dt-kpi" style="animation-delay:.1s"><div class="dt-kpi-lbl">Расходы</div><div class="dt-kpi-val" style="color:var(--c-loss)">${fmtRub(opex)}</div>${dtDelta('opex', opex, byKey('opex').previous)}</div>` +
     `<div class="dt-kpi" style="animation-delay:.15s"><div class="dt-kpi-lbl">CAPEX всего</div><div class="dt-kpi-val" style="color:var(--c-muted)">${fmtRub(capexAll)}</div></div>` +
     `<div class="dt-kpi" style="animation-delay:.2s"><div class="dt-kpi-lbl">Загрузка</div><div class="dt-kpi-val" style="color:var(--c-desktop-accent)">${rentPct}%</div></div>` +
+    lostKpiHtml +
     '</div></div></div>' +
     '<div class="dt-body" id="dt-body">' +
     '<div class="dt-card" style="animation-delay:.08s">' +
@@ -305,6 +387,7 @@ export function renderDesktopShell(dash) {
     '<span style="font-size:11px;color:var(--dt-muted)">Итого OPEX</span>' +
     `<span style="font-size:15px;font-weight:700;color:var(--dt-text)">${fmtRub(opex)}</span>` +
     '</div></div>' +
+    lostCardHtml +
     '<div class="dt-card" style="animation-delay:.12s">' +
     '<div class="dt-card-title">Выручка · 5 месяцев</div>' +
     '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px">' +
@@ -360,6 +443,8 @@ export function renderDesktopShell(dash) {
     '</div></div>'
   );
 }
+
+export { bindDesktopLostInteractions } from './parkLoad.js';
 
 export function renderDesktopSkeleton() {
   return (

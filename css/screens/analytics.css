@@ -1315,6 +1315,141 @@
   flex-shrink: 0;
 }
 
+/* Загрузка парка + упущенная выручка */
+.park-load-card {
+  padding: 16px;
+}
+
+.park-load__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-main, #1a1a1a);
+  margin-bottom: 12px;
+  letter-spacing: -0.01em;
+}
+
+.park-load__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+  font-size: 13px;
+}
+
+.park-load__row-label {
+  color: var(--color-text-muted, var(--c-muted));
+}
+
+.park-load__row-val {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-main, #1a1a1a);
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.park-load__pct {
+  color: var(--color-text-muted, var(--c-muted));
+  font-size: 12px;
+}
+
+.park-load__divider {
+  height: 0;
+  border-top: 0.5px solid var(--color-border-tertiary, var(--color-border));
+  margin: 8px 0;
+}
+
+.park-load__row--total .park-load__row-label,
+.park-load__row--total .park-load__row-val {
+  font-weight: 600;
+  color: var(--c-loss, #d14848);
+}
+
+.park-load__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px 0 2px;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--color-text-muted, var(--c-muted));
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.park-load__chevron {
+  font-size: 16px;
+  transition: transform 0.2s ease;
+}
+
+.park-load__toggle--open .park-load__chevron {
+  transform: rotate(180deg);
+}
+
+.park-load__cars {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.park-load__car-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.park-load__car-id {
+  font-weight: 600;
+  color: var(--color-text-main, #1a1a1a);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.park-load__car-mid {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-main, #1a1a1a);
+  white-space: nowrap;
+}
+
+.park-load__car-tag {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.park-load__car-tag--repair {
+  background: #f0e8ff;
+  color: #6b4fa8;
+}
+
+.park-load__car-tag--idle {
+  background: #fff0e0;
+  color: #c2501a;
+}
+
+.park-load__car-tag--bonus {
+  background: #e8f5ec;
+  color: #2a7a4a;
+}
+
+.park-load__cars-hint {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--color-text-muted, var(--c-muted));
+  text-align: center;
+}
+
 .overview-tab__shortcuts {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));

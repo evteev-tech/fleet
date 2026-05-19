@@ -451,6 +451,12 @@ export async function fetchDashboardAnalytics() {
   return dash;
 }
 
+/** Упущенная выручка за активный период дашборда (Apps Script GET_LOST_REVENUE). */
+export async function fetchLostRevenue() {
+  const body = await postAction('GET_LOST_REVENUE', {});
+  return body?.lostRevenue ?? null;
+}
+
 /**
  * Период аналитики: месяц (B2:B3) или «всё время» (маркер E99 на листе «Дашборд», см. Apps Script).
  * @param {number|null} year
