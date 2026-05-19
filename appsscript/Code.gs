@@ -266,6 +266,7 @@ function doPost(e) {
       case 'GET_INCOME_FORM':   return handleGetIncomeForm(SS);
       case 'ADD_INCOME':            return handleAddIncome(SS, body);
       case 'SAVE_RENTAL_PROMISE':   return handleSaveRentalPromise(SS, body);
+      case 'SAVE_BONUS_DAYS':       return handleSaveBonusDays(SS, body);
       default:
         logFailure(SS, action, 'UNKNOWN_ACTION', 'Action not implemented');
         return err('UNKNOWN_ACTION');
@@ -549,7 +550,7 @@ function handleAddRental(ss, body) {
   const serialStart = dateToExcelSerial(date_start);
   const serialEnd     = date_end ? dateToExcelSerial(date_end) : '';
 
-  sheet.appendRow([rental_id, car_id, driver_id, serialStart, serialEnd, Number(rate_day), comment, '', '']);
+  sheet.appendRow([rental_id, car_id, driver_id, serialStart, serialEnd, Number(rate_day), comment, '', '', '', '']);
 
   const newRow = sheet.getLastRow();
   sheet.getRange(newRow, 4).setNumberFormat('DD.MM.YYYY');
@@ -1203,6 +1204,10 @@ function handleGetIncomeForm(ss) {
     var endRaw = rVals[rj][4];
     var endDt  = parseDate(endRaw);
     if (!endDt) continue;
+    var bonus  = Number(rVals[rj][9]) || 0;
+    if (bonus > 0) {
+      endDt = new Date(endDt.getTime() + bonus * 86400000);
+    }
     var ts = endDt.getTime();
     if (!maxEnd[carId] || ts > maxEnd[carId]) maxEnd[carId] = ts;
   }
@@ -1288,6 +1293,31 @@ function handleSaveRentalPromise(ss, body) {
   found.sheet.getRange(found.row, 9).setValue(formatDateTime(new Date()));
 
   return ok({ updated: true, row: found.row });
+}
+
+// -----------------------------------------------------------------------------
+// SAVE_BONUS_DAYS — лист «Аренда»: J = bonus_days, K = bonus_reason
+// -----------------------------------------------------------------------------
+
+function handleSaveBonusDays(ss, body) {
+  var car_id = String(body.car_id || '').trim();
+  if (!car_id) return err('MISSING_FIELD: car_id');
+
+  var addDays = Number(body.bonus_days);
+  if (!Number.isInteger(addDays) || addDays <= 0) return err('INVALID_BONUS_DAYS');
+
+  var found = findLastRentalRowNumberForCar_(ss, car_id);
+  if (!found.sheet || !found.row) {
+    logFailure(ss, 'SAVE_BONUS_DAYS', 'RENTAL_ROW_NOT_FOUND', car_id);
+    return err('RENTAL_ROW_NOT_FOUND');
+  }
+
+  var current = Number(found.sheet.getRange(found.row, 10).getValue()) || 0;
+  var newTotal = current + addDays;
+  found.sheet.getRange(found.row, 10).setValue(newTotal);
+  found.sheet.getRange(found.row, 11).setValue(String(body.bonus_reason || ''));
+
+  return ok({ bonus_days_total: newTotal });
 }
 
 // -----------------------------------------------------------------------------

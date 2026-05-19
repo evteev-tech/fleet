@@ -1492,9 +1492,6 @@
   word-break: break-word;
 }
 
-/
-
-
 /* Выдача машины после добавления водителя */
 .drv-assign-sheet { padding: 4px 0; }
 .drv-assign-title { font-size: var(--text-lg); font-weight: 700; color: #111; margin-bottom: 4px; }

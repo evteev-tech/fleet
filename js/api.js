@@ -20,6 +20,7 @@ import {
   getMockOperationsNormalized,
   getMockRentalsNormalized,
   mutateMockRentalPromise,
+  mutateMockRentalBonus,
 } from './mock/data.js';
 
 export { clearAllCache, getWithSWR, CACHE_KEYS } from './cache.js';
@@ -327,11 +328,12 @@ function _normalizeDriverRow(r) {
 /**
  * Колонки: A=rental_id, B=car_id, C=driver_id, D=дата_начала,
  *          E=дата_окончания, F=ставка_день, G=примечание,
- *          H=promised_until, I=promised_at (опционально, в конце листа)
+ *          H=promised_until, I=promised_at,
+ *          J=bonus_days, K=bonus_reason (опционально, в конце листа)
  *
  * Даты могут храниться как Excel-число или DD.MM.YYYY — парсим оба варианта.
  *
- * @returns {Promise<Array<{rentalId,carId,driverId,dateStart,dateEnd,rateDay,note,promisedUntil,promisedAt}>>}
+ * @returns {Promise<Array<{rentalId,carId,driverId,dateStart,dateEnd,rateDay,note,promisedUntil,promisedAt,bonusDays,bonusReason}>>}
  */
 export async function getRentals() {
   if (USE_MOCK) return getMockRentalsNormalized();
@@ -350,6 +352,8 @@ export async function getRentals() {
         _parseFlexDate(cell(row, 7)) ?? parseSheetDate(cell(row, 7)) ?? null,
       promisedAt:
         parseSheetDateTime(cell(row, 8)) ?? parseSheetDate(cell(row, 8)) ?? null,
+      bonusDays: Number(cell(row, 9)) || 0,
+      bonusReason: cell(row, 10) || '',
     }))
     .filter(r => r.rentalId);
 }
@@ -507,6 +511,31 @@ export async function saveRentalPromise(carId, promisedUntil) {
   });
 }
 
+/**
+ * Бонусные дни за простой — прибавляет к bonus_days последней строки аренды (лист «Аренда», J–K).
+ * @param {string} carId
+ * @param {number} bonusDays  положительное целое
+ * @param {string} reason
+ */
+export async function saveBonusDays(carId, bonusDays, reason) {
+  const cid = String(carId || '').trim();
+  if (!cid) throw new Error('MISSING: car_id');
+  const days = Number(bonusDays);
+  if (!Number.isInteger(days) || days <= 0) throw new Error('INVALID_BONUS_DAYS');
+
+  if (USE_MOCK) {
+    mutateMockRentalBonus(cid, days, reason);
+    invalidateSwrCache(CACHE_KEYS.RENTALS);
+    return { status: 'ok' };
+  }
+
+  return postAction('SAVE_BONUS_DAYS', {
+    car_id: cid,
+    bonus_days: days,
+    bonus_reason: String(reason || ''),
+  });
+}
+
 // ─── Какие листы сбрасываем после каждого action ─────────────────────────────
 const ACTION_INVALIDATES = {
   ADD_OPERATION:    [SHEETS.OPERATIONS],
@@ -518,6 +547,7 @@ const ACTION_INVALIDATES = {
   ADD_RENTAL:       [SHEETS.RENTALS, SHEETS.CARS, SHEETS.DRIVERS],
   ADD_INCOME:       [SHEETS.OPERATIONS, SHEETS.RENTALS, SHEETS.CARS],
   SAVE_RENTAL_PROMISE: [SHEETS.RENTALS],
+  SAVE_BONUS_DAYS: [SHEETS.RENTALS],
 };
 
 function _invalidateByAction(action) {

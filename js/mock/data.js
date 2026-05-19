@@ -8,7 +8,7 @@
 import { KASSA_ID } from '../config.js';
 import { calcPaidUntil } from '../utils/rent.js';
 
-/** @typedef {{ rentalId: string, carId: string, driverId: string, dateStart: Date, dateEnd: Date|null, rateDay: number, note: string, promisedUntil: Date|null, promisedAt: Date|null }} MockRental */
+/** @typedef {{ rentalId: string, carId: string, driverId: string, dateStart: Date, dateEnd: Date|null, rateDay: number, note: string, promisedUntil: Date|null, promisedAt: Date|null, bonusDays: number, bonusReason: string }} MockRental */
 
 export function mutateMockRentalPromise(carId, promisedUntil, promisedAt) {
   const cid = String(carId || '').trim();
@@ -17,6 +17,15 @@ export function mutateMockRentalPromise(carId, promisedUntil, promisedAt) {
   if (!row) return;
   row.promisedUntil = promisedUntil;
   row.promisedAt = promisedAt;
+}
+
+export function mutateMockRentalBonus(carId, days, reason) {
+  const cid = String(carId || '').trim();
+  if (!cid) return;
+  const row = _MOCK_RENTALS.find(r => r.carId === cid);
+  if (!row) return;
+  row.bonusDays = (Number(row.bonusDays) || 0) + Number(days);
+  row.bonusReason = String(reason || '');
 }
 
 function daysAgo(n) {
@@ -105,6 +114,8 @@ const _MOCK_RENTALS = _MOCK_TASKS.map((t, i) => ({
   note: '',
   promisedUntil: t.promisedUntil ? new Date(t.promisedUntil) : null,
   promisedAt: t.promisedAt ? new Date(t.promisedAt) : null,
+  bonusDays: 0,
+  bonusReason: '',
 }));
 
 /** Дополнительные машины (парк 12 шт.: 5+3+4) */
@@ -133,6 +144,8 @@ export async function getMockRentalsNormalized() {
     note: r.note || '',
     promisedUntil: r.promisedUntil ? new Date(r.promisedUntil) : null,
     promisedAt: r.promisedAt ? new Date(r.promisedAt) : null,
+    bonusDays: Number(r.bonusDays) || 0,
+    bonusReason: r.bonusReason || '',
   }));
 }
 

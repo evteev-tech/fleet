@@ -1,5 +1,6 @@
 /* ═══════════════════════════════════════════════
    screens/fleet.css — экран «Парк машин»
+   v1.1 — .fleet-tab / .fleet-tab--active удалены (табы теперь .pill)
    v1.0 — мёртвые блоки .fleet-stats-row / .car-card удалены
 ════════════════════════════════════════════════ */
 
@@ -32,30 +33,8 @@
   padding-top: var(--space-md);
 }
 
-.fleet-tab {
-  flex: 1;
-  min-width: 0;
-  padding: var(--space-md) 12px;
-  border: none;
-  border-radius: var(--radius-sm);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  font-family: inherit;
-  background: rgba(0, 0, 0, 0.06);
-  color: var(--color-muted);
-  cursor: pointer;
-  transition: background var(--transition-fast) ease, color var(--transition-fast) ease;
-  white-space: nowrap;
-}
-
-.fleet-tab--active {
-  background: var(--color-yellow);
-  color: var(--color-dark);
-}
-
-.fleet-tab:active {
-  opacity: 0.85;
-}
+/* Табы внутри .fleet-page__tabs рендерятся как .pill .pill--light .pill--stretch
+   (см. css/components.css → секция «PILL — выбираемый таб-фильтр») */
 
 /* ─── Тело: список карточек ─── */
 .fleet-page__body {

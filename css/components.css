@@ -970,3 +970,15 @@ select.field-input {
   flex: 1;
   min-width: 0;
 }
+
+/* ─────────────────────────────────────────────
+   Money typography — символ валюты
+   Применять как: 12 450 <span class="rub">₽</span>
+───────────────────────────────────────────── */
+.rub {
+  font-size: 0.65em;
+  font-weight: 500;
+  margin-left: 0.15em;
+  vertical-align: 0.08em;
+  opacity: 0.55;
+}

@@ -1062,7 +1062,7 @@
 
 .overview-tab--skeleton .overview-tab__shortcuts-skel {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 8px;
   margin-top: 4px;
 }
@@ -1317,7 +1317,7 @@
 
 .overview-tab__shortcuts {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 8px;
 }
 

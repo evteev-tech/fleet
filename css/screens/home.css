@@ -227,9 +227,9 @@
   padding: 23px 20px;
   font-size: 14px;
   font-weight: 500;
-  background: transparent;
-  color: #888;
-  border: 1px solid #333;
+  background: var(--surface-on-dark-regular);
+  color: rgba(255, 255, 255, 0.85);
+  border: none;
   border-radius: 14px;
   width: 100%;
 }
@@ -564,8 +564,8 @@
 .home-cash-card__label { color: #a1a1aa; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; }
 .home-cash-card__amount { color: #fff; font-size: 34px; font-weight: 800; margin-top: 4px; }
 .home-cash-card__delta { font-size: 13px; margin-top: 4px; font-weight: 600; }
-.home-cash-card__delta.is-pos { color: #22c55e; }
-.home-cash-card__delta.is-neg { color: #ef4444; }
+.home-cash-card__delta.is-pos { color: var(--c-profit); }
+.home-cash-card__delta.is-neg { color: var(--c-loss); }
 
 .home-cash-card--ops-overview { margin-top: 10px; }
 .home-ops-fin__label {
@@ -861,6 +861,171 @@
   font-size: 11px;
   color: #8a8a8e;
   font-weight: 400;
+}
+
+/* Бонусные дни за простой */
+.payment-task-card__car {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.payment-task-card__bonus-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #eeedfe;
+  color: #3c3489;
+  line-height: 1.2;
+}
+.payment-task-card__bonus-badge .ti {
+  font-size: 11px;
+}
+.payment-task-card__bonus-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px 0;
+  border: none;
+  border-top: 0.5px dashed var(--color-border-tertiary, rgba(0, 0, 0, 0.12));
+  background: transparent;
+  color: #534ab7;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+.payment-task-card__bonus-toggle-text {
+  flex: 1;
+}
+.payment-task-card__bonus-chevron {
+  font-size: 14px;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+.payment-task-card__bonus-toggle[aria-expanded='true'] .payment-task-card__bonus-chevron {
+  transform: rotate(180deg);
+}
+.payment-task-card__bonus-toggle--gifted {
+  background: rgba(83, 74, 183, 0.1);
+  border-radius: 8px;
+  padding: 10px 8px;
+  margin-top: 10px;
+  border-top: none;
+}
+.payment-task-card__bonus-toggle[aria-expanded='false'] + .payment-task-card__bonus-section {
+  display: none;
+}
+.payment-task-card__bonus-section {
+  margin-top: 8px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #eeedfe;
+  border: 1px solid rgba(60, 52, 137, 0.12);
+}
+.payment-task-card__bonus-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.payment-task-card__bonus-shortcut {
+  background: #ffffff;
+  color: #3c3489;
+  border: 1px solid rgba(60, 52, 137, 0.2);
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 8px 6px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.payment-task-card__bonus-shortcut.is-active,
+.payment-task-card__bonus-shortcut:hover,
+.payment-task-card__bonus-shortcut:active {
+  background: #3c3489;
+  color: #ffffff;
+  border-color: #3c3489;
+}
+.payment-task-card__bonus-custom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: #3c3489;
+}
+.payment-task-card__bonus-custom-input {
+  width: 72px;
+  padding: 6px 8px;
+  border: 1px solid rgba(60, 52, 137, 0.25);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+}
+.payment-task-card__bonus-reason {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(60, 52, 137, 0.2);
+  background: #ffffff;
+  color: #3c3489;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+}
+.payment-task-card__bonus-preview {
+  font-size: 12px;
+  color: #52525b;
+  line-height: 1.4;
+  margin-bottom: 10px;
+}
+.payment-task-card__bonus-confirm {
+  width: 100%;
+  background: #3c3489;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.payment-task-card__bonus-confirm:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.payment-task-card--readonly .payment-task-card__bonus-toggle {
+  opacity: 0.55;
+  pointer-events: none;
+  cursor: default;
+  color: #8a8a8e;
+}
+.payment-task-card--readonly .payment-task-card__bonus-shortcut,
+.payment-task-card--readonly .payment-task-card__bonus-confirm,
+.payment-task-card--readonly .payment-task-card__bonus-reason,
+.payment-task-card--readonly .payment-task-card__bonus-custom-input {
+  opacity: 0.45;
+  pointer-events: none;
+  cursor: default;
+}
+.payment-task-card--readonly .payment-task-card__bonus-shortcut.is-active,
+.payment-task-card--readonly .payment-task-card__bonus-shortcut:hover {
+  background: #ffffff;
+  color: #3c3489;
+  border-color: rgba(60, 52, 137, 0.2);
 }
 
 .home-due-list { margin-bottom: 12px; }

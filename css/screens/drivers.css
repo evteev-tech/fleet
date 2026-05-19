@@ -1,6 +1,8 @@
 /* ═══════════════════════════════════════════════
    screens/drivers.css — экраны «Водители» и
                           «Карточка водителя»
+   v1.2 — карточка водителя: аватар нейтрализован, телефон → var(--color-link) (WCAG fix)
+   v1.1 — .drivers-tab / .drivers-tab--active удалены (табы теперь .pill)
    v1.0 — мёртвые .driver-avatar/.driver-profile-* удалены
 ════════════════════════════════════════════════ */
 
@@ -47,30 +49,8 @@
   padding-top: var(--space-md);
 }
 
-.drivers-tab {
-  flex: 1;
-  min-width: 0;
-  padding: var(--space-md) 12px;
-  border: none;
-  border-radius: var(--radius-sm);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  font-family: inherit;
-  background: rgba(0, 0, 0, 0.06);
-  color: var(--color-muted);
-  cursor: pointer;
-  transition: background var(--transition-fast) ease, color var(--transition-fast) ease;
-  white-space: nowrap;
-}
-
-.drivers-tab--active {
-  background: var(--color-yellow);
-  color: var(--color-dark);
-}
-
-.drivers-tab:active {
-  opacity: 0.85;
-}
+/* Табы внутри .drivers-page__tabs рендерятся как .pill .pill--light .pill--stretch
+   (см. css/components.css → секция «PILL — выбираемый таб-фильтр») */
 
 /* ─── Тело: список карточек ─── */
 .drivers-page__body {
@@ -662,13 +642,13 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: var(--color-yellow);
+  background: var(--color-bg);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: var(--text-xl);
-  font-weight: 900;
-  color: var(--color-dark);
+  font-weight: 600;
+  color: var(--color-muted);
   flex-shrink: 0;
 }
 
@@ -682,7 +662,7 @@
 
 .drv-profile-phone {
   font-size: var(--text-base);
-  color: var(--color-yellow);
+  color: var(--color-link);
   font-weight: 600;
   text-decoration: none;
 }
