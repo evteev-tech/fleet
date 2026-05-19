@@ -17,6 +17,7 @@ import { initHistory }   from './screens/history.js';
 import { initFleet }     from './screens/fleet.js';
 import { initDrivers }   from './screens/drivers.js';
 import { initDriver }    from './screens/driver.js';
+import { initCar }       from './screens/car.js';
 import { initSettings }  from './screens/settings.js';
 import { initAnalytics } from './screens/analytics.js';
 import { initIncome } from './screens/income.js';
@@ -41,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initFleet();
   initDrivers();
   initDriver();
+  initCar();
   initSettings();
 
   document.addEventListener('screen:activated', e => {

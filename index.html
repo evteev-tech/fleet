@@ -29,6 +29,7 @@
   <link rel="stylesheet" href="css/screens/transfer.css" />
   <link rel="stylesheet" href="css/screens/add.css" />
   <link rel="stylesheet" href="css/screens/settings.css" />
+  <link rel="stylesheet" href="css/screens/car.css" />
   <link rel="stylesheet" href="css/analytics_theme.css" />
   <link rel="stylesheet" href="css/expense.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.34.0/dist/tabler-icons.min.css" />
@@ -192,6 +193,26 @@
   <section id="screen-drivers" class="screen">
     <div class="home-scroll pb-navbar" id="drivers-body">
       <!-- Полностью рендерится в drivers.js -->
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       ЭКРАН: КАРТОЧКА МАШИНЫ
+  ════════════════════════════════════════════════ -->
+  <section id="screen-car" class="screen">
+    <header class="app-header app-header--light">
+      <button type="button" class="app-header__btn" id="car-back" aria-label="Назад">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <div class="app-header__center">
+        <span class="app-header__title" id="car-header-title">Машина</span>
+      </div>
+      <div class="app-header__spacer"></div>
+    </header>
+    <div class="screen-body pb-navbar" id="car-body">
+      <!-- Полностью рендерится в car.js -->
     </div>
   </section>
 

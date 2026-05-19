@@ -4,6 +4,7 @@
 
 import { getFleet, getDrivers, postAction, invalidateCache } from '../api.js';
 import { getWithSWR, CACHE_KEYS, invalidateCache as invalidateLocalCache } from '../cache.js';
+import { showScreen } from '../router.js';
 import { showBottomSheet, hideBottomSheet, showToast } from '../ui.js';
 import { CAR_STATUSES, SHEETS } from '../config.js';
 import { fmtRuInt } from '../utils/format.js';
@@ -112,6 +113,28 @@ export function initFleet() {
       st === CAR_STATUSES.RENT ? 'rent' :
       st === CAR_STATUSES.REPAIR ? 'repair' :
       st === CAR_STATUSES.IDLE ? 'idle' : null;
+  });
+
+  document.addEventListener('car:action:rent', e => {
+    if (e.detail?.car) void _openDriverSelectSheet(e.detail.car);
+  });
+
+  document.addEventListener('car:action:return', e => {
+    const car = e.detail?.car;
+    if (!car) return;
+    if (!confirm(`Принять ${car.carId} из аренды → простой?`)) return;
+    void (async () => {
+      try {
+        await postAction('UPDATE_CAR_STATUS', { car_id: car.carId, new_status: CAR_STATUSES.IDLE });
+        invalidateCache(SHEETS.CARS);
+        invalidateLocalCache(CACHE_KEYS.CARS);
+        invalidateLocalCache(CACHE_KEYS.INCOME_FORM);
+        showToast('Машина принята ✓', 'success');
+        showScreen('screen-fleet');
+      } catch (err) {
+        showToast(err.message === 'NO_CONNECTION' ? 'Нет соединения' : 'Ошибка', 'error');
+      }
+    })();
   });
 
   document.addEventListener('screen:activated', e => {
@@ -351,7 +374,10 @@ function _bindCardClicks(body, cars) {
       const card = e.target.closest('.fleet-car[data-car-id]');
       if (card && !e.target.closest('.fleet-quick-wrap')) {
         const car = cars.find(c => c.carId === card.dataset.carId);
-        if (car) _openCarSheet(car);
+        if (car) {
+          document.dispatchEvent(new CustomEvent('car:open', { detail: { carId: car.carId } }));
+          showScreen('screen-car');
+        }
       }
     });
   });
