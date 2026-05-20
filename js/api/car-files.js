@@ -7,7 +7,7 @@
  *
  * Экспорт:
  *   listCarFiles(carId)                                → { files, actualDocs }
- *   getCarFile(fileId, viewUrl?)                       → { name, mimeType, blobUrl, isCdn? }
+ *   getCarFile(fileId)                                 → { name, mimeType, blobUrl }
  *   uploadCarFile(carId, kind, file, tag, meta)        → { fileId, name, viewUrl }
  *   deleteCarFile(fileId, carId)                       → ok
  *   renameCarFileTag(fileId, newTag, kind, carId)      → ok
@@ -74,24 +74,15 @@ export async function listCarFiles(carId) {
 // ─── GET_CAR_FILE ─────────────────────────────────────────────────────────────
 
 /**
- * Скачивает файл и возвращает blob URL (data:...) или CDN-ссылку для фото.
+ * Скачивает файл и возвращает blob URL (data:...) через GET_CAR_FILE.
  * @param {string} fileId
- * @param {string|null} [viewUrl] — CDN-ссылка для публичных фото
- * @returns {Promise<{ name: string, mimeType: string, blobUrl: string, isCdn?: boolean }>}
+ * @param {string|null} [_viewUrl] — не используется (lh3 даёт 429)
+ * @returns {Promise<{ name: string, mimeType: string, blobUrl: string, isCdn: boolean }>}
  */
 const _blobCache = new Map(); // fileId → blobUrl
 
 export async function getCarFile(fileId, viewUrl = null) {
-  // Быстрый путь: публичная CDN-ссылка (фото)
-  if (viewUrl) {
-    const cached = _blobCache.get(fileId);
-    if (cached) return cached;
-    const result = { name: '', mimeType: 'image/jpeg', blobUrl: viewUrl, isCdn: true };
-    _blobCache.set(fileId, result);
-    return result;
-  }
-
-  // Медленный путь: через Apps Script (документы)
+  // viewUrl не используем — публичные lh3-ссылки упираются в 429.
   const cached = _blobCache.get(fileId);
   if (cached) return cached;
 
@@ -119,8 +110,7 @@ export async function getCarFile(fileId, viewUrl = null) {
  * @param {string} tag        — osago / sts / front / damage / ...
  * @param {object} [meta]     — { validUntil?, rentalId?, mileage?, note? }
  * @param {function} [onProgress]  — (0..1) для индикатора
- * @returns {Promise<{ fileId: string, name: string, viewUrl: string|null }>}
- *   viewUrl — CDN-ссылка для фото (null для документов)
+ * @returns {Promise<{ fileId: string, name: string, viewUrl: null }>}
  */
 export async function uploadCarFile(carId, kind, file, tag, meta = {}, onProgress) {
   const user = getCurrentUser();

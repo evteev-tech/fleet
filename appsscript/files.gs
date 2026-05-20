@@ -515,23 +515,11 @@ function handleUploadCarFile(ss, body) {
   var blob = Utilities.newBlob(bytes, mimeType || 'application/octet-stream', newName);
   var file = targetFolder.createFile(blob);
 
-  // Публичный доступ для фото (документы остаются приватными)
-  var viewUrl = null;
-  if (kind === 'photos') {
-    try {
-      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-      viewUrl = 'https://lh3.googleusercontent.com/d/' + file.getId() + '=s1600';
-    } catch (e) {
-      viewUrl = null;
-    }
-  }
-
-  // Description с метаданными
+  // Description с метаданными (фото приватные — грузим через GET_CAR_FILE)
   var descMeta = {
     tag:         tag,
     uploaded_by: String(body.email || ''),
     uploaded_at: new Date().toISOString(),
-    view_url:    viewUrl,
   };
   if (meta.valid_until) descMeta.valid_until = meta.valid_until;
   if (meta.rental_id)   descMeta.rental_id   = meta.rental_id;
@@ -547,7 +535,7 @@ function handleUploadCarFile(ss, body) {
     name:     file.getName(),
     tag:      tag,
     kind:     kind,
-    view_url: viewUrl,
+    view_url: null,
   });
 }
 
