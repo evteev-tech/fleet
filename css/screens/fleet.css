@@ -178,3 +178,104 @@
   color: var(--color-dark);
   margin-bottom: var(--space-lg);
 }
+
+/* ── Блок «Стоимость аренды» в карточке (bottom sheet) ── */
+.fleet-rate-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border: 0.5px solid #e0e0e0;
+  border-radius: var(--radius-md);
+}
+
+.fleet-rate-val {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111;
+}
+
+.fleet-rate-sub {
+  font-size: 12px;
+  color: #aaa;
+  margin-top: 2px;
+}
+
+.fleet-rate-edit {
+  border: 0.5px solid #e0e0e0;
+  background: #fff;
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111;
+  cursor: pointer;
+}
+.fleet-rate-edit:active { opacity: 0.85; transform: scale(0.99); }
+
+/* ── Sheet ввода новой ставки ── */
+.fleet-rate-label {
+  display: block;
+  font-size: 13px;
+  color: #aaa;
+  margin-bottom: 6px;
+}
+
+.fleet-rate-opt { color: #ccc; }
+
+.fleet-rate-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.fleet-rate-input {
+  flex: 1;
+  height: 48px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #111;
+  border: 0.5px solid #e0e0e0;
+  border-radius: var(--radius-md);
+  padding: 0 14px;
+  box-sizing: border-box;
+}
+.fleet-rate-input:focus { outline: none; border-color: #FFDD2D; }
+
+.fleet-rate-input--text {
+  font-size: 15px;
+  font-weight: 400;
+  width: 100%;
+  margin-bottom: 18px;
+}
+
+.fleet-rate-unit {
+  font-size: 14px;
+  color: #aaa;
+  white-space: nowrap;
+}
+
+.fleet-rate-delta {
+  font-size: 13px;
+  font-weight: 600;
+  color: #888;
+  min-height: 18px;
+  margin-bottom: 14px;
+}
+.fleet-rate-delta--up   { color: #15803d; }
+.fleet-rate-delta--down { color: #991b1b; }
+
+.fleet-rate-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #eff6ff;
+  color: #1e40af;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+.fleet-rate-note > span:first-child { flex-shrink: 0; }

@@ -7,8 +7,8 @@
  *
  * Экспорт:
  *   listCarFiles(carId)                                → { files, actualDocs }
- *   getCarFile(fileId)                                 → { name, mimeType, blobUrl }
- *   uploadCarFile(carId, kind, file, tag, meta)        → { fileId, name }
+ *   getCarFile(fileId, viewUrl?)                       → { name, mimeType, blobUrl, isCdn? }
+ *   uploadCarFile(carId, kind, file, tag, meta)        → { fileId, name, viewUrl }
  *   deleteCarFile(fileId, carId)                       → ok
  *   renameCarFileTag(fileId, newTag, kind, carId)      → ok
  */
@@ -74,20 +74,30 @@ export async function listCarFiles(carId) {
 // ─── GET_CAR_FILE ─────────────────────────────────────────────────────────────
 
 /**
- * Скачивает файл и возвращает blob URL (data:...).
- * Blob URL кэшируется в WeakRef через _blobCache.
+ * Скачивает файл и возвращает blob URL (data:...) или CDN-ссылку для фото.
  * @param {string} fileId
- * @returns {Promise<{ name: string, mimeType: string, blobUrl: string }>}
+ * @param {string|null} [viewUrl] — CDN-ссылка для публичных фото
+ * @returns {Promise<{ name: string, mimeType: string, blobUrl: string, isCdn?: boolean }>}
  */
 const _blobCache = new Map(); // fileId → blobUrl
 
-export async function getCarFile(fileId) {
+export async function getCarFile(fileId, viewUrl = null) {
+  // Быстрый путь: публичная CDN-ссылка (фото)
+  if (viewUrl) {
+    const cached = _blobCache.get(fileId);
+    if (cached) return cached;
+    const result = { name: '', mimeType: 'image/jpeg', blobUrl: viewUrl, isCdn: true };
+    _blobCache.set(fileId, result);
+    return result;
+  }
+
+  // Медленный путь: через Apps Script (документы)
   const cached = _blobCache.get(fileId);
   if (cached) return cached;
 
   const res = await postAction('GET_CAR_FILE', { file_id: fileId });
   const blobUrl = `data:${res.mimeType};base64,${res.base64}`;
-  const result = { name: res.name, mimeType: res.mimeType, blobUrl };
+  const result = { name: res.name, mimeType: res.mimeType, blobUrl, isCdn: false };
   _blobCache.set(fileId, result);
   return result;
 }
@@ -96,8 +106,12 @@ export async function getCarFile(fileId) {
 
 /**
  * Загружает файл на Drive.
- * Для image/* — сжимает через canvas до 1600px / JPEG 0.82.
- * Для остальных — передаёт as-is (лимит 8 МБ).
+ * Имя файла формируется на бэке (files.gs buildFileName_):
+ *   docs:   А165_ОСАГО_до-2027-08-14_20260516.pdf
+ *   photos: А165_перед_20260516-1430.jpg
+ *
+ * Для image/* — сжатие через canvas до 1600px / JPEG 0.82.
+ * Для остальных — as-is, лимит 8 МБ.
  *
  * @param {string} carId
  * @param {'docs'|'photos'} kind
@@ -105,7 +119,8 @@ export async function getCarFile(fileId) {
  * @param {string} tag        — osago / sts / front / damage / ...
  * @param {object} [meta]     — { validUntil?, rentalId?, mileage?, note? }
  * @param {function} [onProgress]  — (0..1) для индикатора
- * @returns {Promise<{ fileId: string, name: string }>}
+ * @returns {Promise<{ fileId: string, name: string, viewUrl: string|null }>}
+ *   viewUrl — CDN-ссылка для фото (null для документов)
  */
 export async function uploadCarFile(carId, kind, file, tag, meta = {}, onProgress) {
   const user = getCurrentUser();
@@ -151,7 +166,7 @@ export async function uploadCarFile(carId, kind, file, tag, meta = {}, onProgres
   onProgress?.(1);
 
   _invalidateFilesCache(carId);
-  return { fileId: res.file_id, name: res.name };
+  return { fileId: res.file_id, name: res.name, viewUrl: res.view_url ?? null };
 }
 
 // ─── DELETE_CAR_FILE ──────────────────────────────────────────────────────────

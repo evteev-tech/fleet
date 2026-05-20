@@ -330,7 +330,7 @@ function _renderPhotosGrid(photos, carId, canWrite) {
   }
 
   el.innerHTML = photos.map(f => `
-    <div class="car-photo-thumb" data-file-id="${_esc(f.fileId)}" data-tag="${_esc(f.tag)}" data-kind="photos">
+    <div class="car-photo-thumb" data-file-id="${_esc(f.fileId)}" data-tag="${_esc(f.tag)}" data-kind="photos" data-view-url="${_esc(f.viewUrl || '')}">
       <div class="car-photo-thumb__inner car-photo-thumb__inner--loading">
         <span class="car-photo-thumb__tag">${_esc(PHOTO_TAG_LABELS[f.tag] ?? f.tag)}</span>
       </div>
@@ -339,15 +339,16 @@ function _renderPhotosGrid(photos, carId, canWrite) {
   const thumbs = [...el.querySelectorAll('.car-photo-thumb')];
   thumbs.forEach((thumb, i) => {
     const fileId = thumb.dataset.fileId;
-    if (i < 8) _loadThumb(thumb, fileId);
+    const viewUrl = thumb.dataset.viewUrl || null;
+    if (i < 8) _loadThumb(thumb, fileId, viewUrl);
     else {
       const obs = new IntersectionObserver(([entry]) => {
-        if (entry.isIntersecting) { _loadThumb(thumb, fileId); obs.disconnect(); }
+        if (entry.isIntersecting) { _loadThumb(thumb, fileId, viewUrl); obs.disconnect(); }
       }, { rootMargin: '100px' });
       obs.observe(thumb);
     }
 
-    thumb.addEventListener('click', () => _openFile(fileId));
+    thumb.addEventListener('click', () => _openFile(fileId, thumb.dataset.viewUrl || null));
     if (canWrite) {
       let timer;
       thumb.addEventListener('touchstart', () => { timer = setTimeout(() => _openFileMenu(thumb, carId), 600); });
@@ -357,22 +358,22 @@ function _renderPhotosGrid(photos, carId, canWrite) {
   });
 }
 
-async function _loadThumb(thumbEl, fileId) {
+async function _loadThumb(thumbEl, fileId, viewUrl) {
   try {
-    const { blobUrl } = await getCarFile(fileId);
+    const { blobUrl } = await getCarFile(fileId, viewUrl || null);
     const inner = thumbEl.querySelector('.car-photo-thumb__inner');
     if (!inner) return;
     inner.classList.remove('car-photo-thumb__inner--loading');
-    inner.style.backgroundImage = `url("${blobUrl}")`;
-    inner.style.backgroundSize  = 'cover';
+    inner.style.backgroundImage    = `url("${blobUrl}")`;
+    inner.style.backgroundSize     = 'cover';
     inner.style.backgroundPosition = 'center';
   } catch { /* тихая ошибка */ }
 }
 
-async function _openFile(fileId) {
+async function _openFile(fileId, viewUrl = null) {
   showBottomSheet(`<div style="text-align:center;padding:32px 0;color:var(--color-muted)">Загрузка…</div>`);
   try {
-    const { name, mimeType, blobUrl } = await getCarFile(fileId);
+    const { name, mimeType, blobUrl } = await getCarFile(fileId, viewUrl);
     const isImage = mimeType.startsWith('image/');
     const isPdf   = mimeType === 'application/pdf';
 

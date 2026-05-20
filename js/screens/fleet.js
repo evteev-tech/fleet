@@ -2,7 +2,7 @@
  * fleet.js — экран «Парк»: данные GET_FLEET, фильтр по статусу, карточки Т-Банка.
  */
 
-import { getFleet, getDrivers, getRentals, postAction, invalidateCache } from '../api.js';
+import { getFleet, getDrivers, getRentals, postAction, invalidateCache, updateCarRate } from '../api.js';
 import { getWithSWR, CACHE_KEYS, invalidateCache as invalidateLocalCache } from '../cache.js';
 import { showScreen } from '../router.js';
 import { showBottomSheet, hideBottomSheet, showToast } from '../ui.js';
@@ -543,6 +543,15 @@ async function _openCarSheet(car) {
     ${noteBlock ? '<div class="fleet-bs-divider"></div>' : ''}
     ${driverBlock}
     <div class="fleet-bs-divider"></div>
+    <div class="fleet-bs-change-label">Стоимость аренды</div>
+    <div class="fleet-rate-row">
+      <div>
+        <div class="fleet-rate-val">${fmtRate(car.rateDay)}</div>
+        <div class="fleet-rate-sub">текущая ставка</div>
+      </div>
+      <button type="button" class="fleet-rate-edit" id="fleet-rate-edit">Изменить</button>
+    </div>
+    <div class="fleet-bs-divider"></div>
     <div class="fleet-bs-change-label">Изменить статус</div>
     <div class="fleet-status-btns" id="fleet-status-btns">${statusBtns}</div>
   `);
@@ -556,6 +565,10 @@ async function _openCarSheet(car) {
         return;
       }
       await _changeStatus(car, btn.dataset.newStatus);
+    });
+
+    document.getElementById('fleet-rate-edit')?.addEventListener('click', () => {
+      _openRateSheet(car);
     });
   }, 0);
 }
@@ -708,6 +721,137 @@ async function _changeStatus(car, newStatus) {
   } catch (err) {
     btns.forEach(b => { b.disabled = false; b.style.opacity = ''; });
     showToast(err.message === 'NO_CONNECTION' ? 'Нет соединения' : 'Ошибка обновления', 'error');
+  }
+}
+
+/** Bottom-sheet ввода новой ставки аренды. */
+function _openRateSheet(car) {
+  const cur = Math.max(0, Number(car.rateDay) || 0);
+
+  showBottomSheet(`
+    <div class="fleet-bs-back" id="fleet-rate-back">
+      <span>←</span><span>назад</span>
+    </div>
+    <div class="fleet-bs-title">Новая стоимость аренды</div>
+    <div class="fleet-bs-model" style="margin-bottom:16px">
+      ${escapeHtml([car.carId, car.name].filter(Boolean).join(' · '))}
+    </div>
+
+    <label class="fleet-rate-label">Ставка, ₽ в день</label>
+    <div class="fleet-rate-input-wrap">
+      <input
+        id="fleet-rate-input"
+        type="number"
+        inputmode="numeric"
+        step="50"
+        min="0"
+        class="fleet-rate-input"
+        value="${cur || ''}"
+        placeholder="${cur || '0'}"
+      />
+      <span class="fleet-rate-unit">₽/день</span>
+    </div>
+
+    <div class="fleet-rate-delta" id="fleet-rate-delta"></div>
+
+    <div class="fleet-rate-note" id="fleet-rate-active-note" style="display:none">
+      <span>ⓘ</span>
+      <span>Машина в аренде. Текущая аренда останется на старой ставке — новая применится со следующей сдачи.</span>
+    </div>
+
+    <label class="fleet-rate-label">Причина <span class="fleet-rate-opt">(необязательно)</span></label>
+    <input
+      id="fleet-rate-reason"
+      type="text"
+      class="fleet-rate-input fleet-rate-input--text"
+      placeholder="Сезонный спрос, новый прайс…"
+    />
+
+    <button type="button" class="fleet-bs-confirm" id="fleet-rate-save">Сохранить</button>
+  `);
+
+  setTimeout(() => {
+    const input = document.getElementById('fleet-rate-input');
+    const deltaEl = document.getElementById('fleet-rate-delta');
+    const activeNote = document.getElementById('fleet-rate-active-note');
+
+    if (statusKey(car.status) === 'rent' && activeNote) {
+      activeNote.style.display = 'flex';
+    }
+
+    const recalc = () => {
+      const v = Math.max(0, parseInt(input.value, 10) || 0);
+      if (!deltaEl) return;
+      if (!v || v === cur) {
+        deltaEl.textContent = cur ? `Текущая ставка: ${fmtRate(cur)}` : '';
+        deltaEl.className = 'fleet-rate-delta';
+        return;
+      }
+      const d = v - cur;
+      const pct = cur > 0 ? Math.round((d / cur) * 100) : 0;
+      const sign = d > 0 ? '+' : '−';
+      const pctStr = cur > 0 ? ` (${d > 0 ? '+' : '−'}${Math.abs(pct)}%)` : '';
+      deltaEl.textContent =
+        `${fmtRuInt(cur)} → ${fmtRuInt(v)} ₽ · ${sign}${fmtRuInt(Math.abs(d))} ₽${pctStr}`;
+      deltaEl.className = 'fleet-rate-delta ' + (d > 0 ? 'fleet-rate-delta--up' : 'fleet-rate-delta--down');
+    };
+
+    input?.addEventListener('input', recalc);
+    recalc();
+
+    document.getElementById('fleet-rate-back')?.addEventListener('click', () => {
+      hideBottomSheet(() => { void _openCarSheet(car); });
+    });
+
+    document.getElementById('fleet-rate-save')?.addEventListener('click', () => {
+      void _saveRate(car, cur);
+    });
+  }, 0);
+}
+
+/** Отправка новой ставки. */
+async function _saveRate(car, oldRate) {
+  const input = document.getElementById('fleet-rate-input');
+  const reasonEl = document.getElementById('fleet-rate-reason');
+  const btn = document.getElementById('fleet-rate-save');
+
+  const v = Math.max(0, parseInt(input?.value, 10) || 0);
+  if (!v) {
+    showToast('Введите ставку', 'error');
+    return;
+  }
+  if (v === oldRate) {
+    showToast('Ставка не изменилась', 'error');
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+    btn.textContent = 'Сохраняем…';
+  }
+
+  try {
+    await updateCarRate({
+      car_id:   car.carId,
+      new_rate: v,
+      old_rate: oldRate,
+      reason:   reasonEl?.value?.trim() || '',
+    });
+
+    invalidateCache(SHEETS.CARS);
+    invalidateLocalCache(CACHE_KEYS.CARS);
+    invalidateLocalCache(CACHE_KEYS.INCOME_FORM);
+
+    showToast(`Ставка обновлена · ${fmtRate(v)} ✓`, 'success');
+    hideBottomSheet(() => renderFleet());
+  } catch (err) {
+    if (btn) {
+      btn.disabled = false;
+      btn.style.opacity = '';
+      btn.textContent = 'Сохранить';
+    }
+    showToast(err.message === 'NO_CONNECTION' ? 'Нет соединения' : 'Ошибка сохранения', 'error');
   }
 }
 

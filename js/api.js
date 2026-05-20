@@ -440,6 +440,22 @@ export async function updateOperation(payload) {
   return postAction('UPDATE_OPERATION', payload);
 }
 
+/**
+ * Изменение ставки аренды (₽/день) у машины. Пишет rateDay в лист «Машины»
+ * и дописывает след в note. Текущая аренда не трогается.
+ *
+ * @param {object} payload
+ * @param {string} payload.car_id
+ * @param {number} payload.new_rate
+ * @param {number} [payload.old_rate]
+ * @param {string} [payload.reason]
+ * @param {string} [payload.by]
+ * @returns {Promise<object>}
+ */
+export async function updateCarRate(payload) {
+  return postAction('UPDATE_CAR_RATE', payload);
+}
+
 /** Данные листа «Дашборд» для экрана «Аналитика» (Apps Script GET_DASHBOARD). */
 export async function fetchDashboardAnalytics() {
   const body = await postAction('GET_DASHBOARD', {});
@@ -548,6 +564,7 @@ const ACTION_INVALIDATES = {
   UPDATE_OPERATION: [SHEETS.OPERATIONS],
   UPDATE_CAR_MILEAGE:[SHEETS.CARS],
   UPDATE_CAR_STATUS:[SHEETS.CARS, SHEETS.DRIVERS],
+  UPDATE_CAR_RATE:  [SHEETS.CARS],
   SAVE_DRIVER:      [SHEETS.DRIVERS, SHEETS.CARS],
   ADD_DEPOSIT:      [SHEETS.DEPOSITS, SHEETS.DRIVERS],
   ADD_RENTAL:       [SHEETS.RENTALS, SHEETS.CARS, SHEETS.DRIVERS],

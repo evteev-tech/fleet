@@ -256,6 +256,7 @@ function doPost(e) {
       case 'ADD_OPERATION':     return handleAddOperation(SS, body);
       case 'UPDATE_CAR_MILEAGE': return handleUpdateCarMileage(SS, body);
       case 'UPDATE_CAR_STATUS': return handleUpdateCarStatus(SS, body);
+      case 'UPDATE_CAR_RATE':    return handleUpdateCarRate(SS, body);
       case 'SAVE_DRIVER':       return handleSaveDriver(SS, body);
       case 'ADD_DEPOSIT':       return handleAddDeposit(SS, body);
       case 'ADD_RENTAL':        return handleAddRental(SS, body);
@@ -451,6 +452,67 @@ function handleUpdateCarStatus(ss, body) {
 
   sheet.getRange(rowIdx + 1, 4).setValue(new_status);
   return ok({ car_id, new_status });
+}
+
+// -----------------------------------------------------------------------------
+// UPDATE_CAR_RATE
+// -----------------------------------------------------------------------------
+// body: { car_id, new_rate, old_rate?, reason?, by? }
+
+function handleUpdateCarRate(ss, body) {
+  const { car_id, new_rate } = body;
+  const old_rate = body.old_rate;
+  const reason   = body.reason != null ? String(body.reason).trim() : '';
+  const by       = body.by != null ? String(body.by).trim() : '';
+
+  if (!car_id) return err('MISSING_FIELD: car_id');
+  if (new_rate === undefined || new_rate === null || new_rate === '') {
+    return err('MISSING_FIELD: new_rate');
+  }
+
+  const rateNum = Number(new_rate);
+  if (!isFinite(rateNum) || rateNum <= 0) return err('INVALID_RATE');
+
+  const sheet = ss.getSheetByName(SHEET.CARS);
+  if (!sheet) {
+    logFailure(ss, 'UPDATE_CAR_RATE', 'SHEET_NOT_FOUND', SHEET.CARS);
+    return err('SHEET_NOT_FOUND');
+  }
+
+  const data    = sheet.getDataRange().getValues();
+  const headers = data[0];
+
+  const carIdCol = headers.indexOf('car_id');
+  if (carIdCol === -1) {
+    logFailure(ss, 'UPDATE_CAR_RATE', 'COLUMN_NOT_FOUND', 'car_id');
+    return err('COLUMN_NOT_FOUND');
+  }
+
+  const rateCol = 6;
+  const noteCol = 7;
+
+  const carRow = data.findIndex((row, i) => i > 0 && String(row[carIdCol]) === String(car_id));
+  if (carRow === -1) {
+    logFailure(ss, 'UPDATE_CAR_RATE', 'CAR_NOT_FOUND', String(car_id));
+    return err('CAR_NOT_FOUND');
+  }
+
+  const prevRate = (old_rate === undefined || old_rate === null || old_rate === '')
+    ? Number(data[carRow][rateCol]) || 0
+    : Number(old_rate) || 0;
+
+  sheet.getRange(carRow + 1, rateCol + 1).setValue(rateNum);
+
+  const stamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd.MM');
+  let trail = stamp + ' ставка ' + prevRate + '\u2192' + rateNum;
+  if (by)     trail += ', ' + by;
+  if (reason) trail += ' (' + reason + ')';
+
+  const prevNote = data[carRow][noteCol] != null ? String(data[carRow][noteCol]).trim() : '';
+  const nextNote = prevNote ? (prevNote + '\n' + trail) : trail;
+  sheet.getRange(carRow + 1, noteCol + 1).setValue(nextNote);
+
+  return ok({ car_id: String(car_id), old_rate: prevRate, new_rate: rateNum });
 }
 
 // -----------------------------------------------------------------------------
