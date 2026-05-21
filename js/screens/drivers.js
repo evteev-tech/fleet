@@ -3,32 +3,33 @@
  * Форма редактирования — openDriverForm (экран карточки водителя).
  */
 
-import { getDrivers, getFleet, postAction, invalidateCache } from '../api.js';
-import { getWithSWR, CACHE_KEYS, invalidateCache as invalidateLocalCache } from '../cache.js';
+import {
+  getDrivers, getFleet, getDeposits, getRentals, fetchIncomeForm,
+  postAction, invalidateCache,
+} from '../api.js';
+import { CACHE_KEYS, invalidateCache as invalidateLocalCache } from '../cache.js';
 import { showScreen } from '../router.js';
 import { showBottomSheet, hideBottomSheet, showToast } from '../ui.js';
 import { CAR_STATUSES, SHEETS } from '../config.js';
 import { fmtRub, fmtRuInt } from '../utils/format.js';
 import { renderAppHeader } from '../ui-components.js?v=7';
+import {
+  isActiveStatus, isVacationStatus, isArchiveStatus,
+  enrichDriver, sortActiveDrivers, overdueBannerStats,
+  driverDisplayName, payStateTagLabel, fmtDdMm,
+} from '../utils/driver-pay.js';
+
+// В листе «Справочник», колонка «Статусы водителей», добавить значение: в отпуске
 
 const TABS = [
-  { id: 'all', label: 'Все', match: () => true },
   { id: 'active', label: 'Активные', match: s => isActiveStatus(s) },
+  { id: 'vacation', label: 'В отпуске', match: s => isVacationStatus(s) },
   { id: 'archive', label: 'Архив', match: s => isArchiveStatus(s) },
 ];
 
 let _pendingTab = null;
 let _lastDrivers = [];
 let _activeTab = 'active';
-
-function isActiveStatus(raw) {
-  const s = String(raw || '').toLowerCase();
-  return s.includes('актив') && !s.includes('архив');
-}
-
-function isArchiveStatus(raw) {
-  return String(raw || '').toLowerCase().includes('архив');
-}
 
 
 function formatPhoneRu(raw) {
@@ -44,20 +45,6 @@ function formatPhoneRu(raw) {
   return `+7 ${a} ${b}-${c}-${e}`;
 }
 
-function depositStyle(driver) {
-  const x = Number(driver.deposit) || 0;
-  if (x < 0) return '#C62828';
-  if (x > 0 && isArchiveStatus(driver.status)) return '#757575';
-  if (x > 0) return '#2E7D32';
-  return '#757575';
-}
-
-function badgeFor(driver) {
-  if (isArchiveStatus(driver.status)) {
-    return { label: 'Архив', class: 'drivers-card__badge--archive' };
-  }
-  return { label: 'Активный', class: 'drivers-card__badge--active' };
-}
 
 export function initDrivers() {
   document.addEventListener('screen:activated', e => {
@@ -74,42 +61,32 @@ export async function renderDrivers() {
     _pendingTab = null;
   }
 
-  body.innerHTML = '';
-  let drivers;
-  let cacheHit = false;
+  body.innerHTML = _skeletonHTML();
 
-  getWithSWR(CACHE_KEYS.DRIVERS, () => getDrivers(), {
-    onCached: d => {
-      cacheHit = true;
-      drivers = d;
-      _lastDrivers = drivers;
-      _paint(body, drivers, _activeTab);
-    },
-    onFresh: d => {
-      drivers = d;
-      _lastDrivers = drivers;
-      _paint(body, drivers, _activeTab);
-    },
-    onFetchError: (_e, meta) => {
-      if (!meta?.hadCache) {
-        body.innerHTML = _errorHTML();
-        document.getElementById('drivers-retry')?.addEventListener('click', () => renderDrivers());
-      }
-    },
-  });
-
-  setTimeout(() => {
-    if (!cacheHit && drivers === undefined) {
-      body.innerHTML = _skeletonHTML();
-    }
-  }, 0);
+  try {
+    const [drivers, fleet, incomeRows, deposits, rentals] = await Promise.all([
+      getDrivers(),
+      getFleet(),
+      fetchIncomeForm(),
+      getDeposits(),
+      getRentals(),
+    ]);
+    const ctx = { fleet, incomeRows, deposits, rentals };
+    _lastDrivers = drivers.map(d => enrichDriver(d, ctx));
+    _paint(body, _lastDrivers, _activeTab);
+  } catch {
+    body.innerHTML = _errorHTML();
+    document.getElementById('drivers-retry')?.addEventListener('click', () => renderDrivers());
+  }
 }
 
 function _paint(body, drivers, tabId) {
-  const filtered = drivers.filter(c => {
-    const tab = TABS.find(t => t.id === tabId) ?? TABS[0];
-    return tab.match(c.status);
-  });
+  const tab = TABS.find(t => t.id === tabId) ?? TABS[0];
+  let filtered = drivers.filter(c => tab.match(c.status));
+  if (tabId === 'active') filtered = sortActiveDrivers(filtered);
+
+  const overdue = tabId === 'active' ? overdueBannerStats(filtered) : { count: 0, sum: 0 };
+  const showLegend = tabId === 'active';
 
   body.innerHTML = `
     <div class="drivers-page">
@@ -125,8 +102,20 @@ function _paint(body, drivers, tabId) {
         `).join('')}
       </div>
 
+      ${showLegend ? `
+        <div class="drivers-overdue-banner ${overdue.count ? '' : 'hidden'}">
+          <span class="drivers-overdue-banner__count">${overdue.count} просрочка</span>
+          <span class="drivers-overdue-banner__sum">на ${fmtRuInt(overdue.sum)} ₽</span>
+        </div>
+        <div class="drivers-pay-legend">
+          <span class="drivers-pay-legend__item"><i class="drivers-pay-legend__dot drivers-pay-legend__dot--red"></i>просрочка</span>
+          <span class="drivers-pay-legend__item"><i class="drivers-pay-legend__dot drivers-pay-legend__dot--yellow"></i>сегодня</span>
+          <span class="drivers-pay-legend__item"><i class="drivers-pay-legend__dot drivers-pay-legend__dot--green"></i>оплачено</span>
+        </div>
+      ` : ''}
+
       <div class="drivers-page__body" id="drivers-list-root">
-        ${_listHTML(filtered, drivers.length === 0)}
+        ${_listHTML(filtered, drivers.length === 0, tabId)}
       </div>
     </div>
   `;
@@ -136,79 +125,87 @@ function _paint(body, drivers, tabId) {
       const id = btn.dataset.tab;
       if (!id || id === _activeTab) return;
       _activeTab = id;
-      body.querySelectorAll('.pill[data-tab]').forEach(b =>
-        b.classList.toggle('pill--active', b.dataset.tab === id));
-      const root = document.getElementById('drivers-list-root');
-      if (root) {
-        const next = _lastDrivers.filter(c => {
-          const t = TABS.find(x => x.id === id) ?? TABS[0];
-          return t.match(c.status);
-        });
-        root.innerHTML = _listHTML(next, _lastDrivers.length === 0);
-        _bindRows(body, next);
-      }
+      _paint(body, _lastDrivers, id);
     });
   });
 
-_bindRows(body, filtered);
+  _bindRows(body, filtered);
 
   document.getElementById('drivers-add-btn')?.addEventListener('click', () => {
-    // Форма «Новый водитель» не использует fleet/drivers — открываем мгновенно.
-    // getFleet() понадобится позже в _openAssignCarSheet после сохранения.
     openDriverForm(null, [], _lastDrivers);
   });
 }
 
 
-function _listHTML(list, driversWasEmpty) {
+function _listHTML(list, driversWasEmpty, tabId) {
   if (driversWasEmpty) {
     return `<div class="drivers-empty">Нет водителей</div>`;
   }
   if (!list.length) {
     return `<div class="drivers-empty">Нет водителей с таким статусом</div>`;
   }
-  return list.map(d => _cardHTML(d)).join('');
+  if (tabId === 'active') return list.map(d => _activeCardHTML(d)).join('');
+  return list.map(d => _inactiveCardHTML(d, tabId)).join('');
 }
 
-function _cardHTML(d) {
-  const badge = badgeFor(d);
-  const dep = Number(d.deposit) || 0;
-  const depStr = fmtRub(dep);
-  const depCol = depositStyle(d);
-  const car = d.currentCar;
-  const carStr = car ? escapeHtml(String(car)) : '—';
-  const carCol = car ? '#2E7D32' : '#757575';
-  const note = String(d.note || '').trim();
+function _initials(d) {
+  const name = String(d.name || '').trim();
+  if (name) return name.split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase() ?? '').join('');
+  const cid = d.carId || d.driverId || '?';
+  return String(cid).slice(0, 2).toUpperCase();
+}
+
+function _activeCardHTML(d) {
+  const dn = driverDisplayName(d);
+  const stateMod = d.payState || 'neutral';
+  const tag = d.payState ? payStateTagLabel(d.payState, d.daysLeft) : '';
+  const tagCls = d.payState ? `drivers-card__pay-tag--${d.payState}` : '';
+  const carLine = d.carId
+    ? `🚗 ${escapeHtml(d.carId)}${d.car?.color ? ` · ${escapeHtml(d.car.color)}` : ''}`
+    : 'Без машины';
+  const paidStr = d.paidUntil ? fmtDdMm(d.paidUntil) : '—';
 
   return `
-    <article class="drivers-card" data-driver-id="${escapeAttr(d.driverId)}">
-      <div class="drivers-card__top">
-        <div class="drivers-card__id-block">
-          <div class="drivers-card__name">${escapeHtml(d.name || '—')}</div>
-          <div class="drivers-card__did">${escapeHtml(d.driverId)}</div>
+    <article class="drivers-card drivers-card--pay drivers-card--${escapeAttr(stateMod)}" data-driver-id="${escapeAttr(d.driverId)}">
+      <div class="drivers-card__status-stripe" aria-hidden="true"></div>
+      <div class="drivers-card__inner">
+        <div class="drivers-card__row">
+          <div class="drivers-card__avatar">${escapeHtml(_initials(d))}</div>
+          <div class="drivers-card__main">
+            <div class="drivers-card__name${dn.muted ? ' drivers-card__name--muted' : ''}">${escapeHtml(dn.text)}</div>
+            <div class="drivers-card__sub">${carLine}</div>
+          </div>
+          ${tag ? `<span class="drivers-card__pay-tag ${tagCls}">${escapeHtml(tag)}</span>` : ''}
         </div>
-        <span class="drivers-card__badge ${badge.class}">${badge.label}</span>
-      </div>
-      <div class="drivers-card__rule"></div>
-      <div class="drivers-card__grid">
-        <div class="drivers-card__cell">
-          <div class="drivers-card__lbl">Телефон</div>
-          <div class="drivers-card__val">${escapeHtml(formatPhoneRu(d.phone))}</div>
-        </div>
-        <div class="drivers-card__cell">
-          <div class="drivers-card__lbl">Депозит</div>
-          <div class="drivers-card__val" style="color:${depCol}">${depStr}</div>
-        </div>
-        <div class="drivers-card__cell">
-          <div class="drivers-card__lbl">Машина</div>
-          <div class="drivers-card__val" style="color:${carCol}">${carStr}</div>
+        <div class="drivers-card__foot">
+          <span>Оплачено до <strong>${escapeHtml(paidStr)}</strong></span>
+          <span>Депозит <strong>${escapeHtml(fmtRub(d.deposit))}</strong></span>
         </div>
       </div>
-      ${note ? `
-        <div class="drivers-card__note">
-          <span class="drivers-card__note-text">${escapeHtml(note)}</span>
+    </article>
+  `;
+}
+
+function _inactiveCardHTML(d, tabId) {
+  const dn = driverDisplayName(d);
+  const statusLabel = tabId === 'vacation' ? 'в отпуске' : 'архив';
+  let sub = 'Без машины';
+  if (d.lastRental?.dateEnd instanceof Date && !Number.isNaN(d.lastRental.dateEnd.getTime())) {
+    sub = `Без машины · сдал ${fmtDdMm(d.lastRental.dateEnd)}`;
+  } else if (d.carId) {
+    sub = `${d.carId}${d.car?.color ? ` · ${d.car.color}` : ''}`;
+  }
+
+  return `
+    <article class="drivers-card drivers-card--inactive" data-driver-id="${escapeAttr(d.driverId)}">
+      <div class="drivers-card__row">
+        <div class="drivers-card__avatar drivers-card__avatar--muted">${escapeHtml(_initials(d))}</div>
+        <div class="drivers-card__main">
+          <div class="drivers-card__name${dn.muted ? ' drivers-card__name--muted' : ''}">${escapeHtml(dn.text)}</div>
+          <div class="drivers-card__sub">${escapeHtml(sub)}</div>
         </div>
-      ` : ''}
+        <span class="drivers-card__status-tag">${statusLabel}</span>
+      </div>
     </article>
   `;
 }

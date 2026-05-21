@@ -19,6 +19,10 @@ import { CAR_STATUSES, KASSA_ID, ROLES } from '../config.js';
 import { fmtRub, fmtRuInt } from '../utils/format.js';
 import { renderAppHeader } from '../ui-components.js?v=7';
 
+let _pendingContext = null;
+/** @type {string|null} */
+let _returnTo = null;
+
 /** @type {{ cars: object[], selectedId: string|null, amount: number, period: '1w'|'2w'|'1m'|null, numpadOpen: boolean, numpadBuf: string, comment: string, mileage: string }} */
 let _state = {
   cars: [],
@@ -35,8 +39,44 @@ const STATUS_RENT = CAR_STATUSES.RENT;
 
 export function initIncome() {
   document.addEventListener('screen:activated', e => {
-    if (e.detail.screenId === 'screen-income') void renderIncome();
+    if (e.detail.screenId !== 'screen-income') return;
+    _pendingContext = e.detail.paymentContext ?? null;
+    _returnTo = e.detail.returnTo ?? null;
+    void renderIncome();
   });
+}
+
+function _goBackFromIncome() {
+  _closeNumpad();
+  if (_returnTo) {
+    showScreen(_returnTo);
+    return;
+  }
+  const u = getCurrentUser();
+  showScreen(u?.role === ROLES.INVESTOR ? 'screen-dashboard' : 'screen-home');
+}
+
+function _applyPendingContext(root) {
+  if (!_pendingContext?.carId) return;
+  const carId = String(_pendingContext.carId).trim();
+  const exists = _state.cars.some(c => String(c.carId) === carId);
+  if (!exists) {
+    _pendingContext = null;
+    return;
+  }
+  _state.selectedId = carId;
+  const amt = Number(_pendingContext.amount);
+  if (amt > 0) {
+    _state.amount = Math.round(amt);
+    _state.period = null;
+  }
+  root.querySelectorAll('.income-card').forEach(c => {
+    c.classList.toggle('income-card--selected', c.dataset.carId === carId);
+  });
+  root.querySelector(`.income-card[data-car-id="${carId}"]`)
+    ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  _updateBottom(root);
+  _pendingContext = null;
 }
 
 export function renderIncome() {
@@ -60,9 +100,7 @@ root.innerHTML = `
   `;
 
   document.getElementById('income-back-btn')?.addEventListener('click', () => {
-    _closeNumpad();
-    const u = getCurrentUser();
-    showScreen(u?.role === ROLES.INVESTOR ? 'screen-dashboard' : 'screen-home');
+    _goBackFromIncome();
   });
 
   let fleet;
@@ -107,6 +145,7 @@ root.innerHTML = `
 
     _state.cars = cars;
     _renderIncomeShell(root);
+    _applyPendingContext(root);
   };
 
   getWithSWR(CACHE_KEYS.CARS, () => getFleet(), {
@@ -198,9 +237,7 @@ function _renderIncomeShell(root) {
   `;
 
   document.getElementById('income-back-btn2')?.addEventListener('click', () => {
-    _closeNumpad();
-    const u = getCurrentUser();
-    showScreen(u?.role === ROLES.INVESTOR ? 'screen-dashboard' : 'screen-home');
+    _goBackFromIncome();
   });
 
   root.querySelectorAll('.income-card').forEach(el => {
@@ -586,8 +623,7 @@ async function _submit(root) {
     invalidateLocalCache(CACHE_KEYS.INCOME_FORM);
 
     showToast('Операция записана', 'success', 2000);
-    const u = getCurrentUser();
-    showScreen(u?.role === ROLES.INVESTOR ? 'screen-dashboard' : 'screen-home');
+    _goBackFromIncome();
   } catch (e) {
     console.error(e);
     showToast(`Ошибка записи: ${e.message || e}`, 'error', 3000);

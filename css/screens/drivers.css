@@ -882,3 +882,392 @@
 
 .btn-danger:active   { opacity: 0.8; }
 .btn-danger:disabled { opacity: 0.5; cursor: default; }
+
+/* ─── Список: баннер просрочек и легенда ─── */
+.drivers-overdue-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 var(--space-lg) var(--space-sm);
+  padding: 10px 14px;
+  background: #fcebeb;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: #991b1b;
+}
+
+.drivers-pay-legend {
+  display: flex;
+  gap: var(--space-md);
+  padding: 0 var(--space-lg) var(--space-sm);
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+}
+
+.drivers-pay-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.drivers-pay-legend__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.drivers-pay-legend__dot--red    { background: #ef4444; }
+.drivers-pay-legend__dot--yellow { background: #f59e0b; }
+.drivers-pay-legend__dot--green  { background: #22c55e; }
+
+/* ─── Карточка водителя в списке (активный) ─── */
+.drivers-card--pay {
+  display: flex;
+  align-items: stretch;
+  padding: 0;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.drivers-card--overdue  { background: var(--c-loss-bg); }
+.drivers-card--today    { background: var(--color-orange-bg); }
+.drivers-card--ok       { background: var(--c-profit-bg); }
+.drivers-card--neutral  { background: var(--color-white); }
+
+.drivers-card__status-stripe {
+  width: 3px;
+  flex-shrink: 0;
+  align-self: stretch;
+}
+
+.drivers-card--overdue .drivers-card__status-stripe  { background: var(--c-loss); }
+.drivers-card--today   .drivers-card__status-stripe  { background: var(--color-orange); }
+.drivers-card--ok      .drivers-card__status-stripe  { background: var(--c-profit); }
+.drivers-card--neutral .drivers-card__status-stripe  { background: var(--color-border); }
+
+.drivers-card__inner {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-md) var(--space-md) var(--space-md) 10px;
+}
+
+.drivers-card__row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+}
+
+.drivers-card__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-dark);
+  flex-shrink: 0;
+}
+
+.drivers-card__avatar--muted { opacity: 0.7; }
+
+.drivers-card__main { flex: 1; min-width: 0; }
+
+.drivers-card__name {
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--color-dark);
+}
+
+.drivers-card__name--muted {
+  color: var(--color-muted);
+  font-weight: 600;
+}
+
+.drivers-card__sub {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+  margin-top: 2px;
+}
+
+.drivers-card__pay-tag {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.drivers-card__pay-tag--overdue { background: var(--c-loss); color: var(--color-white); }
+.drivers-card__pay-tag--today   { background: var(--color-orange-bg); color: var(--color-orange); }
+.drivers-card__pay-tag--ok      { background: var(--c-profit-bg); color: var(--c-profit); }
+
+.drivers-card__foot {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--space-md);
+  padding-top: var(--space-sm);
+  border-top: 0.5px solid var(--color-border);
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+}
+
+.drivers-card--inactive {
+  opacity: 0.82;
+  padding: var(--space-md);
+}
+
+.drivers-card__status-tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: var(--color-bg);
+  color: var(--color-muted);
+  flex-shrink: 0;
+}
+
+/* ─── Карточка водителя (#screen-driver) ─── */
+#screen-driver .screen-body {
+  background: var(--color-bg);
+  padding: 0;
+}
+
+#screen-driver .drv-hero {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  padding-top: max(var(--space-md), calc(env(safe-area-inset-top) + var(--space-sm)));
+  padding-bottom: var(--space-2xl);
+  background: var(--color-dark);
+  margin-bottom: 0;
+}
+
+#screen-driver .drv-hero__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-yellow);
+  color: var(--color-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-lg);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+#screen-driver .drv-hero__info { flex: 1; min-width: 0; }
+
+#screen-driver .drv-hero__name {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--color-white);
+  letter-spacing: -0.02em;
+}
+
+#screen-driver .drv-hero__meta {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted-white);
+  margin-top: 2px;
+}
+
+#screen-driver .drv-hero-call {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--surface-on-dark-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+#screen-driver .drv-content {
+  background: var(--color-white);
+  padding: 0 0 var(--space-2xl);
+  margin-top: var(--space-md);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  position: relative;
+  z-index: 1;
+}
+
+#screen-driver .drv-tabs {
+  margin: 0 var(--space-md) var(--space-md);
+}
+
+#screen-driver #driver-tab-panel {
+  padding: 0 var(--space-md);
+}
+
+#screen-driver .drv-pay-block {
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-lg);
+  margin-bottom: var(--space-md);
+}
+
+#screen-driver .drv-pay-block--overdue {
+  background: var(--c-loss-bg);
+}
+#screen-driver .drv-pay-block--overdue .drv-pay-block__title {
+  color: var(--c-loss);
+}
+
+#screen-driver .drv-pay-block--today {
+  background: var(--color-orange-bg);
+}
+#screen-driver .drv-pay-block--today .drv-pay-block__title {
+  color: var(--color-orange);
+}
+
+#screen-driver .drv-pay-block--ok {
+  background: var(--c-profit-bg);
+}
+#screen-driver .drv-pay-block--ok .drv-pay-block__title {
+  color: var(--c-profit);
+}
+
+#screen-driver .drv-pay-block--neutral {
+  background: var(--color-white);
+}
+#screen-driver .drv-pay-block--neutral .drv-pay-block__title {
+  color: var(--color-dark);
+}
+
+#screen-driver .drv-pay-block__title {
+  font-size: var(--text-lg);
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+#screen-driver .drv-pay-block__meta {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+  margin-top: 4px;
+  line-height: 1.3;
+}
+
+#screen-driver #driver-pay-btn {
+  margin-bottom: var(--space-md);
+}
+
+#screen-driver .drv-summary-grid {
+  margin-bottom: var(--space-md);
+}
+
+#screen-driver .drv-deposit-return {
+  align-self: flex-start;
+  margin-top: var(--space-xs);
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: var(--text-sm);
+  font-weight: 400;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+#screen-driver .drv-deposit-return:active {
+  opacity: 0.7;
+}
+
+#screen-driver .drv-secondary-actions {
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-sm);
+}
+
+#screen-driver .drv-secondary-actions .btn-secondary {
+  flex: 1;
+  width: auto;
+}
+
+#screen-driver .drv-info-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: 10px var(--space-md);
+  background: var(--color-blue-bg);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-md);
+  color: var(--color-dark);
+}
+
+#screen-driver .drv-info-banner__btn {
+  border: none;
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+  padding: 6px var(--space-md);
+  font-weight: 600;
+  font-size: var(--text-xs);
+  color: var(--color-dark);
+  cursor: pointer;
+}
+
+#screen-driver .drv-fields {
+  background: var(--color-white);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: var(--space-md);
+}
+
+#screen-driver .drv-field {
+  padding: var(--space-md);
+  border-bottom: 0.5px solid var(--color-border);
+}
+#screen-driver .drv-field:last-child { border-bottom: none; }
+
+#screen-driver .drv-field__lbl {
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+  margin-bottom: 2px;
+}
+#screen-driver .drv-field__val { font-size: var(--text-base); color: var(--color-dark); }
+#screen-driver .drv-field__empty { font-style: italic; color: var(--color-muted); }
+#screen-driver .drv-field__link { color: var(--color-link); text-decoration: none; }
+
+#screen-driver .drv-edit-btn { width: 100%; }
+
+#screen-driver .drv-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+#screen-driver .drv-timeline__item {
+  display: flex;
+  gap: var(--space-md);
+}
+
+#screen-driver .drv-timeline__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+#screen-driver .drv-timeline__dot--money   { background: var(--c-profit); }
+#screen-driver .drv-timeline__dot--warn    { background: var(--color-orange); }
+#screen-driver .drv-timeline__dot--neutral { background: var(--color-muted); }
+
+#screen-driver .drv-timeline__date { font-size: var(--text-xs); color: var(--color-muted); }
+#screen-driver .drv-timeline__desc { font-size: var(--text-sm); font-weight: 600; color: var(--color-dark); }
+#screen-driver .drv-timeline__amt  { font-size: var(--text-sm); color: var(--color-dark); }
+
+#screen-driver .drv-empty {
+  text-align: center;
+  padding: var(--space-xl);
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+}
+
+#screen-driver .drv-skeleton { padding: var(--space-lg); }
+#screen-driver .drv-skeleton .skel--hero { height: 80px; margin-bottom: var(--space-md); }
+#screen-driver .drv-skeleton .skel--row  { height: 48px; margin-bottom: var(--space-sm); }
