@@ -125,14 +125,10 @@ function _summaryTabHTML(driver) {
     ? `<div class="drv-pay-block__meta">до ${driver.paidUntil ? _esc(fmtDdMm(driver.paidUntil)) : '—'} · ${fmtRuInt(driver.rateDay)} ₽/день</div>`
     : '';
 
-  const payBlock = driver.onRent && driver.payState
-    ? `<div class="drv-pay-block drv-pay-block--${driver.payState}">
-        <div class="drv-pay-block__title">${_esc(payStateTitle(driver.payState))}</div>
-        ${payMeta}
-      </div>`
-    : `<div class="drv-pay-block drv-pay-block--neutral">
-        <div class="drv-pay-block__title">${driver.carId ? 'Нет данных об оплате' : 'Машина не назначена'}</div>
-      </div>`;
+  const payState = driver.onRent && driver.payState ? driver.payState : 'neutral';
+  const payTitle = driver.onRent && driver.payState
+    ? payStateTitle(driver.payState)
+    : (driver.carId ? 'Нет данных об оплате' : 'Машина не назначена');
 
   const payBtn = driver.onRent
     ? `<button type="button" class="btn-primary" id="driver-pay-btn">Принять платёж</button>`
@@ -142,26 +138,31 @@ function _summaryTabHTML(driver) {
   const deposit = driver.deposit;
 
   const secondaryBtns = isVacationStatus(driver.status)
-    ? `<button type="button" class="btn-secondary" id="driver-give-car">Выдать машину</button>`
-    : `<button type="button" class="btn-secondary" id="driver-return-car">Принять авто</button>
-       <button type="button" class="btn-secondary" id="driver-vacation">В отпуск</button>`;
+    ? `<button type="button" class="drv-btn drv-btn--dark" id="driver-give-car">Выдать машину</button>`
+    : `<button type="button" class="drv-btn drv-btn--dark" id="driver-return-car">Принять авто</button>
+       <button type="button" class="drv-btn drv-btn--dark" id="driver-vacation">В отпуск</button>`;
 
   return `
-    ${payBlock}
-    ${payBtn}
-    <div class="summary-grid drv-summary-grid">
-      <div class="summary-card">
-        <div class="summary-card__label">Депозит</div>
-        <div class="summary-card__value">${fmtRub(deposit)}</div>
-        ${deposit > 0 ? `<button type="button" class="drv-deposit-return" id="driver-deposit-return">Вернуть</button>` : ''}
+    <div class="drv-tab-stack drv-tab-stack--summary">
+      <div class="drv-card drv-pay-block drv-pay-block--${payState}">
+        <div class="drv-pay-block__title">${_esc(payTitle)}</div>
+        ${payMeta}
       </div>
-      <div class="summary-card">
-        <div class="summary-card__label">Оплачено всего</div>
-        <div class="summary-card__value">${fmtRub(totalPaid.amount)}</div>
-        <div class="summary-card__delta">${totalPaid.days} дн.</div>
+      ${payBtn}
+      <div class="summary-grid drv-summary-grid">
+        <div class="summary-card drv-card">
+          <div class="summary-card__label">Депозит</div>
+          <div class="summary-card__value">${fmtRub(deposit)}</div>
+          ${deposit > 0 ? `<button type="button" class="drv-deposit-return" id="driver-deposit-return">Вернуть</button>` : ''}
+        </div>
+        <div class="summary-card drv-card">
+          <div class="summary-card__label">Оплачено всего</div>
+          <div class="summary-card__value">${fmtRub(totalPaid.amount)}</div>
+          <div class="summary-card__delta">${totalPaid.days} дн.</div>
+        </div>
       </div>
+      <div class="drv-secondary-actions">${secondaryBtns}</div>
     </div>
-    <div class="drv-secondary-actions">${secondaryBtns}</div>
   `;
 }
 
@@ -189,33 +190,66 @@ function _dataTabHTML(driver) {
   };
 
   return `
-    ${banner}
-    <div class="drv-fields">
-      ${field('ФИО', driver.name)}
-      ${field('Телефон', driver.phone, true)}
-      ${field('Машина', driver.carId || '')}
-      ${field('ВУ', driver.license)}
-      ${field('Комментарий', driver.note)}
+    <div class="drv-tab-stack drv-tab-stack--data">
+      ${banner}
+      <div class="drv-card drv-fields-card">
+        <div class="drv-fields">
+          ${field('ФИО', driver.name)}
+          ${field('Телефон', driver.phone, true)}
+          ${field('Машина', driver.carId || '')}
+          ${field('ВУ', driver.license)}
+          ${field('Комментарий', driver.note)}
+        </div>
+      </div>
+      <button type="button" class="drv-btn drv-btn--blue drv-edit-btn" id="driver-edit">Редактировать</button>
     </div>
-    <button type="button" class="btn-secondary drv-edit-btn" id="driver-edit">Редактировать</button>
   `;
 }
+
+const _MONTH_LABELS = [
+  'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+  'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь',
+];
 
 function _historyTabHTML(driver) {
   const events = _buildTimeline(driver);
   if (!events.length) {
-    return `<div class="drv-empty">Событий пока нет</div>`;
+    return `<div class="drv-tab-stack"><div class="drv-empty">Событий пока нет</div></div>`;
   }
-  return `<div class="drv-timeline">${events.map(ev => `
-    <div class="drv-timeline__item">
-      <div class="drv-timeline__dot drv-timeline__dot--${ev.kind}"></div>
-      <div class="drv-timeline__body">
-        <div class="drv-timeline__date">${_esc(ev.dateStr)}</div>
-        <div class="drv-timeline__desc">${_esc(ev.desc)}</div>
-        ${ev.amount != null ? `<div class="drv-timeline__amt">${fmtRub(ev.amount)}</div>` : ''}
+
+  const groups = [];
+  let currentKey = null;
+  for (const ev of events) {
+    const d = new Date(ev.ts);
+    const key = `${d.getFullYear()}-${d.getMonth()}`;
+    if (key !== currentKey) {
+      groups.push({ key, label: _MONTH_LABELS[d.getMonth()], items: [] });
+      currentKey = key;
+    }
+    groups[groups.length - 1].items.push(ev);
+  }
+
+  const groupsHtml = groups.map(g => `
+    <div class="drv-history-group">
+      <div class="section-label drv-history-label">${_esc(g.label)}</div>
+      <div class="drv-card drv-timeline-card">
+        <div class="drv-timeline">${g.items.map(ev => {
+          const amtClass = ev.amountKind ? ` drv-timeline__amt--${ev.amountKind}` : '';
+          return `
+          <div class="drv-timeline__item">
+            <div class="drv-timeline__dot drv-timeline__dot--${ev.kind}"></div>
+            <div class="drv-timeline__body">
+              <div class="drv-timeline__date">${_esc(ev.dateStr)}</div>
+              <div class="drv-timeline__desc">${_esc(ev.desc)}</div>
+              ${ev.amount != null ? `<div class="drv-timeline__amt${amtClass}">${fmtRub(ev.amount)}</div>` : ''}
+            </div>
+          </div>`;
+        }).join('')}</div>
       </div>
     </div>
-  `).join('')}</div>`;
+  `).join('');
+
+  return `<div class="drv-tab-stack drv-tab-stack--history">${groupsHtml}</div>`;
 }
 
 function _bindTabs(body, driver) {
@@ -320,12 +354,14 @@ function _buildTimeline(driver) {
   (_ctx?.deposits || [])
     .filter(d => String(d.driverId) === did)
     .forEach(d => {
+      const isIn = Number(d.amount) >= 0;
       events.push({
         ts: _parseDate(d.date),
         dateStr: _fmtDate(d.date),
-        desc: Number(d.amount) >= 0 ? 'Пополнение депозита' : 'Возврат депозита',
+        desc: isIn ? 'Пополнение депозита' : 'Возврат депозита',
         amount: d.amount,
-        kind: 'money',
+        kind: isIn ? 'deposit-in' : 'deposit-out',
+        amountKind: isIn ? 'in' : 'out',
       });
     });
 
@@ -347,7 +383,7 @@ function _buildTimeline(driver) {
           dateStr: fmtDdMm(r.dateEnd),
           desc: `Окончание аренды · ${r.carId || ''}`,
           amount: null,
-          kind: 'warn',
+          kind: 'neutral',
         });
       }
     });
