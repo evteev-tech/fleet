@@ -255,7 +255,12 @@ export async function getOperations({ kassaId = null, month = null, year = null 
   if (kassaId) params.set('kassa_id', kassaId);
   const qs = params.toString() ? `?${params.toString()}` : '';
   const data = await apiRequest(`/operations${qs}`);
-  let ops = (data.operations ?? []).map(op => ({ ...op, date: parseApiDate(op.date) }));
+  let ops = (data.operations ?? []).map(op => ({
+    ...op,
+    id: op.opId || op.id,
+    date: parseApiDate(op.dateRaw || op.date),
+    author: op.provel || op.author,
+  }));
   if (month && year) {
     ops = ops.filter(op => {
       const d = op.date;
