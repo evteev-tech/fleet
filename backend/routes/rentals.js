@@ -17,4 +17,16 @@ router.get('/rentals/income-form', (req, res) => {
   return ok(res, { car_id, ...(row || { max_paid_until: null, driver_id: null, amount: 0 }) });
 });
 
+// PATCH /api/rentals/:id/promise — записать "обещал заплатить"
+router.patch('/rentals/:id/promise', (req, res) => {
+  const { id } = req.params;
+  const { promised_until } = req.body || {};
+  if (!promised_until) return fail(res, 'MISSING_FIELD: promised_until');
+  const rental = db.prepare('SELECT id FROM rentals WHERE id = ?').get(id);
+  if (!rental) return fail(res, 'RENTAL_NOT_FOUND', 404);
+  db.prepare('UPDATE rentals SET promised_until = ?, promised_at = ? WHERE id = ?')
+    .run(promised_until, new Date().toISOString().slice(0, 10), id);
+  return ok(res, { id, promised_until });
+});
+
 export default router;
