@@ -199,16 +199,21 @@ async function apiRequest(endpoint, options = {}) {
   return json;
 }
 
-/** Парсит дату из REST API (DD.MM.YYYY, ISO) в native Date. */
+/** Парсит дату из REST API в local Date (без UTC-сдвига). */
 const parseApiDate = (dateStr) => {
   if (!dateStr) return new Date();
   if (dateStr instanceof Date) return dateStr;
-  // Check for DD.MM.YYYY format
-  if (/^\d{2}\.\d{2}\.\d{4}/.test(dateStr)) {
-    const [day, month, year] = dateStr.split(' ')[0].split('.');
-    return new Date(`${year}-${month}-${day}T12:00:00Z`);
+  const str = String(dateStr).split(' ')[0]; // remove time if present
+  // YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+    const [year, month, day] = str.split('-');
+    return new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
   }
-  // Fallback for standard ISO / YYYY-MM-DD
+  // DD.MM.YYYY
+  if (/^\d{2}\.\d{2}\.\d{4}/.test(str)) {
+    const [day, month, year] = str.split('.');
+    return new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
+  }
   return new Date(dateStr);
 };
 
@@ -250,47 +255,19 @@ export async function getUsers() {
  * @returns {Promise<Array>}
  */
 export async function getOperations(kassaId = null) {
+  if (USE_MOCK) return getMockOperationsNormalized({ kassaId, month: null, year: null });
   let url = '/operations';
   if (kassaId) url += `?kassa_id=${kassaId}`;
   const data = await apiRequest(url);
+  if (!data || !data.operations) return [];
 
-  if (!data || !data.operations || data.operations.length === 0) {
-    return [];
-  }
-
-  // ВРЕМЕННЫЙ ДЕБАГ: Выведет первую операцию прямо на экран!
-  alert('ДАННЫЕ С СЕРВЕРА:\n' + JSON.stringify(data.operations[0], null, 2));
-
-  return data.operations.map(op => {
-    // Универсальный парсинг даты
-    let dateObj = new Date();
-    const rawDate = op.dateRaw || op.date || op.date_raw;
-
-    if (typeof rawDate === 'string') {
-      if (/^\d{2}\.\d{2}\.\d{4}/.test(rawDate)) {
-        const [day, month, year] = rawDate.split(' ')[0].split('.');
-        dateObj = new Date(`${year}-${month}-${day}T12:00:00Z`);
-      } else {
-        // Подстраховка для формата "2026-05-15 12:00:00"
-        dateObj = new Date(rawDate.replace(' ', 'T'));
-      }
-    } else if (rawDate instanceof Date) {
-      dateObj = rawDate;
-    } else if (typeof rawDate === 'number') {
-      dateObj = new Date(rawDate);
-    }
-
-    return {
-      ...op,
-      id: op.opId || op.id,
-      date: dateObj,
-      author: op.provel || op.author,
-      // Подстраховка на случай смены регистра в алиасах
-      amount: Number(op.amount) || 0,
-      type: op.type || '',
-      direction: op.direction || '',
-    };
-  });
+  return data.operations.map(op => ({
+    ...op,
+    id: op.opId || op.id,
+    date: parseApiDate(op.date),
+    author: op.provel || op.author,
+    amount: Number(op.amount) || 0,
+  }));
 }
 
 /**
@@ -347,9 +324,13 @@ export async function getDrivers() {
  *
  * @returns {Promise<Array<{rentalId,carId,driverId,dateStart,dateEnd,rateDay,note,promisedUntil,promisedAt,bonusDays,bonusReason}>>}
  */
-export async function getRentals() {
+export async function getRentals(status = null) {
   if (USE_MOCK) return getMockRentalsNormalized();
-  const data = await apiRequest('/rentals');
+  let url = '/rentals';
+  if (status) url += `?status=${status}`;
+  const data = await apiRequest(url);
+  if (!data || !data.rentals) return [];
+
   return data.rentals.map(r => ({
     ...r,
     dateStart: parseApiDate(r.dateStart),
@@ -368,9 +349,16 @@ export async function getRentals() {
  *
  * @returns {Promise<Array<{depOpId,date,driverId,carId,amount,status,comment}>>}
  */
-export async function getDeposits() {
-  const data = await apiRequest('/deposits');
-  return data.deposits.map(d => ({ ...d, date: parseApiDate(d.date) }));
+export async function getDeposits(driverId = null) {
+  let url = '/deposits';
+  if (driverId) url += `?driver_id=${driverId}`;
+  const data = await apiRequest(url);
+  if (!data || !data.deposits) return [];
+
+  return data.deposits.map(d => ({
+    ...d,
+    date: parseApiDate(d.date),
+  }));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
