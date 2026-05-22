@@ -70,6 +70,168 @@ export function invalidateCache(sheetName) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// НИЗКОУРОВНЕВОЕ ЧТЕНИЕ
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Читает все строки листа через Sheets API v4.
+ * Первая строка (заголовки) пропускается.
+ * Результат кэшируется на CACHE_TTL_MS мс.
+ *
+ * @param {string} sheetName
+ * @returns {Promise<string[][]>}  массив строк без строки заголовков
+ */
+async function readSheet(sheetName) {
+  const cached = _cache.get(sheetName);
+  if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
+    return cached.data;
+  }
+
+  const url =
+    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/` +
+    `${encodeURIComponent(sheetName)}?key=${API_KEY}` +
+    `&valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=FORMATTED_STRING`;
+
+  let res;
+  try {
+    res = await fetch(url);
+  } catch {
+    _lastApiStatus = 'error';
+    throw new Error('NO_CONNECTION');
+  }
+
+  if (!res.ok) {
+    _lastApiStatus = 'error';
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body?.error?.message ?? `HTTP ${res.status}`);
+  }
+
+  const json = await res.json();
+  // values[0] — заголовки, пропускаем
+  const rows = (json.values ?? []).slice(1);
+
+  _lastApiStatus = 'ok';
+  _cache.set(sheetName, { data: rows, ts: Date.now() });
+  return rows;
+}
+
+// ─── Геттер ячейки ────────────────────────────────────────────────────────────
+const cell = (row, idx, fallback = '') =>
+  row[idx] !== undefined && row[idx] !== null
+    ? String(row[idx]).trim()
+    : fallback;
+
+/** Балансы из листа «Кассы»: число, форматированная строка или (отриц.) в скобках */
+export function parseAmount(val) {
+  if (val == null || val === '') return 0;
+  if (typeof val === 'number' && Number.isFinite(val)) return val;
+  let t = String(val).trim().replace(/\u00a0/g, ' ');
+  t = t.replace(/[₽]/g, '');
+  const compact = t.replace(/\s/g, '');
+  const parenNeg = /^\(.*\)$/.test(compact);
+  const core = compact.replace(/[()]/g, '').replace(/,/g, '.');
+  const n = parseFloat(parenNeg ? `-${core}` : core);
+  return Number.isFinite(n) ? n : 0;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// REST API (новый бэкенд)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Обёртка над fetch для REST API с Bearer JWT.
+ * @param {string} endpoint — путь относительно API_BASE, напр. `/fleet`
+ * @param {RequestInit} [options]
+ * @returns {Promise<object>}
+ */
+async function apiRequest(endpoint, options = {}) {
+  const { body, headers: extraHeaders, ...rest } = options;
+  const headers = { ...(extraHeaders || {}) };
+
+  const token = getToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  let payload;
+  if (body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+    payload = typeof body === 'string' ? body : JSON.stringify(body);
+  }
+
+  let res;
+  try {
+    res = await fetch(`${API_BASE}${endpoint}`, {
+      ...rest,
+      headers,
+      body: payload,
+    });
+  } catch {
+    _lastApiStatus = 'error';
+    throw new Error('NO_CONNECTION');
+  }
+
+  if (res.status === 401) {
+    _lastApiStatus = 'error';
+    clearToken();
+    throw new Error('UNAUTHORIZED');
+  }
+
+  let json;
+  try {
+    json = await res.json();
+  } catch {
+    _lastApiStatus = 'error';
+    throw new Error(`HTTP ${res.status}: ответ не является JSON`);
+  }
+
+  if (!res.ok || json?.status === 'error') {
+    _lastApiStatus = 'error';
+    throw new Error(json?.message ?? `HTTP ${res.status}`);
+  }
+
+  _lastApiStatus = 'ok';
+  return json;
+}
+
+/** Форматирует дату из REST/SQLite в строку DD.MM.YYYY для parseRuDate на экранах. */
+const formatToRuDate = (dateStr) => {
+  if (!dateStr) return '';
+  const str = String(dateStr).split(' ')[0]; // remove time if present
+  // If it is YYYY-MM-DD from SQLite
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+    const [y, m, d] = str.split('-');
+    return `${d}.${m}.${y}`;
+  }
+  return str; // Return as-is if already DD.MM.YYYY
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ПОЛЬЗОВАТЕЛИ
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Возвращает список пользователей из листа «Пользователи».
+ * Колонки: A=email, B=имя, C=роль, D=статус, E=примечание, F=pin
+ * PIN приводится: String(Math.round(Number(rawPin)))
+ *
+ * @returns {Promise<Array<{email,name,role,status,note,pin}>>}
+ */
+export async function getUsers() {
+  const rows = await readSheet(SHEETS.USERS);
+  return rows
+    .map(row => ({
+      email:  cell(row, 0),
+      name:   cell(row, 1),
+      role:   cell(row, 2),
+      status: cell(row, 3),
+      note:   cell(row, 4),
+      pin:    String(Math.round(Number(cell(row, 5)))) || '',
+    }))
+    .filter(u => u.email);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // ОПЕРАЦИИ КАССЫ
 // ═══════════════════════════════════════════════════════════════════════════
 
