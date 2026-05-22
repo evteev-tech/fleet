@@ -199,22 +199,16 @@ async function apiRequest(endpoint, options = {}) {
   return json;
 }
 
-/** Парсит дату из REST API в local Date (без UTC-сдвига). */
-const parseApiDate = (dateStr) => {
-  if (!dateStr) return new Date();
-  if (dateStr instanceof Date) return dateStr;
+/** Форматирует дату из REST/SQLite в строку DD.MM.YYYY для parseRuDate на экранах. */
+const formatToRuDate = (dateStr) => {
+  if (!dateStr) return '';
   const str = String(dateStr).split(' ')[0]; // remove time if present
-  // YYYY-MM-DD
+  // If it is YYYY-MM-DD from SQLite
   if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
-    const [year, month, day] = str.split('-');
-    return new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
+    const [y, m, d] = str.split('-');
+    return `${d}.${m}.${y}`;
   }
-  // DD.MM.YYYY
-  if (/^\d{2}\.\d{2}\.\d{4}/.test(str)) {
-    const [day, month, year] = str.split('.');
-    return new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
-  }
-  return new Date(dateStr);
+  return str; // Return as-is if already DD.MM.YYYY
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -264,10 +258,11 @@ export async function getOperations(kassaId = null) {
   return data.operations.map(op => ({
     ...op,
     id: op.opId || op.id,
-    date: parseApiDate(op.date || op.dateRaw),
+    date: formatToRuDate(op.date),
+    dateRaw: formatToRuDate(op.dateRaw || op.date),
     author: op.provel || op.author,
     amount: Number(op.amount) || 0,
-    // UI compatibility aliases (old screen filters expect snake_case)
+    // Compatibility aliases for old screen filters
     kassa_id: op.kassaId || op.kassa_id,
     car_id: op.carId || op.car_id,
     driver_id: op.driverId || op.driver_id,
@@ -339,9 +334,9 @@ export async function getRentals(status = null) {
 
   return data.rentals.map(r => ({
     ...r,
-    dateStart: parseApiDate(r.dateStart),
-    dateEnd: parseApiDate(r.dateEnd),
-    promisedUntil: r.promisedUntil ? parseApiDate(r.promisedUntil) : null,
+    dateStart: formatToRuDate(r.dateStart),
+    dateEnd: formatToRuDate(r.dateEnd),
+    promisedUntil: r.promisedUntil ? formatToRuDate(r.promisedUntil) : null,
   }));
 }
 
@@ -363,7 +358,8 @@ export async function getDeposits(driverId = null) {
 
   return data.deposits.map(d => ({
     ...d,
-    date: parseApiDate(d.date),
+    date: formatToRuDate(d.date),
+    dateRaw: formatToRuDate(d.dateRaw || d.date),
   }));
 }
 
