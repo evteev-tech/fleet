@@ -19,7 +19,7 @@ function normalizeOp(row) {
     comment:       row.comment,
     provel:        row.author,
     classOverride: row.class_override,
-    classItog:     row.class_final,
+    classItog:     row.class_final || row.class_override || row.class_calc || null,
   };
 }
 
