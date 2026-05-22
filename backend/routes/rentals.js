@@ -4,6 +4,7 @@ import { ok, fail, keysToCamel } from '../utils.js';
 
 const router = Router();
 
+// DD.MM.YYYY для kassa_ops (исторический формат, не меняем)
 function todayStr() {
   const d = new Date();
   return String(d.getDate()).padStart(2,'0') + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + d.getFullYear();
@@ -12,6 +13,17 @@ function todayStr() {
 function nowStr() {
   const d = new Date();
   return todayStr() + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+
+// ISO YYYY-MM-DD для rentals (нормализует DD.MM.YYYY и уже ISO)
+function toIso(str) {
+  if (!str) return null;
+  const s = String(str).trim();
+  // DD.MM.YYYY → YYYY-MM-DD
+  const ddmm = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (ddmm) return `${ddmm[3]}-${ddmm[2].padStart(2,'0')}-${ddmm[1].padStart(2,'0')}`;
+  // уже ISO или другой формат — вернуть как есть
+  return s;
 }
 
 function getNextId(table, prefix) {
@@ -42,29 +54,31 @@ router.get('/income-form', (req, res) => {
       GROUP BY r.car_id
     `).all();
   }
-  return ok(res, { incomeForm: keysToCamel(rows) });
+  // Нормализуем last_paid_date в DD.MM.YYYY для фронта (driver-pay.js ждёт этот формат)
+  const mapped = (rows || []).map(r => {
+    let lpd = r.last_paid_date;
+    if (lpd) {
+      // ISO → DD.MM.YYYY
+      const iso = lpd.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (iso) lpd = `${iso[3]}.${iso[2]}.${iso[1]}`;
+    }
+    return { ...r, last_paid_date: lpd };
+  });
+  return ok(res, { incomeForm: keysToCamel(mapped) });
 });
 
 router.get('/', (req, res) => {
   const { car_id, status } = req.query;
   let sql = `
     SELECT
-      id AS rental_id,
-      car_id,
-      driver_id,
-      date_start,
-      date_end,
-      rate_day,
-      comment,
-      promised_until,
-      promised_at,
-      bonus_days,
-      bonus_reason,
-      status
+      id AS rental_id, car_id, driver_id,
+      date_start, date_end, rate_day, comment,
+      promised_until, promised_at,
+      bonus_days, bonus_reason, status
     FROM rentals WHERE 1=1`;
   const params = [];
   if (car_id) { sql += ' AND car_id = ?'; params.push(car_id); }
-  if (status) { sql += ' AND status = ?'; params.push(status); }
+  if (status)  { sql += ' AND status = ?'; params.push(status); }
   sql += ' ORDER BY rowid DESC';
   const rows = db.prepare(sql).all(...params);
   return ok(res, { rentals: keysToCamel(rows) });
@@ -77,7 +91,7 @@ router.post('/', (req, res) => {
   const rental_id = getNextId('rentals', 'R');
   db.prepare(`INSERT INTO rentals (id,car_id,driver_id,date_start,date_end,rate_day,comment,status)
     VALUES (?,?,?,?,?,?,?,'active')`)
-    .run(rental_id, car_id, driver_id, date_start, date_end || null, Number(rate_day), comment);
+    .run(rental_id, car_id, driver_id, toIso(date_start), toIso(date_end) || null, Number(rate_day), comment);
   return ok(res, { rental_id });
 });
 
@@ -125,22 +139,45 @@ router.post('/income', (req, res) => {
           comment = '', provel = 'Азамат', mileage } = req.body;
   if (!car_id || !driver_id || (!amount && amount !== 0) || !date_from || !date_to || !kassa_id)
     return fail(res, 'MISSING_FIELDS');
+
+  const isoFrom = toIso(date_from);
+  const isoTo   = toIso(date_to);
+
   const doTx = db.transaction(() => {
+    // 1. Запись в кассу
     const op_id = getNextId('kassa_ops', 'CO');
-    db.prepare(`INSERT INTO kassa_ops (id,date,kassa_id,direction,amount,type,category,car_id,driver_id,comment,author,class_calc,class_final)
+    db.prepare(`INSERT INTO kassa_ops
+      (id,date,kassa_id,direction,amount,type,category,car_id,driver_id,comment,author,class_calc,class_final)
       VALUES (?,?,?,'приход',?,'аренда','аренда',?,?,?,?,'revenue','revenue')`)
       .run(op_id, todayStr(), kassa_id, Number(amount), car_id, driver_id, comment, provel);
-    const rental_id = getNextId('rentals', 'R');
-    db.prepare(`INSERT INTO rentals (id,car_id,driver_id,date_start,date_end,rate_day,comment,status)
-      VALUES (?,?,?,?,?,?,?,'active')`)
-      .run(rental_id, car_id, driver_id, date_from, date_to, Number(rate), comment);
-    db.prepare("UPDATE rentals SET promised_until=NULL, promised_at=NULL WHERE car_id=? AND status='active' AND id!=?")
-      .run(car_id, rental_id);
+
+    // 2. Обновляем существующую активную аренду (TD-05: не плодим дубли)
+    const existing = db.prepare(
+      "SELECT id FROM rentals WHERE car_id = ? AND status = 'active' ORDER BY rowid DESC LIMIT 1"
+    ).get(car_id);
+
+    let rental_id;
+    if (existing) {
+      // Продлеваем существующую аренду
+      rental_id = existing.id;
+      db.prepare(`UPDATE rentals SET date_end = ?, promised_until = NULL, promised_at = NULL WHERE id = ?`)
+        .run(isoTo, rental_id);
+    } else {
+      // Активной аренды нет — создаём новую
+      rental_id = getNextId('rentals', 'R');
+      db.prepare(`INSERT INTO rentals (id,car_id,driver_id,date_start,date_end,rate_day,comment,status)
+        VALUES (?,?,?,?,?,?,?,'active')`)
+        .run(rental_id, car_id, driver_id, isoFrom, isoTo, Number(rate), comment);
+    }
+
+    // 3. Статус машины и пробег
     db.prepare("UPDATE cars SET status='в аренде' WHERE id=?").run(car_id);
     if (mileage && Number(mileage) > 0)
       db.prepare('UPDATE cars SET mileage=? WHERE id=?').run(Math.round(Number(mileage)), car_id);
+
     return { op_id, rental_id };
   });
+
   try { return ok(res, doTx()); }
   catch(e) { console.error('[ADD_INCOME]', e); return fail(res, e.message); }
 });
