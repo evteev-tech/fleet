@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import db from '../db.js';
-import { ok } from '../utils.js';
+import { ok, keysToCamel } from '../utils.js';
 
 const router = Router();
 
 router.get('/', (req, res) => {
-  const kassas = db.prepare('SELECT * FROM kassas').all();
+  const kassas = db.prepare('SELECT id AS kassa_id, name, owner, type, note FROM kassas').all();
   const balances = db.prepare(`
     SELECT kassa_id,
       SUM(CASE WHEN direction = 'приход' THEN amount ELSE 0 END) -
@@ -15,11 +15,11 @@ router.get('/', (req, res) => {
   `).all();
   const balMap = {};
   balances.forEach(r => { balMap[r.kassa_id] = r.balance || 0; });
-  return ok(res, { kassas: kassas.map(k => ({
-    kassaId: k.id, name: k.name, owner: k.owner,
-    type: k.type, note: k.note,
-    balanceCurrent: Math.round(balMap[k.id] || 0),
-  }))});
+  const rows = kassas.map(k => ({
+    ...k,
+    balance_current: Math.round(balMap[k.kassa_id] || 0),
+  }));
+  return ok(res, { kassas: keysToCamel(rows) });
 });
 
 export default router;

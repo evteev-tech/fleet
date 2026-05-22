@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import db from '../db.js';
-import { ok, fail } from '../utils.js';
+import { ok, fail, keysToCamel } from '../utils.js';
 
 const router = Router();
 
@@ -19,12 +19,23 @@ function getNextDepId() {
 
 router.get('/', (req, res) => {
   const { driver_id, car_id } = req.query;
-  let sql = 'SELECT * FROM deposits WHERE 1=1';
+  let sql = `
+    SELECT
+      id AS dep_op_id,
+      date,
+      date AS date_raw,
+      driver_id,
+      car_id,
+      amount,
+      status,
+      comment
+    FROM deposits WHERE 1=1`;
   const params = [];
   if (driver_id) { sql += ' AND driver_id = ?'; params.push(driver_id); }
   if (car_id)    { sql += ' AND car_id = ?';    params.push(car_id); }
   sql += ' ORDER BY rowid DESC';
-  return ok(res, { deposits: db.prepare(sql).all(...params) });
+  const rows = db.prepare(sql).all(...params);
+  return ok(res, { deposits: keysToCamel(rows) });
 });
 
 router.post('/', (req, res) => {

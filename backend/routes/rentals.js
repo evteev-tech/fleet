@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import db from '../db.js';
-import { ok, fail } from '../utils.js';
+import { ok, fail, keysToCamel } from '../utils.js';
 
 const router = Router();
 
@@ -25,28 +25,49 @@ router.get('/income-form', (req, res) => {
   const { car_id } = req.query;
   let rows;
   if (car_id) {
-    rows = db.prepare(`SELECT r.car_id, MAX(r.date_end) AS last_paid_date, r.rate_day, r.driver_id, r.promised_until, r.promised_at
-      FROM rentals r WHERE r.car_id = ? AND r.status = 'active' GROUP BY r.car_id`).all(car_id);
+    rows = db.prepare(`
+      SELECT r.car_id, MAX(r.date_end) AS last_paid_date, r.rate_day, r.driver_id,
+             r.promised_until, r.promised_at
+      FROM rentals r
+      WHERE r.car_id = ? AND r.status = 'active'
+      GROUP BY r.car_id
+    `).all(car_id);
   } else {
-    rows = db.prepare(`SELECT r.car_id, MAX(r.date_end) AS last_paid_date, r.rate_day, r.driver_id, r.promised_until, r.promised_at
-      FROM rentals r INNER JOIN cars c ON c.id = r.car_id
-      WHERE c.status = 'в аренде' AND r.status = 'active' GROUP BY r.car_id`).all();
+    rows = db.prepare(`
+      SELECT r.car_id, MAX(r.date_end) AS last_paid_date, r.rate_day, r.driver_id,
+             r.promised_until, r.promised_at
+      FROM rentals r
+      INNER JOIN cars c ON c.id = r.car_id
+      WHERE c.status = 'в аренде' AND r.status = 'active'
+      GROUP BY r.car_id
+    `).all();
   }
-  return ok(res, { incomeForm: rows.map(r => ({
-    carId: r.car_id, lastPaidDate: r.last_paid_date || '',
-    rateDay: r.rate_day || 0, driverId: r.driver_id || '',
-    promisedUntil: r.promised_until || '', promisedAt: r.promised_at || '',
-  }))});
+  return ok(res, { incomeForm: keysToCamel(rows) });
 });
 
 router.get('/', (req, res) => {
   const { car_id, status } = req.query;
-  let sql = 'SELECT * FROM rentals WHERE 1=1';
+  let sql = `
+    SELECT
+      id AS rental_id,
+      car_id,
+      driver_id,
+      date_start,
+      date_end,
+      rate_day,
+      comment,
+      promised_until,
+      promised_at,
+      bonus_days,
+      bonus_reason,
+      status
+    FROM rentals WHERE 1=1`;
   const params = [];
   if (car_id) { sql += ' AND car_id = ?'; params.push(car_id); }
   if (status) { sql += ' AND status = ?'; params.push(status); }
   sql += ' ORDER BY rowid DESC';
-  return ok(res, { rentals: db.prepare(sql).all(...params) });
+  const rows = db.prepare(sql).all(...params);
+  return ok(res, { rentals: keysToCamel(rows) });
 });
 
 router.post('/', (req, res) => {

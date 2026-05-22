@@ -19,7 +19,6 @@ import {
   getWithSWR,
   invalidateCache as invalidateSwrCache,
 } from './cache.js';
-import { parseSheetDate, parseSheetDateTime } from './utils/date.js';
 import { parseDate, fmtDate } from './utils/format.js';
 import {
   getMockFleetNormalized,
@@ -141,92 +140,6 @@ export function parseAmount(val) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// ПОЛЬЗОВАТЕЛИ
-// ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * Возвращает список пользователей из листа «Пользователи».
- * Колонки: A=email, B=имя, C=роль, D=статус, E=примечание, F=pin
- * PIN приводится: String(Math.round(Number(rawPin)))
- *
- * @returns {Promise<Array<{email,name,role,status,note,pin}>>}
- */
-export async function getUsers() {
-  const rows = await readSheet(SHEETS.USERS);
-  return rows
-    .map(row => ({
-      email:  cell(row, 0),
-      name:   cell(row, 1),
-      role:   cell(row, 2),
-      status: cell(row, 3),
-      note:   cell(row, 4),
-      pin:    String(Math.round(Number(cell(row, 5)))) || '',
-    }))
-    .filter(u => u.email);
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// ОПЕРАЦИИ КАССЫ
-// ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * Колонки: A=op_id, B=дата, C=касса_id, D=направление, E=сумма,
- *          F=тип, G=категория, H=car_id, I=driver_id,
- *          J=комментарий, K=провёл, L=класс_override, M=класс_итог
- *
- * @param {{ kassaId?: string|null, month?: number|null, year?: number|null }} opts
- * @returns {Promise<Array>}
- */
-export async function getOperations({ kassaId = null, month = null, year = null } = {}) {
-  if (USE_MOCK) return getMockOperationsNormalized({ kassaId, month, year });
-  const rows = await readSheet(SHEETS.OPERATIONS);
-
-  return rows
-    .map(row => ({
-      opId:          cell(row, 0),
-      date:          parseDate(cell(row, 1)),
-      dateRaw:       cell(row, 1),
-      kassaId:       cell(row, 2),
-      direction:     cell(row, 3),
-      amount:        parseFloat(cell(row, 4)) || 0,
-      type:          cell(row, 5),
-      category:      cell(row, 6),
-      carId:         cell(row, 7),
-      driverId:      cell(row, 8),
-      comment:       cell(row, 9),
-      provel:        cell(row, 10),
-      classOverride: cell(row, 11),
-      classItog:     cell(row, 12),
-    }))
-    .filter(op => op.opId)
-    .filter(op => !kassaId || op.kassaId === kassaId)
-    .filter(op => {
-      if (!month || !year || !op.date) return true;
-      return op.date.getMonth() + 1 === month && op.date.getFullYear() === year;
-    });
-}
-
-/**
- * Лист «Кассы».
- * Колонки: A=kassa_id, B=название, C=баланс_текущий
- *
- * @returns {Promise<Array<{kassaId:string,name:string,balanceCurrent:number}>>}
- */
-export async function getKassas() {
-  const rows = await readSheet(SHEETS.KASSAS);
-  return rows
-    .map(row => ({
-      kassaId:        cell(row, 0),           // A — касса_id
-      name:           cell(row, 1),           // B — название
-      owner:          cell(row, 2),           // C — владелец
-      type:           cell(row, 3),           // D — тип
-      balanceCurrent: parseAmount(row[4]),    // E — баланс_текущий  ← было row[2]
-      note:           cell(row, 5),           // F — примечание
-    }))
-    .filter(k => k.kassaId);
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
 // REST API (новый бэкенд)
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -287,6 +200,70 @@ async function apiRequest(endpoint, options = {}) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// ПОЛЬЗОВАТЕЛИ
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Возвращает список пользователей из листа «Пользователи».
+ * Колонки: A=email, B=имя, C=роль, D=статус, E=примечание, F=pin
+ * PIN приводится: String(Math.round(Number(rawPin)))
+ *
+ * @returns {Promise<Array<{email,name,role,status,note,pin}>>}
+ */
+export async function getUsers() {
+  const rows = await readSheet(SHEETS.USERS);
+  return rows
+    .map(row => ({
+      email:  cell(row, 0),
+      name:   cell(row, 1),
+      role:   cell(row, 2),
+      status: cell(row, 3),
+      note:   cell(row, 4),
+      pin:    String(Math.round(Number(cell(row, 5)))) || '',
+    }))
+    .filter(u => u.email);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ОПЕРАЦИИ КАССЫ
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Колонки: A=op_id, B=дата, C=касса_id, D=направление, E=сумма,
+ *          F=тип, G=категория, H=car_id, I=driver_id,
+ *          J=комментарий, K=провёл, L=класс_override, M=класс_итог
+ *
+ * @param {{ kassaId?: string|null, month?: number|null, year?: number|null }} opts
+ * @returns {Promise<Array>}
+ */
+export async function getOperations({ kassaId = null, month = null, year = null } = {}) {
+  if (USE_MOCK) return getMockOperationsNormalized({ kassaId, month, year });
+  const params = new URLSearchParams();
+  if (kassaId) params.set('kassa_id', kassaId);
+  const qs = params.toString() ? `?${params.toString()}` : '';
+  const data = await apiRequest(`/operations${qs}`);
+  let ops = data.operations ?? [];
+  if (month && year) {
+    ops = ops.filter(op => {
+      const d = parseDate(op.dateRaw ?? op.date);
+      if (!d) return true;
+      return d.getMonth() + 1 === month && d.getFullYear() === year;
+    });
+  }
+  return ops;
+}
+
+/**
+ * Кассы через REST GET /api/kassas.
+ *
+ * @returns {Promise<Array<{kassaId:string,name:string,balanceCurrent:number}>>}
+ */
+export async function getKassas() {
+  const data = await apiRequest('/kassas');
+  return data.kassas;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // МАШИНЫ
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -332,25 +309,8 @@ export async function getDrivers() {
  */
 export async function getRentals() {
   if (USE_MOCK) return getMockRentalsNormalized();
-
-  const rows = await readSheet(SHEETS.RENTALS);
-  return rows
-    .map(row => ({
-      rentalId:  cell(row, 0),
-      carId:     cell(row, 1),
-      driverId:  cell(row, 2),
-      dateStart: _parseFlexDate(cell(row, 3)),
-      dateEnd:   _parseFlexDate(cell(row, 4)),
-      rateDay:   parseFloat(cell(row, 5)) || 0,
-      note:      cell(row, 6),
-      promisedUntil:
-        _parseFlexDate(cell(row, 7)) ?? parseSheetDate(cell(row, 7)) ?? null,
-      promisedAt:
-        parseSheetDateTime(cell(row, 8)) ?? parseSheetDate(cell(row, 8)) ?? null,
-      bonusDays: Number(cell(row, 9)) || 0,
-      bonusReason: cell(row, 10) || '',
-    }))
-    .filter(r => r.rentalId);
+  const data = await apiRequest('/rentals');
+  return data.rentals;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -364,19 +324,8 @@ export async function getRentals() {
  * @returns {Promise<Array<{depOpId,date,driverId,carId,amount,status,comment}>>}
  */
 export async function getDeposits() {
-  const rows = await readSheet(SHEETS.DEPOSITS);
-  return rows
-    .map(row => ({
-      depOpId:  cell(row, 0),
-      date:     parseDate(cell(row, 1)),
-      dateRaw:  cell(row, 1),
-      driverId: cell(row, 2),
-      carId:    cell(row, 3),
-      amount:   parseFloat(cell(row, 4)) || 0,
-      status:   cell(row, 5),
-      comment:  cell(row, 6),
-    }))
-    .filter(d => d.depOpId);
+  const data = await apiRequest('/deposits');
+  return data.deposits;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -574,28 +523,4 @@ function _invalidateByAction(action) {
   if (action === 'UPDATE_PERIOD') {
     invalidateSwrCache(CACHE_KEYS.DASHBOARD);
   }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// ВСПОМОГАТЕЛЬНЫЕ
-// ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * Парсит дату, которая может быть:
- *   — строкой DD.MM.YYYY
- *   — Excel-числом (дней с 30.12.1899)
- * @param {string} raw
- * @returns {Date|null}
- */
-function _parseFlexDate(raw) {
-  if (!raw) return null;
-  // DD.MM.YYYY
-  if (/^\d{1,2}\.\d{1,2}\.\d{4}$/.test(raw)) return parseDate(raw);
-  // Excel serial number
-  const num = Number(raw);
-  if (!isNaN(num) && num > 1000) {
-    const excelEpoch = new Date(1899, 11, 30);
-    return new Date(excelEpoch.getTime() + num * 86400000);
-  }
-  return null;
 }

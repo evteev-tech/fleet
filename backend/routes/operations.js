@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import db from '../db.js';
-import { ok, fail } from '../utils.js';
+import { ok, fail, keysToCamel } from '../utils.js';
 
 const router = Router();
 
@@ -12,35 +12,33 @@ function getNextOpId() {
   return 'CO' + String(n).padStart(4, '0');
 }
 
-function normalizeOp(row) {
-  return {
-    opId:          row.id,
-    date:          row.date,
-    dateRaw:       row.date,
-    kassaId:       row.kassa_id,
-    direction:     row.direction,
-    amount:        row.amount,
-    type:          row.type,
-    category:      row.category,
-    carId:         row.car_id,
-    driverId:      row.driver_id,
-    comment:       row.comment,
-    provel:        row.author,
-    classOverride: row.class_override,
-    classItog:     row.class_final || row.class_override || row.class_calc || null,
-  };
-}
-
 router.get('/', (req, res) => {
   const { kassa_id, car_id, driver_id, limit = 500 } = req.query;
-  let sql = 'SELECT * FROM kassa_ops WHERE 1=1';
+  let sql = `
+    SELECT
+      id AS op_id,
+      date,
+      date AS date_raw,
+      kassa_id,
+      direction,
+      amount,
+      type,
+      category,
+      car_id,
+      driver_id,
+      comment,
+      author AS provel,
+      class_override,
+      COALESCE(class_final, class_override, class_calc) AS class_itog
+    FROM kassa_ops WHERE 1=1`;
   const params = [];
   if (kassa_id)  { sql += ' AND kassa_id = ?';  params.push(kassa_id); }
   if (car_id)    { sql += ' AND car_id = ?';     params.push(car_id); }
   if (driver_id) { sql += ' AND driver_id = ?';  params.push(driver_id); }
   sql += ' ORDER BY rowid DESC LIMIT ?';
   params.push(Number(limit));
-  return ok(res, { operations: db.prepare(sql).all(...params).map(normalizeOp) });
+  const rows = db.prepare(sql).all(...params);
+  return ok(res, { operations: keysToCamel(rows) });
 });
 
 router.post('/', (req, res) => {
