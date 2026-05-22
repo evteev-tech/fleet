@@ -18,11 +18,11 @@ router.post('/login-pin', (req, res) => {
   const { pin } = req.body || {};
   if (!pin || String(pin).trim() === '') return fail(res, 'MISSING_FIELD: pin');
   const user = db.prepare(
-    "SELECT id, login, role, name FROM users WHERE pin = ? AND status = 'активный'"
+    "SELECT id, login, role, name, email FROM users WHERE pin = ? AND status = 'активный'"
   ).get(String(pin).trim());
   if (!user) return fail(res, 'INVALID_PIN', 401);
   const token = signToken(user);
-  return ok(res, { token, user: { id: user.id, login: user.login, role: user.role, name: user.name } });
+  return ok(res, { token, user: { id: user.id, login: user.login, role: user.role, name: user.name, email: user.email } });
 });
 
 router.post('/logout', (req, res) => ok(res, { message: 'logged_out' }));

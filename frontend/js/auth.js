@@ -1,17 +1,34 @@
-﻿/**
- * auth.js — авторизация по PIN.
+/**
+ * auth.js — авторизация по PIN через REST API (POST /api/login-pin).
  *
- * Пользователи хранятся в Google Таблице, лист «Пользователи».
- * Аутентификация: ввод PIN → поиск совпадения в таблице → сохранение сессии.
+ * Вход: пользователь вводит 4-значный PIN → запрос к бэкенду →
+ * сервер возвращает JWT + данные пользователя → сохраняем токен и сессию.
  */
 
-import { getUsers } from './api.js';
 import { clearAllCache } from './cache.js';
 import { showScreen, renderNavbar } from './router.js';
 import { showToast } from './ui.js';
-import { ROLES } from './config.js';
+import { ROLES, API_BASE, LS_TOKEN } from './config.js';
 
 const LS_KEY = 'matizi_user';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ТОКЕН (JWT) — используется api.js для Bearer-авторизации
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** @returns {string|null} */
+export function getToken() {
+  return localStorage.getItem(LS_TOKEN);
+}
+
+/** @param {string} token */
+export function setToken(token) {
+  localStorage.setItem(LS_TOKEN, token);
+}
+
+export function clearToken() {
+  localStorage.removeItem(LS_TOKEN);
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // СЕССИЯ
@@ -26,10 +43,10 @@ export function getCurrentUser() {
     const raw = localStorage.getItem(LS_KEY);
     if (!raw) return null;
     const user = JSON.parse(raw);
-    if (!user?.email || user?.role == null || user.role === '') return null;
+    if (user?.role == null || user.role === '') return null;
     return {
       name: user.name,
-      email: user.email,
+      email: user.email ?? '',
       role: String(user.role).trim().toLowerCase(),
     };
   } catch {
@@ -39,26 +56,25 @@ export function getCurrentUser() {
 
 /**
  * Сохраняет пользователя в localStorage.
- * @param {{ name: string, role: string, email: string }} user
+ * @param {{ name: string, role: string, email?: string }} user
  */
 export function setCurrentUser(user) {
   localStorage.setItem(
     LS_KEY,
     JSON.stringify({
       name: user.name,
-      role: String(user.role ?? '')
-        .trim()
-        .toLowerCase(),
-      email: user.email,
+      role: String(user.role ?? '').trim().toLowerCase(),
+      email: user.email ?? '',
     }),
   );
 }
 
 /**
- * Удаляет сессию и возвращает на экран логина.
+ * Удаляет сессию и токен, возвращает на экран логина.
  */
 export function clearCurrentUser() {
   clearAllCache();
+  clearToken();
   localStorage.removeItem(LS_KEY);
   document.getElementById('navbar')?.classList.add('hidden');
   showScreen('screen-login');
@@ -70,15 +86,20 @@ export function clearCurrentUser() {
 
 /**
  * Проверяет сессию и направляет на нужный экран.
- * При наличии сессии сразу рендерит navbar и переходит.
- * При отсутствии — показывает экран логина и инициализирует PIN-ввод.
+ * Сессия валидна только при наличии И токена, И сохранённого пользователя.
  */
 export function initAuth() {
   const user = getCurrentUser();
+  const token = getToken();
 
-  if (user) {
+  if (user && token) {
     void renderNavbar(user.role).then(() => _goHome(user.role));
   } else {
+    // частичная сессия (без токена) — чистим, чтобы не залипнуть
+    if (user || token) {
+      clearToken();
+      localStorage.removeItem(LS_KEY);
+    }
     showScreen('screen-login');
     handlePinInput();
   }
@@ -90,7 +111,6 @@ export function initAuth() {
 
 /**
  * Инициализирует PIN-клавиатуру и управляет состоянием ввода.
- * Клавиатура рендерится динамически в #pinKeyboard.
  */
 export function handlePinInput() {
   const keyboard = document.getElementById('pinKeyboard');
@@ -99,7 +119,6 @@ export function handlePinInput() {
 
   let digits = [];
 
-  // ── Рендер клавиатуры ────────────────────────────────────────────────────
   keyboard.innerHTML = [1,2,3,4,5,6,7,8,9,'',0,'⌫'].map(k => {
     if (k === '') {
       return `<div class="pin-key pin-key--empty"></div>`;
@@ -118,7 +137,6 @@ export function handlePinInput() {
     return `<button class="pin-key" data-digit="${k}">${k}</button>`;
   }).join('');
 
-  // ── Обработчик нажатий ───────────────────────────────────────────────────
   keyboard.addEventListener('click', e => {
     const btn = e.target.closest('button');
     if (!btn) return;
@@ -143,7 +161,6 @@ export function handlePinInput() {
   });
 }
 
-// ─── Обновление индикаторов ──────────────────────────────────────────────────
 function _updateDots(dotsEl, digits, state = 'normal') {
   dotsEl.querySelectorAll('.pin-dot').forEach((dot, i) => {
     dot.classList.toggle('pin-dot--filled', state === 'normal' && i < digits.length);
@@ -153,47 +170,58 @@ function _updateDots(dotsEl, digits, state = 'normal') {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// ПОПЫТКА ВХОДА
+// ПОПЫТКА ВХОДА — через POST /api/login-pin
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Проверяет PIN по таблице пользователей.
+ * Отправляет PIN на бэкенд, при успехе сохраняет токен и сессию.
  * @param {string} pin
  * @param {HTMLElement} dotsEl
  * @param {HTMLElement} keyboard
  */
 async function tryLogin(pin, dotsEl, keyboard) {
-  // Состояние загрузки
   _setKeyboardDisabled(keyboard, true);
   _updateDots(dotsEl, [], 'loading');
 
+  let res;
   try {
-    const users = await getUsers();
-    const user  = users.find(u =>
-      u.pin === pin && u.status.toLowerCase() === 'активный'
-    );
-
-    if (user) {
-      setCurrentUser({ name: user.name, role: user.role, email: user.email });
-      await renderNavbar(user.role);
-      _goHome(user.role);
-    } else {
-      _showError(dotsEl, keyboard);
-    }
-
-  } catch (err) {
+    res = await fetch(`${API_BASE}/login-pin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pin }),
+    });
+  } catch {
     _setKeyboardDisabled(keyboard, false);
     _updateDots(dotsEl, [], 'normal');
+    showToast('Нет соединения', 'error');
+    return;
+  }
 
-    if (err.message === 'NO_CONNECTION') {
-      showToast('Нет соединения', 'error');
-    } else {
-      showToast('Ошибка авторизации', 'error');
-    }
+  let body;
+  try {
+    body = await res.json();
+  } catch {
+    _setKeyboardDisabled(keyboard, false);
+    _updateDots(dotsEl, [], 'normal');
+    showToast('Ошибка авторизации', 'error');
+    return;
+  }
+
+  if (res.ok && body?.status === 'ok' && body?.token && body?.user) {
+    setToken(body.token);
+    setCurrentUser({
+      name: body.user.name,
+      role: body.user.role,
+      email: body.user.email,
+    });
+    await renderNavbar(String(body.user.role).trim().toLowerCase());
+    _goHome(body.user.role);
+  } else {
+    // неверный PIN или иная ошибка авторизации
+    _showError(dotsEl, keyboard);
   }
 }
 
-// ─── Анимация ошибки ────────────────────────────────────────────────────────
 function _showError(dotsEl, keyboard) {
   _updateDots(dotsEl, [], 'error');
   dotsEl.classList.add('pin-dots--shake');
@@ -205,18 +233,14 @@ function _showError(dotsEl, keyboard) {
   }, 600);
 }
 
-// ─── Блокировка клавиатуры ──────────────────────────────────────────────────
 function _setKeyboardDisabled(keyboard, disabled) {
   keyboard.querySelectorAll('button').forEach(b => {
     b.disabled = disabled;
   });
 }
 
-// ─── Роутинг после логина ───────────────────────────────────────────────────
 function _goHome(role) {
-  const r = String(role ?? '')
-    .trim()
-    .toLowerCase();
+  const r = String(role ?? '').trim().toLowerCase();
   if (r === ROLES.MECHANIC || r === ROLES.OPERATIONS) {
     showScreen('screen-home');
   } else {

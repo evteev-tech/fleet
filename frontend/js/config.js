@@ -2,6 +2,11 @@
 export const USE_MOCK =
   typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('mock');
 
+// ─── Новый бэкенд (REST API) ─────────────────────────────────────────────────
+export const API_BASE = 'https://keyautotrans.ru/api';
+export const LS_TOKEN  = 'matizi_token';
+
+
 // ─── Идентификаторы Google Таблицы ──────────────────────────────────────────
 export const SHEET_ID = '1z4raGK4oamjZNznow-OesTljRz649_wCFYIFOh3mufg';
 export const API_KEY     = 'AIzaSyC5FiPFic6A-Ze6h7NlhvLfZki7xBc5qnU';
