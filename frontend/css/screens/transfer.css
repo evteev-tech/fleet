@@ -1,0 +1,209 @@
+/* ═══════════════════════════════════════════════
+   screens/transfer.css — вынесено из screens.css (аудит п.8)
+════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════
+   ЭКРАН: ПЕРЕВОД МЕЖДУ КАССАМИ (transfer.js)
+════════════════════════════════════════════════ */
+
+.transfer-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: var(--bg-page);
+  padding-bottom: calc(var(--navbar-height) + var(--safe-bottom));
+}
+
+.transfer-scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px 16px;
+  padding-bottom: calc(100px + env(safe-area-inset-bottom));
+}
+
+.transfer-from {
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 4px;
+}
+
+.transfer-from__label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 3px;
+}
+
+.transfer-from__name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-dark);
+}
+
+.transfer-from__select {
+  width: 100%;
+  margin-top: 4px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-dark);
+  background: #fff;
+  font-family: var(--font-family);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23666' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+.transfer-sum-wrap {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 8px 0 16px;
+  cursor: pointer;
+}
+
+.transfer-sum {
+  display: block;
+  text-align: center;
+  font-size: 40px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  color: var(--color-dark);
+}
+
+.transfer-to-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.transfer-to-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.transfer-to-btn {
+  width: 100%;
+  padding: 16px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-dark);
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-family);
+}
+
+.transfer-to-btn--active {
+  border: 2px solid var(--color-accent);
+  background: #fafce8;
+}
+
+.transfer-comment {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  font-size: 15px;
+  font-family: var(--font-family);
+  background: #fff;
+}
+
+.transfer-bottom {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--navbar-height) + var(--safe-bottom));
+  z-index: 30;
+  background: #fff;
+  padding: 14px 16px calc(12px + env(safe-area-inset-bottom));
+  box-shadow: 0 -4px 20px rgba(26, 26, 26, 0.08);
+  border-radius: 16px 16px 0 0;
+}
+
+.btn-transfer-submit {
+  width: 100%;
+  padding: 14px 16px;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-family);
+  font-size: 15px;
+  font-weight: 800;
+  background: var(--color-dark);
+  color: #fff;
+  cursor: pointer;
+}
+
+.btn-transfer-submit:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.transfer-numpad-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 26, 26, 0.45);
+  z-index: 200;
+}
+
+.transfer-numpad {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 210;
+  background: #fff;
+  border-radius: 16px 16px 0 0;
+  padding: 12px 16px calc(20px + env(safe-area-inset-bottom));
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.18);
+  transform: translateY(100%);
+  transition: transform 0.28s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.transfer-numpad--visible {
+  transform: translateY(0);
+}
+
+.transfer-numpad__display {
+  font-size: 28px;
+  font-weight: 900;
+  color: #1a1a1a;
+  letter-spacing: -0.04em;
+  text-align: center;
+  padding: 4px 0 12px;
+}
+
+.transfer-numpad__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.transfer-numpad__key {
+  padding: 16px;
+  font-size: 22px;
+  font-weight: 700;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  background: #fafafa;
+  cursor: pointer;
+  font-family: var(--font-family);
+}

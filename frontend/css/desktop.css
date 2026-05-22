@@ -1,0 +1,472 @@
+/**
+ * Десктопный layout (≥1024px): sidebar + область контента.
+ * Мобильный вид <1024px не затрагивается.
+ */
+
+@media (min-width: 1024px) {
+  html {
+    height: 100%;
+  }
+
+  body {
+    display: flex;
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+    margin: 0;
+  }
+
+  #navbar {
+    display: none !important;
+  }
+
+  #sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 300;
+    height: 100dvh;
+    max-height: 100dvh;
+    background: #1a1a1a;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+  }
+
+  #app-content {
+    flex: 1;
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  /* Каркас экранов */
+  #app-content > .screen {
+    height: 100dvh;
+    max-height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  #app-content > .screen.screen--active {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Убрать отступ под мобильный navbar */
+  #app-content .pb-navbar {
+    padding-bottom: 24px;
+  }
+
+  /* ── Sidebar компоненты ── */
+
+  .sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    margin-bottom: 8px;
+    flex-shrink: 0;
+  }
+
+  .sidebar-logo-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: var(--radius-sm);
+    background: #ffdd2d;
+    font-size: var(--text-base);
+    font-weight: 900;
+    color: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .sidebar-logo-text {
+    font-size: var(--text-lg);
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: -0.04em;
+  }
+
+  .sidebar-section {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .sidebar-section-label {
+    font-size: var(--text-xs);
+    color: rgba(255, 255, 255, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 8px var(--space-md) 4px;
+    flex-shrink: 0;
+  }
+
+  .sidebar-spacer {
+    flex: 1;
+    min-height: 8px;
+  }
+
+  .sidebar-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    width: 100%;
+    text-align: left;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-family: var(--font-family);
+    color: rgba(255, 255, 255, 0.45);
+    border-radius: var(--radius-sm);
+    padding: 9px var(--space-md);
+    font-size: var(--text-base);
+    font-weight: 500;
+    box-sizing: border-box;
+  }
+
+  .sidebar-item i {
+    font-size: var(--text-xl);
+    flex-shrink: 0;
+    line-height: 1;
+  }
+
+  .sidebar-item--active {
+    background: rgba(255, 221, 45, 0.12);
+    color: #ffdd2d;
+  }
+
+  .sidebar-item:hover:not(.sidebar-item--active) {
+    background: rgba(255, 255, 255, 0.07);
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .sidebar-tooltip {
+    position: absolute;
+    left: 54px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #1a1a1a;
+    border: 0.5px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    font-size: var(--text-sm);
+    padding: 5px var(--space-md);
+    border-radius: var(--space-sm);
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-fast) ease;
+    z-index: 400;
+    font-weight: 500;
+  }
+
+  .sidebar-user {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: var(--space-md);
+    border-top: 0.5px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+    margin-top: auto;
+  }
+
+  .sidebar-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #ffdd2d;
+    font-size: var(--text-xs);
+    font-weight: 700;
+    color: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .sidebar-user-name {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.85);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* ── Развёрнутый sidebar (≥1280px) ── */
+@media (min-width: 1280px) {
+  #sidebar {
+    width: 210px;
+    padding: 16px var(--space-md) 12px;
+  }
+
+  #app-content {
+    margin-left: 210px;
+  }
+
+  .sidebar-tooltip {
+    display: none;
+  }
+}
+
+/* ── Свёрнутый sidebar (1024–1279px) ── */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  #sidebar {
+    width: 64px;
+    padding: 16px 8px 12px;
+    align-items: stretch;
+  }
+
+  #app-content {
+    margin-left: 64px;
+  }
+
+  .sidebar-header {
+    justify-content: center;
+  }
+
+  .sidebar-logo-text,
+  .sidebar-label,
+  .sidebar-section-label,
+  .sidebar-user-name {
+    display: none !important;
+  }
+
+  .sidebar-user {
+    justify-content: center;
+    padding: var(--space-md) 8px;
+  }
+
+  .sidebar-item {
+    justify-content: center;
+    padding: 9px 8px;
+  }
+
+  .sidebar-item:hover .sidebar-tooltip {
+    opacity: 1;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ЭКРАНЫ: двухколоночный layout (≥1024px)
+══════════════════════════════════════════════════════════════ */
+
+@media (min-width: 1024px) {
+
+  /* ── screen-dashboard ── */
+
+  #screen-dashboard {
+    flex-direction: row !important;
+    overflow: hidden !important;
+  }
+
+  /* Левая тёмная колонка */
+  #screen-dashboard .dashboard-header {
+    width: 300px !important;
+    flex-shrink: 0 !important;
+    height: 100dvh !important;
+    overflow-y: auto !important;
+    padding: 32px 24px 24px !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  /* Скрыть логотип и аватар — они в sidebar */
+  #screen-dashboard .header-top-row {
+    display: none !important;
+  }
+
+  #screen-dashboard .header-total-amount {
+    font-size: 42px !important;
+  }
+
+  /* Правая колонка с кассами и парком */
+  #screen-dashboard .dashboard-body {
+    flex: 1 !important;
+    min-width: 0 !important;
+    height: 100dvh !important;
+    overflow-y: auto !important;
+    padding: 32px 32px 24px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* ── screen-home ── */
+
+  /*
+   * DOM-структура которую рендерит home.js внутрь #home-body:
+   *
+   * #screen-home
+   *   └── #home-body.home-scroll.pb-navbar   ← единственный потомок в HTML
+   *         ├── .home-header                 ← тёмная левая колонка
+   *         └── .home-content-sheet          ← светлая правая колонка
+   *
+   * Решение: делаем #home-body горизонтальным flex-контейнером.
+   * Каждый прямой потомок становится колонкой.
+   */
+
+  #screen-home {
+    overflow: hidden !important;
+  }
+
+  /* #home-body — горизонтальный контейнер двух колонок */
+  #screen-home #home-body {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: stretch !important;
+    height: 100dvh !important;
+    overflow: hidden !important;
+    padding-bottom: 0 !important; /* убрать отступ под мобильный navbar */
+  }
+
+  /* Левая колонка — тёмная панель с балансом */
+  #screen-home .home-header {
+    /* размеры */
+    width: 320px !important;
+    min-width: 320px !important;
+    max-width: 320px !important;
+    flex-shrink: 0 !important;
+    /* высота = весь экран, своя прокрутка */
+    height: 100dvh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    /* внутренний layout — flex-колонка чтобы margin-top:auto работал */
+    display: flex !important;
+    flex-direction: column !important;
+    /* отступы */
+    padding: 32px 24px 24px !important;
+    box-sizing: border-box !important;
+    /* z-index ниже sidebar */
+    position: relative !important;
+    z-index: 1 !important;
+  }
+
+  /* Скрыть логотип и аватар — они в sidebar */
+  #screen-home .home-hdr__brand-row {
+    display: none !important;
+  }
+
+  /* Баланс покрупнее */
+  #screen-home .kassa-amount {
+    font-size: 40px !important;
+  }
+
+  /*
+   * Кнопки «Принять платёж» и «Расход» — прижать к низу левой панели.
+   * margin-top: auto работает только если родитель (.home-header)
+   * является flex-колонкой И имеет height: 100dvh — оба условия выше выполнены.
+   */
+  #screen-home .home-action-wrap {
+    margin-top: auto !important;
+    padding-top: 24px !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  /* Правая колонка — парк и список операций */
+  #screen-home .home-content-sheet {
+    flex: 1 !important;
+    min-width: 0 !important;
+    height: 100dvh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 32px !important;
+    padding-bottom: 24px !important;
+    box-sizing: border-box !important;
+    /* убрать мобильные стили */
+    margin-top: 0 !important;
+    border-radius: 0 !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .transfer-bottom {
+    display: none !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  /* Кнопка расхода — из fixed в нормальный поток */
+  .expense-bottom {
+    display: block !important;
+    position: static !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 16px 0 8px !important;
+    background: transparent !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+    z-index: auto !important;
+  }
+
+  .expense-scroll {
+    padding-bottom: 24px !important;
+  }
+
+  .btn-expense-submit {
+    max-width: 400px !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  /* screen-login вне #app-content — защищаем от flex-row на body */
+  #screen-login {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 500 !important;
+    display: none;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: var(--bg-page) !important;
+    min-height: 100dvh !important;
+  }
+
+  #screen-login.screen--active {
+    display: flex !important;
+  }
+
+  /* PIN-клавиатура: нормальные размеры на десктопе */
+  .login-wrap {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 16px !important;
+    width: 320px !important;
+  }
+
+  .pin-keyboard {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: var(--space-md) !important;
+    width: 100% !important;
+  }
+
+  .pin-key {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 64px !important;
+    font-size: var(--space-2xl) !important;
+    font-weight: 700 !important;
+    border: 1px solid #e8e8e8 !important;
+    border-radius: 12px !important;
+    background: #fff !important;
+    cursor: pointer !important;
+  }
+
+  .pin-key--empty {
+    background: transparent !important;
+    border: none !important;
+    pointer-events: none !important;
+  }
+}

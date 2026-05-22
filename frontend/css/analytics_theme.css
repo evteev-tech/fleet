@@ -1,0 +1,110 @@
+/* ═══════════════════════════════════════════════
+   ANALYTICS THEME — использует CSS custom properties
+   Подключать ПОСЛЕ colors.css и screens.css
+════════════════════════════════════════════════ */
+
+/* ── Фон страницы ── */
+.analytics-root {
+  background: var(--c-bg-page);
+}
+
+/* ── Карточки — без теней, плоские ── */
+.analytics-tile {
+  box-shadow: none;
+  border: 0.5px solid rgba(17,17,17,0.07);
+}
+
+.analytics-card-pad {
+  box-shadow: none;
+  border: 0.5px solid rgba(17,17,17,0.07);
+}
+
+.analytics-tile__amount {
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+
+/* ── Overview tab ── */
+.overview-tab__profit--pos {
+  color: var(--c-profit);
+}
+.overview-tab__profit--neg {
+  color: var(--c-loss);
+}
+
+/* ── Дельта ── */
+.analytics-delta--good { color: var(--c-profit); }
+.analytics-delta--bad  { color: var(--c-loss); }
+
+/* .analytics-bar — без переопределения: цвета из screens.css (если блок снова появится в разметке). */
+
+/* ── CAPEX timeline ── */
+.tl-fill  { background: var(--c-neutral); }
+.tl-val   { color: var(--c-neutral); }
+.tl-track { background: var(--c-bar-empty); }
+.tl-row   { border-bottom-color: var(--c-bar-empty); }
+
+/* ── ROI ── */
+.roi-card {
+  background: var(--c-profit-bg);
+  border-left-color: var(--c-profit);
+}
+.roi-val { color: var(--c-profit); }
+
+/* ── Opex dynamics ── */
+.opex-dyn-hero__arrow--up   { color: var(--c-loss); }
+.opex-dyn-hero__arrow--down { color: var(--c-profit); }
+.opex-dyn-delta--up         { color: var(--c-loss); }
+.opex-dyn-delta--down       { color: var(--c-profit); }
+.opex-dyn-top               { background: var(--c-loss-bg); }
+
+/* ── Кассы ── */
+.analytics-kassa-row--azamat   { background: var(--c-kassa-azamat); }
+.analytics-kassa-row--vladimir { background: var(--c-kassa-vladimir); }
+.analytics-kassa-row--yulia    { background: var(--c-kassa-yulia); }
+
+.analytics-kassa-row__nums { font-weight: 800; }
+.analytics-kassa-row__inc  { color: var(--c-profit); }
+.analytics-kassa-row__exp  { color: var(--c-loss); }
+
+/* ── PnL heatmap ── */
+.phc--pos .phc__res { color: var(--c-pnl-cell-pos); }
+.phc--neg .phc__res { color: var(--c-pnl-cell-neg); }
+.pnl-heat3-total__val { color: var(--c-profit); }
+
+/* ── Сег-кнопки CAPEX ── */
+.analytics-seg__btn--active {
+  background: var(--c-neutral);
+  color: var(--c-accent);
+}
+
+/* ── Числа крупнее ── */
+.analytics-capex-hero__amount {
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.analytics-capex-row__sum { font-weight: 800; }
+.analytics-capex-sum      { font-weight: 800; }
+.analytics-util-pct { font-weight: 800; }
+
+/* ── Прогноз ── */
+.fcst-hero {
+  background: var(--c-dark);
+}
+.fcst-hero__label  { color: var(--c-accent); }
+.fcst-hero__amount { color: var(--c-on-dark); }
+
+.fcst-wk {
+  border: 0.5px solid rgba(17,17,17,0.07);
+  box-shadow: none;
+}
+.fcst-wk__col--today .fcst-wk__day { color: var(--c-profit); }
+
+.fcst-nd--today            { background: var(--c-profit-bg); }
+.fcst-nd--today .fcst-nd__date { color: var(--c-profit); }
+
+/* ── Белые карточки ── */
+.white-card {
+  box-shadow: none;
+  border: 0.5px solid rgba(17,17,17,0.07);
+}

@@ -1,0 +1,110 @@
+/**
+ * colors.css — цветовые токены проекта
+ * Подключать после main.css, до screens.css
+ */
+
+:root {
+  /* ── Семантические цвета ── */
+  --c-profit:      #2E8B6F;  /* прибыль, рост, "хорошо" */
+  --c-loss:        #D14848;  /* убыток, падение, "плохо" */
+  --c-neutral:     #111111;  /* нейтральный акцент, OPEX */
+  --c-muted:       #8A8A8E;  /* приглушённый текст, метки */
+  --color-link:    #0066FF;  /* ссылки, интерактивный текст */
+
+  /* Полупрозрачные подложки на тёмном фоне */
+  --surface-on-dark-soft:     rgba(255, 255, 255, 0.06);
+  --surface-on-dark-regular:  rgba(255, 255, 255, 0.08);
+  --surface-on-dark-strong:   rgba(255, 255, 255, 0.1);
+
+  /* ── Фоновые заливки ── */
+  --c-profit-bg:   #E8F2EC;  /* светло-зелёный фон */
+  --c-loss-bg:     #FBE9E9;  /* светло-красный фон */
+  --c-warning-bg:  #FEF9C3;  /* жёлтый фон (простой) */
+  --c-bg-page:     #F6F7F8;  /* фон страницы аналитики */
+
+  /* ── Поверхности и текст на тёмном ── */
+  --c-surface:     #FFFFFF;  /* карточки, белый фон */
+  --c-on-dark:     #FFFFFF;  /* текст на тёмном хедере */
+
+  --color-text-tertiary: #8a8a8e; /* подписи второго уровня (аналитика) */
+
+  /* ── PnL heatmap: текст на ячейке ── */
+  --c-pnl-cell-pos: #7EFFC4;
+  --c-pnl-cell-neg: #FFB3B3;
+
+  /* ── Монохромная шкала для графиков ── */
+  --c-bar-100:     #111111;  /* самый тёмный */
+  --c-bar-75:      #444444;
+  --c-bar-50:      #777777;
+  --c-bar-25:      #AAAAAA;
+  --c-bar-10:      #CCCCCC;  /* самый светлый */
+  --c-bar-empty:   #EBEBEB;  /* пустая ячейка/трек */
+
+  /* ── Статусы парка ── */
+  --c-rent:        #2E8B6F;  /* аренда */
+  --c-rent-bg:     #E8F2EC;
+  --c-idle:        #D97706;  /* простой */
+  --c-idle-bg:     #FEF9C3;
+  --c-repair:      #D14848;  /* ремонт */
+  --c-repair-bg:   #FBE9E9;
+
+  /* ── Кассы (точки на графиках) ── */
+  --c-kassa-azamat:   #FFDD2D;
+  --c-kassa-vladimir: #378ADD;
+  --c-kassa-yulia:    #2E8B6F;
+
+  /* ── Акценты UI ── */
+  --c-accent:      #FFDD2D;  /* жёлтый — кнопки, активная вкладка */
+  --c-dark:        #111111;  /* фон тёмных блоков */
+
+  /* ── PnL heatmap градиенты ── */
+  --c-pnl-profit-dark:   #1E6F5C;  /* высокая маржа >60% */
+  --c-pnl-profit-mid:    #2E8B6F;  /* средняя маржа 30–60% */
+  --c-pnl-profit-light:  #7FB5A6;  /* низкая маржа <30% */
+
+  --c-pnl-loss-dark:     #8B3A26;  /* большой убыток >30k */
+  --c-pnl-loss-mid:      #A04848;  /* средний убыток 10–30k */
+  --c-pnl-loss-light:    #C65D5D;  /* малый убыток <10k */
+
+  /* ── Desktop-specific оттенки ── */
+  --c-desktop-bg-1:   #1E1E1E;
+  --c-desktop-bg-2:   #2A2A2A;
+  --c-desktop-muted:  #9A9A9E;
+  --c-desktop-accent: #60A5FA;
+
+  /* ── Аналитика: категории расходов (OPEX getCategoryColor) ── */
+  --cat-salary: #534ab7;
+  --cat-parts: #d85a30;
+  --cat-fuel: #1d9e75;
+  --cat-fines: #ba7517;
+  --cat-insurance: #2f6fad;
+  --cat-other: #888780;
+
+  /* ── Аналитика: семантика выручка / расходы / CAPEX ── */
+  --c-revenue: #1d9e75;
+  --c-opex: #5f5e5a;
+  --c-capex-light: rgba(55, 138, 221, 0.25);
+  --c-capex: #378add;
+  --c-capex-dark: #0c447c;
+  --c-profit-pos: #0f6e56;
+  --c-profit-neg: #a32d2d;
+  --c-warn: #ba7517;
+
+  /* CAPEX структура (горизонтальные полосы) */
+  --capex-bucket-buy: #185fa5;
+  --capex-bucket-parts: #378add;
+  --capex-bucket-repair: #2a7a4a;
+  --capex-bucket-other: #85b7eb;
+
+  /* Forecast — линии на графике (совпадают с JS fallback в forecast.js) */
+  --fcst-line-fact: #d85a30;
+  --fcst-line-fc: var(--c-profit-pos);
+  --fcst-band-fill: rgba(29, 158, 117, 0.18);
+  --c-chart-revenue: var(--c-revenue);
+  --c-chart-opex-agg: var(--c-opex);
+  --c-chart-capex: var(--c-capex);
+
+  --c-chart-fleet-rent: var(--c-revenue);
+  --c-chart-fleet-idle: #ef9f27;
+  --c-chart-fleet-repair: #e24b4a;
+}

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1A1A1A" />
+  <title>Матизы</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="favicon.ico" sizes="48x48 32x32 16x16" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
+ <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/colors.css" />
+  <link rel="stylesheet" href="css/offline-indicator.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/screens.css" />
+  <link rel="stylesheet" href="css/screens/login.css" />
+  <link rel="stylesheet" href="css/screens/home.css" />
+  <link rel="stylesheet" href="css/screens/dashboard.css" />
+  <link rel="stylesheet" href="css/screens/analytics.css" />
+  <link rel="stylesheet" href="css/screens/analytics_step2.css" />
+  <link rel="stylesheet" href="css/screens/analytics_forecast.css" />
+  <link rel="stylesheet" href="css/screens/history.css" />
+  <link rel="stylesheet" href="css/screens/fleet.css" />
+  <link rel="stylesheet" href="css/screens/drivers.css" />
+  <link rel="stylesheet" href="css/screens/income.css" />
+  <link rel="stylesheet" href="css/screens/transfer.css" />
+  <link rel="stylesheet" href="css/screens/add.css" />
+  <link rel="stylesheet" href="css/screens/settings.css" />
+  <link rel="stylesheet" href="css/screens/car.css" />
+  <link rel="stylesheet" href="css/analytics_theme.css" />
+  <link rel="stylesheet" href="css/expense.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.34.0/dist/tabler-icons.min.css" />
+  <link rel="stylesheet" href="css/desktop.css" />
+</head>
+<body>
+  <div class="offline-indicator" role="status" aria-live="polite">
+    <span class="offline-indicator__icon" aria-hidden="true">⚠️</span>
+    Нет соединения — работаем из кеша
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       ЭКРАН: ЛОГИН
+  ════════════════════════════════════════════════ -->
+  <section id="screen-login" class="screen screen--active">
+    <div class="login-wrap">
+      <div class="login-logo">Матизы</div>
+      <div class="login-hint">Введите PIN</div>
+      <div class="pin-dots" id="pinDots">
+        <span class="pin-dot"></span>
+        <span class="pin-dot"></span>
+        <span class="pin-dot"></span>
+        <span class="pin-dot"></span>
+      </div>
+      <div class="pin-error" id="pinError"></div>
+      <div class="pin-keyboard" id="pinKeyboard">
+        <!-- рендерится через handlePinInput() в auth.js -->
+      </div>
+    </div>
+  </section>
+
+  <div id="app-content">
+  <!-- ═══════════════════════════════════════════════
+       ЭКРАН: ГЛАВНАЯ (МЕХАНИК — Азамат)
+  ════════════════════════════════════════════════ -->
+  <section id="screen-home" class="screen">
+    <div class="home-scroll pb-navbar" id="home-body">
+      <!-- Полностью рендерится в home.js (хедер + кнопки + парк + операции) -->
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       ЭКРАН: ПРИНЯТЬ ПЛАТЁЖ
+  ════════════════════════════════════════════════ -->
+  <section id="screen-income" class="screen">
+    <div id="income-root" class="income-root"></div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       ЭКРАН: РАСХОД (механик)
+  ════════════════════════════════════════════════ -->
+  <section id="screen-expense" class="screen">
+    <div id="expense-root" class="expense-root"></div>
+  </section>
+
+  <section id="screen-transfer" class="screen">
+    <div id="transfer-root" class="transfer-root"></div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       ЭКРАН: ДАШБОРД (Владимир, Юлия)
+  ════════════════════════════════════════════════ -->
+  <section id="screen-dashboard" class="screen">
+    <div class="dashboard-header">
+
+      <div class="header-top-row">
+        <span class="header-logo">Матизы</span>
+        <div class="header-avatar" id="dashAvatar"></div>
+      </div>
+
+      <div class="header-total-label">ИТОГО В КАССАХ</div>
+      <div class="header-total-amount" id="dashTotalAmount">—</div>
+
+      <div class="header-stats-row">
+        <div class="header-stat-tile">
+          <div class="header-stat-value green" id="dashIncome">—</div>
+          <div class="header-stat-label">Доходы</div>
+        </div>
+        <div class="header-stat-tile">
+          <div class="header-stat-value red" id="dashExpense">—</div>
+          <div class="header-stat-label">Расходы</div>
+        </div>
+        <div class="header-stat-tile">
+          <div class="header-stat-value white" id="dashProfit">—</div>
+          <div class="header-stat-label">Чистыми</div>
+        </div>
+      </div>
+
+      <div class="period-switcher period-switcher--dark">
+  <button type="button" class="period-switcher__btn" id="dashMonthPrev" aria-label="Предыдущий период">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+  <span class="period-switcher__label" id="dashMonthLabel"></span>
+  <button type="button" class="period-switcher__btn" id="dashMonthNext" aria-label="Следующий период">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+</div>
+    </div>
+
+    <div class="dashboard-body">
+      <div class="section-label">Кассы</div>
+      <div class="white-card" id="dashKassaList"></div>
+
+      <div class="section-label" id="dashFleetLabel">Парк</div>
+      <div class="white-card" id="dashFleetList"></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       ЭКРАН: ДОБАВИТЬ ОПЕРАЦИЮ
+  ════════════════════════════════════════════════ -->
+  <section id="screen-add" class="screen">
+  <header class="app-header app-header--light">
+    <button type="button" class="app-header__btn" id="add-back" aria-label="Назад">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <div class="app-header__center">
+      <span class="app-header__title">Новая операция</span>
+    </div>
+    <div class="app-header__spacer"></div>
+  </header>
+  <div class="screen-body pb-navbar" id="add-body">
+    <!-- Динамически рендерится в add.js -->
+  </div>
+</section>
+
+  <!-- ═══════════════════════════════════════════════
+       ЭКРАН: АНАЛИТИКА (investor, operations)
+  ════════════════════════════════════════════════ -->
+  <section id="screen-analytics" class="screen">
+    <div id="analytics-root" class="analytics-root"></div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       ЭКРАН: ИСТОРИЯ ОПЕРАЦИЙ
+  ════════════════════════════════════════════════ -->
+  <section id="screen-history" class="screen screen-history">
+    <!-- Экран истории: рендер history.js -->
+    <div class="home-scroll pb-navbar hist-history-root" id="history-body">
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       ЭКРАН: ПАРК МАШИН
+  ════════════════════════════════════════════════ -->
+  <section id="screen-fleet" class="screen">
+    <div class="home-scroll pb-navbar" id="fleet-body">
+      <!-- Полностью рендерится в fleet.js -->
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       ЭКРАН: СПИСОК ВОДИТЕЛЕЙ
+  ════════════════════════════════════════════════ -->
+  <section id="screen-drivers" class="screen">
+    <div class="home-scroll pb-navbar" id="drivers-body">
+      <!-- Полностью рендерится в drivers.js -->
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       ЭКРАН: КАРТОЧКА МАШИНЫ
+  ════════════════════════════════════════════════ -->
+  <section id="screen-car" class="screen">
+    <header class="app-header app-header--light">
+      <button type="button" class="app-header__btn" id="car-back" aria-label="Назад">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <div class="app-header__center">
+        <span class="app-header__title" id="car-header-title">Машина</span>
+      </div>
+      <div class="app-header__spacer"></div>
+    </header>
+    <div class="screen-body pb-navbar" id="car-body">
+      <!-- Полностью рендерится в car.js -->
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       ЭКРАН: КАРТОЧКА ВОДИТЕЛЯ
+  ════════════════════════════════════════════════ -->
+<section id="screen-driver" class="screen">
+  <header class="app-header app-header--light">
+    <button type="button" class="app-header__btn" id="driver-back" aria-label="Назад">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <div class="app-header__center">
+      <span class="app-header__title" id="driver-header-name">Водитель</span>
+    </div>
+    <div class="app-header__spacer"></div>
+  </header>
+  <div class="screen-body pb-navbar" id="driver-body">
+    <!-- Полностью рендерится в driver.js -->
+  </div>
+</section>
+
+  <!-- ═══════════════════════════════════════════════
+       ЭКРАН: НАСТРОЙКИ
+  ════════════════════════════════════════════════ -->
+  <section id="screen-settings" class="screen">
+    <div class="home-scroll pb-navbar" id="settings-body">
+      <!-- Полностью рендерится в settings.js -->
+    </div>
+  </section>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       ГЛОБАЛЬНЫЕ UI-КОМПОНЕНТЫ
+  ════════════════════════════════════════════════ -->
+
+  <!-- Navbar -->
+  <nav class="navbar hidden" id="navbar">
+    <!-- Рендерится динамически в router.js -->
+  </nav>
+
+  <!-- Bottomsheet -->
+  <div class="bottomsheet-overlay hidden" id="bs-overlay"></div>
+  <div class="bottomsheet hidden" id="bottomsheet">
+    <div class="bottomsheet-handle"></div>
+    <div class="bottomsheet-content" id="bs-content"></div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast hidden" id="toast">
+    <span class="toast-icon" id="toast-icon"></span>
+    <span class="toast-text" id="toast-text"></span>
+  </div>
+
+  <!-- JS-модули -->
+  <script type="module" src="js/config.js"></script>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

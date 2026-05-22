@@ -1,0 +1,1376 @@
+/* ═══════════════════════════════════════════════
+   screens/drivers.css — экраны «Водители» и
+                          «Карточка водителя»
+   v1.2 — карточка водителя: аватар нейтрализован, телефон → var(--color-link) (WCAG fix)
+   v1.1 — .drivers-tab / .drivers-tab--active удалены (табы теперь .pill)
+   v1.0 — мёртвые .driver-avatar/.driver-profile-* удалены
+════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════
+   ЭКРАН: СПИСОК ВОДИТЕЛЕЙ
+════════════════════════════════════════════════ */
+
+.drivers-page {
+  min-height: 100%;
+  background: var(--color-bg);
+  padding-bottom: var(--space-lg);
+}
+
+.drivers-page--center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+
+.drivers-add-btn {
+  padding: 6px var(--space-md);
+  background: var(--color-yellow);
+  color: var(--color-dark);
+  border: none;
+  border-radius: 20px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ─── Табы ─── */
+.drivers-page__tabs {
+  display: flex;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-lg);
+  background: var(--color-bg);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.drivers-page__tabs--skel {
+  padding-top: var(--space-md);
+}
+
+/* Табы внутри .drivers-page__tabs рендерятся как .pill .pill--light .pill--stretch
+   (см. css/components.css → секция «PILL — выбираемый таб-фильтр») */
+
+/* ─── Тело: список карточек ─── */
+.drivers-page__body {
+  padding: 0 var(--space-lg) var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.drivers-card {
+  background: var(--color-white);
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-lg);
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+
+.drivers-card:active {
+  transform: scale(0.992);
+}
+
+.drivers-card--skeleton {
+  cursor: default;
+  pointer-events: none;
+}
+
+.drivers-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.drivers-card__name {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--color-dark);
+  line-height: 1.2;
+}
+
+.drivers-card__did {
+  margin-top: 4px;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-muted);
+}
+
+/* Бейджи активный / архивный */
+.drivers-card__badge {
+  flex-shrink: 0;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  padding: 5px var(--space-md);
+  border-radius: var(--radius-sm);
+}
+
+.drivers-card__badge--active {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.drivers-card__badge--archive {
+  background: #f5f5f5;
+  color: #757575;
+}
+
+.drivers-card__rule {
+  height: 0.5px;
+  background: #e8e8ed;
+  margin: var(--space-md) 0;
+}
+
+.drivers-card__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md) var(--space-lg);
+}
+
+.drivers-card__lbl {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-muted);
+  margin-bottom: 4px;
+}
+
+.drivers-card__val {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-dark);
+}
+
+.drivers-card__note {
+  margin-top: var(--space-md);
+  padding: var(--space-md) 12px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  font-size: var(--text-sm);
+  color: #5c5c61;
+  line-height: 1.35;
+}
+
+.drivers-empty {
+  text-align: center;
+  padding: var(--space-xl) var(--space-lg);
+  font-size: var(--text-base);
+  font-weight: 500;
+  color: var(--color-muted);
+}
+
+.drivers-error {
+  text-align: center;
+  padding: var(--space-xl);
+}
+
+.drivers-error__text {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-dark);
+  margin-bottom: var(--space-lg);
+}
+
+/* ─── Доп. шапка списка («Водители» + «+ Добавить») ─── */
+.drvs-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-md) var(--space-sm);
+}
+
+.drvs-add-btn {
+  background: var(--color-yellow);
+  color: var(--color-dark);
+  border: none;
+  border-radius: 20px;
+  padding: 6px var(--space-lg);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+  white-space: nowrap;
+}
+
+.drvs-add-btn:active {
+  opacity: 0.8;
+  transform: scale(0.96);
+}
+
+/* Аватар в строке водителя */
+.drv-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--color-dark);
+}
+
+/* Итоговая строка депозитов */
+.drvs-total {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+  padding: var(--space-sm) var(--space-md) var(--space-md);
+  text-align: right;
+}
+
+.drvs-total strong {
+  color: var(--color-dark);
+  font-weight: 700;
+}
+
+/* ═══════════════════════════════════════════════
+   МАСТЕР: ВЫДАЧА МАШИНЫ ПОСЛЕ ДОБАВЛЕНИЯ ВОДИТЕЛЯ
+════════════════════════════════════════════════ */
+
+.drv-assign-sheet { padding: 4px 0; }
+
+.drv-assign-title {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--color-dark);
+  margin-bottom: 4px;
+}
+
+.drv-assign-sub {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+  margin-bottom: var(--space-lg);
+}
+
+.drv-assign-empty {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+  text-align: center;
+  padding: var(--space-xl) 0;
+}
+
+.drv-assign-cars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.drv-assign-car {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md) 14px;
+  border-radius: var(--radius-md);
+  background: #f9f9f9;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+}
+
+.drv-assign-car--selected {
+  background: #dcfce7;
+  border-color: #16a34a;
+}
+
+.drv-assign-car-id {
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--color-dark);
+  min-width: 50px;
+}
+
+.drv-assign-car-meta {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+  flex: 1;
+}
+
+.drv-assign-car-rate {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-dark);
+  white-space: nowrap;
+}
+
+.drv-assign-confirm {
+  width: 100%;
+  padding: 14px;
+  background: var(--color-yellow);
+  color: var(--color-dark);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: var(--space-sm);
+}
+
+.drv-assign-confirm:disabled {
+  background: #f0f0f0;
+  color: #bbb;
+  cursor: default;
+}
+
+.drv-assign-skip {
+  width: 100%;
+  padding: var(--space-md);
+  background: transparent;
+  color: var(--color-muted);
+  border: none;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+/* ═══════════════════════════════════════════════
+   BOTTOMSHEET: ДЕТАЛИ МАШИНЫ (открывается из парка)
+════════════════════════════════════════════════ */
+
+.fleet-bs-hero {
+  margin-bottom: 0;
+}
+
+.fleet-bs-drag {
+  width: 36px;
+  height: 4px;
+  background: #e0e0e0;
+  border-radius: 2px;
+  margin: 0 auto var(--space-lg);
+}
+
+.fleet-bs-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.fleet-bs-plate {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--color-dark);
+  margin-bottom: 2px;
+  letter-spacing: 0.03em;
+}
+
+.fleet-bs-model {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+
+.fleet-bs-badge {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  padding: 4px var(--space-md);
+  border-radius: 20px;
+  white-space: nowrap;
+  margin-top: 4px;
+}
+
+.fleet-bs-badge--rent {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.fleet-bs-badge--idle {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.fleet-bs-badge--repair {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.fleet-bs-divider {
+  height: 0.5px;
+  background: #f0f0f0;
+  margin: var(--space-md) 0;
+}
+
+.fleet-bs-change-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  margin-bottom: var(--space-sm);
+}
+
+.fleet-status-btns {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.fleet-status-btn {
+  width: 100%;
+  padding: 14px var(--space-lg);
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  min-height: 48px;
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+}
+
+.fleet-status-btn--rent {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.fleet-status-btn--idle {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.fleet-status-btn--repair {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.fleet-status-btn:active {
+  opacity: 0.85;
+  transform: scale(0.99);
+}
+
+/* ─── Контекст в bottomsheet ─── */
+.fleet-bs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-sm);
+  margin-bottom: 0;
+}
+
+.fleet-bs-lbl {
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+  margin-bottom: 2px;
+}
+
+.fleet-bs-val {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-dark);
+}
+
+.fleet-bs-section-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  margin-bottom: var(--space-sm);
+}
+
+.fleet-bs-driver {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) 12px;
+  background: #f5f5f5;
+  border-radius: var(--radius-sm);
+  margin-bottom: 0;
+}
+
+.fleet-bs-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: #555;
+  flex-shrink: 0;
+}
+
+.fleet-bs-driver-name {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-dark);
+}
+
+.fleet-bs-driver-phone {
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+}
+
+.fleet-bs-driver-empty {
+  padding: var(--space-sm) 12px;
+  background: #f5f5f5;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+  margin-bottom: 0;
+}
+
+.fleet-bs-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--space-sm) var(--space-sm);
+  background: #fef9c3;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: #854d0e;
+  margin-bottom: 0;
+}
+
+/* ─── Второй шит: выбор водителя ─── */
+.fleet-bs-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: var(--space-md);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+
+.fleet-bs-title {
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--color-dark);
+  margin-bottom: 14px;
+}
+
+.fleet-driver-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: var(--space-lg);
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.fleet-driver-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  border-radius: var(--radius-sm);
+  background: #f9f9f9;
+  cursor: pointer;
+}
+
+.fleet-driver-item--selected {
+  background: #dcfce7;
+}
+
+.fleet-driver-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: #555;
+  flex-shrink: 0;
+}
+
+.fleet-driver-info {
+  flex: 1;
+}
+
+.fleet-driver-name {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-dark);
+}
+
+.fleet-driver-car {
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+}
+
+.fleet-driver-check {
+  font-size: var(--text-base);
+  color: #16a34a;
+}
+
+.fleet-driver-check.hidden {
+  display: none;
+}
+
+.fleet-bs-confirm {
+  width: 100%;
+  padding: 15px;
+  background: var(--color-yellow);
+  color: var(--color-dark);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.fleet-bs-confirm:disabled {
+  background: #f0f0f0;
+  color: #bbb;
+  cursor: default;
+}
+
+/* ═══════════════════════════════════════════════
+   ЭКРАН: КАРТОЧКА ВОДИТЕЛЯ
+════════════════════════════════════════════════ */
+
+.drv-profile-card {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  margin: var(--space-sm) var(--space-md) var(--space-md);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  box-shadow: var(--shadow-sm);
+}
+
+.drv-profile-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--color-muted);
+  flex-shrink: 0;
+}
+
+.drv-profile-name {
+  font-size: var(--text-lg);
+  font-weight: 900;
+  color: var(--color-dark);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.drv-profile-phone {
+  font-size: var(--text-base);
+  color: var(--color-link);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.drv-profile-phone:active {
+  opacity: 0.7;
+}
+
+/* Мета-поля */
+.drv-profile-meta {
+  width: 100%;
+  margin-top: var(--space-xs);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.drv-meta-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  font-size: var(--text-base);
+  padding: 4px 0;
+  border-bottom: 1px solid var(--color-bg);
+}
+
+.drv-meta-row:last-child {
+  border-bottom: none;
+}
+
+.drv-meta-lbl {
+  color: var(--color-muted);
+  flex-shrink: 0;
+}
+
+.drv-meta-val {
+  color: var(--color-dark);
+  font-weight: 600;
+  text-align: right;
+}
+
+/* Карточка депозита */
+.drv-deposit-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-sm) 0;
+}
+
+.drv-deposit-label {
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+  margin-bottom: 3px;
+}
+
+.drv-deposit-amount {
+  font-size: var(--text-xl);
+  font-weight: 700;
+}
+
+.drv-deposit--pos  { color: var(--c-profit); }
+.drv-deposit--neg  { color: var(--c-loss); }
+.drv-deposit--zero { color: var(--color-muted); }
+
+.drv-deposit-return-btn {
+  padding: var(--space-sm) var(--space-lg);
+  background: var(--color-dark);
+  color: var(--color-white);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Шит возврата депозита */
+.drv-return-sheet { padding: 4px 0; }
+
+.drv-return-title {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--color-dark);
+  margin-bottom: 4px;
+}
+
+.drv-return-sub {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+  margin-bottom: var(--space-lg);
+}
+
+.drv-return-field {
+  margin-bottom: var(--space-md);
+}
+
+.drv-return-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.drv-return-input {
+  width: 100%;
+  padding: var(--space-md) 14px;
+  border: 1px solid #e0e0e0;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-base);
+  color: var(--color-dark);
+  background: #f9f9f9;
+  outline: none;
+}
+
+.drv-return-input:focus {
+  border-color: var(--color-dark);
+  background: var(--color-white);
+}
+
+.drv-return-remain {
+  font-size: var(--text-sm);
+  color: var(--c-profit);
+  margin-top: 6px;
+}
+
+.drv-return-err {
+  font-size: var(--text-sm);
+  color: var(--c-loss);
+  margin-top: 6px;
+}
+
+.drv-return-submit {
+  width: 100%;
+  padding: 15px;
+  background: var(--color-yellow);
+  color: var(--color-dark);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: var(--space-sm);
+}
+
+.drv-return-submit:disabled {
+  background: #f0f0f0;
+  color: #bbb;
+  cursor: default;
+}
+
+/* История депозитов */
+.drv-dep-history {
+  border-top: 1px solid var(--color-bg);
+}
+
+.drv-dep-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--color-bg);
+  font-size: var(--text-base);
+}
+
+.drv-dep-row:last-child {
+  border-bottom: none;
+}
+
+.drv-dep-date   { color: var(--color-muted); flex-shrink: 0; }
+.drv-dep-type   { flex: 1; font-weight: 600; }
+.drv-dep--income { color: var(--c-profit); }
+.drv-dep--return { color: var(--c-loss); }
+
+.drv-dep-sum {
+  font-weight: 700;
+  color: var(--color-dark);
+  white-space: nowrap;
+}
+
+.drv-dep-empty {
+  padding: var(--space-md);
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+  text-align: center;
+}
+
+/* Кнопки внизу */
+.drv-actions {
+  display: flex;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md) var(--space-lg);
+}
+
+.drv-actions > * {
+  flex: 1;
+}
+
+.btn-primary--outline {
+  background: transparent;
+  border: 2px solid var(--color-yellow);
+  color: var(--color-dark);
+}
+
+.btn-danger {
+  background: var(--c-loss);
+  color: var(--color-white);
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 14px;
+  font-size: var(--text-base);
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+}
+
+.btn-danger:active   { opacity: 0.8; }
+.btn-danger:disabled { opacity: 0.5; cursor: default; }
+
+/* ─── Список: баннер просрочек и легенда ─── */
+.drivers-overdue-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 var(--space-lg) var(--space-sm);
+  padding: 10px 14px;
+  background: #fcebeb;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: #991b1b;
+}
+
+.drivers-pay-legend {
+  display: flex;
+  gap: var(--space-md);
+  padding: 0 var(--space-lg) var(--space-sm);
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+}
+
+.drivers-pay-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.drivers-pay-legend__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.drivers-pay-legend__dot--red    { background: #ef4444; }
+.drivers-pay-legend__dot--yellow { background: #f59e0b; }
+.drivers-pay-legend__dot--green  { background: #22c55e; }
+
+/* ─── Карточка водителя в списке (активный) ─── */
+.drivers-card--pay {
+  display: flex;
+  align-items: stretch;
+  padding: 0;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.drivers-card--overdue  { background: var(--c-loss-bg); }
+.drivers-card--today    { background: var(--color-orange-bg); }
+.drivers-card--ok       { background: var(--c-profit-bg); }
+.drivers-card--neutral  { background: var(--color-white); }
+
+.drivers-card__status-stripe {
+  width: 3px;
+  flex-shrink: 0;
+  align-self: stretch;
+}
+
+.drivers-card--overdue .drivers-card__status-stripe  { background: var(--c-loss); }
+.drivers-card--today   .drivers-card__status-stripe  { background: var(--color-orange); }
+.drivers-card--ok      .drivers-card__status-stripe  { background: var(--c-profit); }
+.drivers-card--neutral .drivers-card__status-stripe  { background: var(--color-border); }
+
+.drivers-card__inner {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-md) var(--space-md) var(--space-md) 10px;
+}
+
+.drivers-card__row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+}
+
+.drivers-card__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-dark);
+  flex-shrink: 0;
+}
+
+.drivers-card__avatar--muted { opacity: 0.7; }
+
+.drivers-card__main { flex: 1; min-width: 0; }
+
+.drivers-card__name {
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--color-dark);
+}
+
+.drivers-card__name--muted {
+  color: var(--color-muted);
+  font-weight: 600;
+}
+
+.drivers-card__sub {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+  margin-top: 2px;
+}
+
+.drivers-card__pay-tag {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.drivers-card__pay-tag--overdue { background: var(--c-loss); color: var(--color-white); }
+.drivers-card__pay-tag--today   { background: var(--color-orange-bg); color: var(--color-orange); }
+.drivers-card__pay-tag--ok      { background: var(--c-profit-bg); color: var(--c-profit); }
+
+.drivers-card__foot {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--space-md);
+  padding-top: var(--space-sm);
+  border-top: 0.5px solid var(--color-border);
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+}
+
+.drivers-card--inactive {
+  opacity: 0.82;
+  padding: var(--space-md);
+}
+
+.drivers-card__status-tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: var(--color-bg);
+  color: var(--color-muted);
+  flex-shrink: 0;
+}
+
+/* ─── Карточка водителя (#screen-driver) ─── */
+#screen-driver .screen-body {
+  background: var(--color-bg);
+  padding: 0;
+}
+
+#screen-driver .drv-hero {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  padding-top: max(var(--space-md), calc(env(safe-area-inset-top) + var(--space-sm)));
+  padding-bottom: var(--space-2xl);
+  background: var(--color-dark);
+  margin-bottom: 0;
+}
+
+#screen-driver .drv-hero__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-yellow);
+  color: var(--color-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-lg);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+#screen-driver .drv-hero__info { flex: 1; min-width: 0; }
+
+#screen-driver .drv-hero__name {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--color-white);
+  letter-spacing: -0.02em;
+}
+
+#screen-driver .drv-hero__meta {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted-white);
+  margin-top: 2px;
+}
+
+#screen-driver .drv-hero-call {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--surface-on-dark-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+#screen-driver .drv-content {
+  background: var(--color-bg);
+  padding: 0 0 var(--space-2xl);
+  margin-top: var(--space-md);
+  position: relative;
+  z-index: 1;
+}
+
+#screen-driver .drv-tabs {
+  margin: 0 var(--space-md) var(--space-md);
+}
+
+#screen-driver #driver-tab-panel {
+  padding: 0;
+}
+
+#screen-driver .drv-tab-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: 0 var(--space-md);
+}
+
+#screen-driver .drv-card {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
+  padding: var(--space-md);
+}
+
+/* ─── Кнопки карточки (заливка) ─── */
+#screen-driver .drv-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 13px var(--space-xl);
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-family);
+  font-size: var(--text-base);
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+}
+
+#screen-driver .drv-btn:active {
+  transform: scale(0.985);
+  opacity: 0.9;
+}
+
+#screen-driver .drv-btn--dark {
+  background: var(--color-dark);
+  color: var(--color-white);
+}
+
+#screen-driver .drv-btn--blue {
+  background: var(--color-blue);
+  color: var(--color-white);
+}
+
+#screen-driver .drv-secondary-actions {
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-sm);
+}
+
+#screen-driver .drv-secondary-actions .drv-btn {
+  flex: 1;
+  width: auto;
+}
+
+/* ─── Сводка: статус оплаты ─── */
+#screen-driver .drv-pay-block {
+  border-left: 3px solid var(--color-border);
+}
+
+#screen-driver .drv-pay-block--overdue {
+  border-left-color: var(--c-loss);
+}
+#screen-driver .drv-pay-block--overdue .drv-pay-block__title {
+  color: var(--c-loss);
+}
+
+#screen-driver .drv-pay-block--today {
+  border-left-color: var(--color-orange);
+}
+#screen-driver .drv-pay-block--today .drv-pay-block__title {
+  color: var(--color-orange);
+}
+
+#screen-driver .drv-pay-block--ok {
+  border-left-color: var(--c-profit);
+}
+#screen-driver .drv-pay-block--ok .drv-pay-block__title {
+  color: var(--c-profit);
+}
+
+#screen-driver .drv-pay-block--neutral {
+  border-left-color: var(--color-border);
+}
+#screen-driver .drv-pay-block--neutral .drv-pay-block__title {
+  color: var(--color-dark);
+  font-weight: 700;
+}
+
+#screen-driver .drv-pay-block__title {
+  font-size: var(--text-lg);
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+#screen-driver .drv-pay-block__meta {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+  margin-top: 4px;
+  line-height: 1.3;
+}
+
+#screen-driver .drv-summary-grid {
+  margin: 0;
+}
+
+#screen-driver .drv-summary-grid .summary-card.drv-card {
+  padding: var(--space-md);
+}
+
+#screen-driver .drv-summary-grid .summary-card__value {
+  font-weight: 900;
+}
+
+#screen-driver .drv-deposit-return {
+  align-self: flex-start;
+  margin-top: var(--space-xs);
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-dark);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+#screen-driver .drv-deposit-return:active {
+  opacity: 0.7;
+}
+
+/* ─── Данные ─── */
+#screen-driver .drv-info-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: 10px var(--space-md);
+  background: var(--color-blue-bg);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--color-blue);
+}
+
+#screen-driver .drv-info-banner__btn {
+  border: none;
+  background: none;
+  padding: 0;
+  font-weight: 700;
+  font-size: var(--text-sm);
+  color: var(--color-blue);
+  cursor: pointer;
+}
+
+#screen-driver .drv-fields-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+#screen-driver .drv-fields {
+  background: none;
+  border-radius: 0;
+  margin: 0;
+}
+
+#screen-driver .drv-field {
+  padding: var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+}
+#screen-driver .drv-field:last-child { border-bottom: none; }
+
+#screen-driver .drv-field__lbl {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+  margin-bottom: 2px;
+}
+#screen-driver .drv-field__val {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-dark);
+}
+#screen-driver .drv-field__empty {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--color-muted);
+}
+#screen-driver .drv-field__link {
+  color: var(--color-blue);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+#screen-driver .drv-edit-btn { width: 100%; }
+
+/* ─── История ─── */
+#screen-driver .drv-history-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+#screen-driver .drv-history-label {
+  margin: 0;
+  padding: 0;
+  color: var(--color-muted);
+}
+
+#screen-driver .drv-timeline-card {
+  padding: var(--space-md);
+}
+
+#screen-driver .drv-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  position: relative;
+}
+
+#screen-driver .drv-timeline::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 8px;
+  bottom: 8px;
+  width: 1.5px;
+  background: var(--color-border);
+}
+
+#screen-driver .drv-timeline__item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  position: relative;
+  z-index: 1;
+}
+
+#screen-driver .drv-timeline__dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  margin-top: 2px;
+  flex-shrink: 0;
+  border: 3px solid var(--color-white);
+  box-sizing: border-box;
+  position: relative;
+  z-index: 2;
+}
+
+#screen-driver .drv-timeline__dot--deposit-in { background: var(--c-profit); }
+#screen-driver .drv-timeline__dot--deposit-out { background: var(--c-loss); }
+#screen-driver .drv-timeline__dot--neutral     { background: var(--color-muted); }
+
+#screen-driver .drv-timeline__date { font-size: var(--text-xs); color: var(--color-muted); }
+#screen-driver .drv-timeline__desc { font-size: var(--text-sm); font-weight: 600; color: var(--color-dark); }
+#screen-driver .drv-timeline__amt  { font-size: var(--text-sm); font-weight: 600; color: var(--color-muted); }
+#screen-driver .drv-timeline__amt--in  { color: var(--c-profit); }
+#screen-driver .drv-timeline__amt--out { color: var(--c-loss); }
+
+#screen-driver .drv-empty {
+  text-align: center;
+  padding: var(--space-xl);
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+}
+
+#screen-driver .drv-skeleton { padding: var(--space-lg); }
+#screen-driver .drv-skeleton .skel--hero { height: 80px; margin-bottom: var(--space-md); }
+#screen-driver .drv-skeleton .skel--row  { height: 48px; margin-bottom: var(--space-sm); }

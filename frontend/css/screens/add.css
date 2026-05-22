@@ -1,0 +1,170 @@
+/* ═══════════════════════════════════════════════
+   screens/add.css — вынесено из screens.css (аудит п.8)
+════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────
+   ЭКРАН: ДОБАВИТЬ ОПЕРАЦИЮ
+───────────────────────────────────────────── */
+.add-type-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+
+.add-type-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: var(--space-md) var(--space-sm);
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition-fast), transform var(--transition-fast);
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.add-type-btn:active { transform: scale(0.96); }
+
+.add-type-btn--active {
+  background: var(--color-dark);
+}
+
+.add-type-btn--active .add-type-btn__label {
+  color: var(--color-white);
+}
+
+.add-type-btn__icon { font-size: 20px; }
+
+.add-type-btn__label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-dark);
+  text-align: center;
+}
+
+.amount-input-wrap {
+  position: relative;
+}
+
+.amount-input-currency {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-muted);
+}
+
+.amount-input-wrap .field-input {
+  padding-left: 28px;
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+/* ─────────────────────────────────────────────
+   ЭКРАН: ДОБАВИТЬ ОПЕРАЦИЮ
+───────────────────────────────────────────── */
+
+.add-form {
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+/* ── Переключатель типа ── */
+.add-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  background: var(--color-bg);
+  padding: 4px;
+  border-radius: var(--radius-md);
+}
+
+.add-tab {
+  padding: 9px 4px;
+  border-radius: 10px;
+  font-family: var(--font-family);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-muted);
+  cursor: pointer;
+  text-align: center;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.add-tab--active {
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+}
+
+/* ── Поле ── */
+.add-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.add-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 12px;
+  align-items: start;
+}
+
+.add-field-row > .add-field {
+  min-width: 0;
+}
+
+.add-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+.add-field-err {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--c-loss);
+}
+
+.add-kassa-fixed {
+  background: var(--color-bg);
+  border-radius: 11px;
+  padding: 11px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+/* ── Сумма ── */
+.add-amount-input {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--color-dark);
+  letter-spacing: -0.02em;
+  padding: 12px;
+}
+
+/* ── Блок периода аренды ── */
+.add-rental-period {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 200ms ease, opacity 200ms ease;
+}
+
+.add-rental-period--open {
+  max-height: 200px;
+  opacity: 1;
+}
