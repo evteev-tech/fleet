@@ -1,5 +1,10 @@
 # Dependencies
 node_modules/
+backend/node_modules/
+
+# Backend local/runtime
+backend/.env
+backend/data/
 
 # Local artifacts
 *.xlsx
