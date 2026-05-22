@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import db from '../db.js';
-import { ok, fail, getNextId } from '../utils.js';
+import { ok, fail, getNextId, keysToCamel } from '../utils.js';
 
 const router = Router();
 
@@ -8,12 +8,16 @@ const router = Router();
 router.get('/drivers', (req, res) => {
   const drivers = db.prepare(`
     SELECT
-      d.id, d.name, d.phone, d.license, d.status, d.deposit_balance, d.note,
-      r.car_id        AS currentCar,
-      c.name          AS currentCarName,
-      r.id            AS rentalId,
-      r.rate_day      AS rateDay,
-      r.promised_until AS promisedUntil
+      d.id              AS driver_id,
+      d.name, d.phone, d.license, d.status,
+      d.deposit_balance AS deposit,
+      d.note,
+      r.car_id          AS car_id,
+      r.car_id          AS current_car,
+      c.name            AS current_car_name,
+      r.id              AS rental_id,
+      r.rate_day,
+      r.promised_until
     FROM drivers d
     LEFT JOIN (
       SELECT * FROM rentals WHERE status = 'active'
@@ -22,7 +26,7 @@ router.get('/drivers', (req, res) => {
     LEFT JOIN cars c ON c.id = r.car_id
     ORDER BY d.name
   `).all();
-  return ok(res, { drivers });
+  return ok(res, { drivers: keysToCamel(drivers) });
 });
 
 // POST /api/drivers — создать или обновить водителя

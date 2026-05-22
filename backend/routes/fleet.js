@@ -1,10 +1,33 @@
 import { Router } from 'express';
 import db from '../db.js';
-import { ok, fail } from '../utils.js';
+import { ok, fail, keysToCamel } from '../utils.js';
 const router = Router();
 router.get('/fleet', (req, res) => {
-  const cars = db.prepare(`SELECT c.id, c.name, c.color, c.status, c.mileage, c.mileage_to, c.rate_day, c.date_bought, c.note, r.id AS rental_id, r.driver_id, d.name AS driver_name, d.phone AS driver_phone, r.promised_until AS paid_until, r.rate_day AS rental_amount, r.date_start FROM cars c LEFT JOIN (SELECT * FROM rentals WHERE status = 'active' GROUP BY car_id HAVING rowid = MAX(rowid)) r ON r.car_id = c.id LEFT JOIN drivers d ON d.id = r.driver_id ORDER BY c.id`).all();
-  return ok(res, { fleet: cars });
+  const cars = db.prepare(`
+    SELECT
+      c.id            AS car_id,
+      c.name, c.color, c.status, c.mileage,
+      c.mileage_to    AS to_mileage,
+      c.rate_day,
+      c.date_bought   AS date_buy,
+      c.price_bought  AS price_buy,
+      c.note,
+      r.id            AS rental_id,
+      r.driver_id,
+      d.name          AS driver_name,
+      d.phone         AS driver_phone,
+      r.promised_until AS paid_until,
+      r.rate_day      AS rental_amount,
+      r.date_start
+    FROM cars c
+    LEFT JOIN (
+      SELECT * FROM rentals WHERE status = 'active'
+      GROUP BY car_id HAVING rowid = MAX(rowid)
+    ) r ON r.car_id = c.id
+    LEFT JOIN drivers d ON d.id = r.driver_id
+    ORDER BY c.id
+  `).all();
+  return ok(res, { fleet: keysToCamel(cars) });
 });
 router.patch('/fleet/:id/status', (req, res) => {
   const { id } = req.params;

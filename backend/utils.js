@@ -34,5 +34,23 @@ export function calcClass(type, direction) {
   if (dir === 'расход') return 'opex';
   return 'revenue';
 }
+
+/** snake_case → camelCase (e.g. rate_day → rateDay). Keys without underscores pass through. */
+export function toCamelCase(str) {
+  return String(str).replace(/_([a-z])/g, (_, ch) => ch.toUpperCase());
+}
+
+/** Deeply converts object keys from snake_case to camelCase. Arrays, null, and Date pass through. */
+export function keysToCamel(obj) {
+  if (obj == null || obj instanceof Date) return obj;
+  if (Array.isArray(obj)) return obj.map(keysToCamel);
+  if (typeof obj === 'object') {
+    return Object.fromEntries(
+      Object.entries(obj).map(([key, val]) => [toCamelCase(key), keysToCamel(val)]),
+    );
+  }
+  return obj;
+}
+
 export function ok(res, data) { return res.json({ status: 'ok', ...data }); }
 export function fail(res, message, code = 400) { return res.status(code).json({ status: 'error', error: true, message }); }

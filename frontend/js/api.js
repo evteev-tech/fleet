@@ -6,6 +6,13 @@
  */
 
 import { SHEET_ID, API_KEY, WEBHOOK_URL, SECRET_TOKEN, CACHE_TTL_MS, SHEETS, USE_MOCK } from './config.js';
+import * as CONFIG from './config.js';
+import * as AuthModule from './auth.js';
+
+if (typeof window !== 'undefined') {
+  window.CONFIG = CONFIG;
+  window.Auth = AuthModule;
+}
 import {
   CACHE_KEYS,
   clearAllCache,
@@ -220,54 +227,78 @@ export async function getKassas() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// REST API (новый бэкенд)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Обёртка над fetch для REST API с Bearer JWT.
+ * @param {string} endpoint — путь относительно API_BASE, напр. `/fleet`
+ * @param {RequestInit} [options]
+ * @returns {Promise<object>}
+ */
+async function apiRequest(endpoint, options = {}) {
+  const { body, headers: extraHeaders, ...rest } = options;
+  const headers = { ...(extraHeaders || {}) };
+
+  const token = window.Auth?.getToken?.();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  let payload;
+  if (body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+    payload = typeof body === 'string' ? body : JSON.stringify(body);
+  }
+
+  let res;
+  try {
+    res = await fetch(`${window.CONFIG.API_BASE}${endpoint}`, {
+      ...rest,
+      headers,
+      body: payload,
+    });
+  } catch {
+    _lastApiStatus = 'error';
+    throw new Error('NO_CONNECTION');
+  }
+
+  if (res.status === 401) {
+    _lastApiStatus = 'error';
+    window.Auth?.clearToken?.();
+    throw new Error('UNAUTHORIZED');
+  }
+
+  let json;
+  try {
+    json = await res.json();
+  } catch {
+    _lastApiStatus = 'error';
+    throw new Error(`HTTP ${res.status}: ответ не является JSON`);
+  }
+
+  if (!res.ok || json?.status === 'error') {
+    _lastApiStatus = 'error';
+    throw new Error(json?.message ?? `HTTP ${res.status}`);
+  }
+
+  _lastApiStatus = 'ok';
+  return json;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // МАШИНЫ
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Машины с листа «Машины» через Apps Script GET_FLEET.
- * Колонки: A=car_id … J=ТО на пробеге (см. Code.gs handleGetFleet).
+ * Список машин через REST GET /api/fleet.
  *
  * @returns {Promise<Array<{carId,name,color,status,dateBuy,priceBuy,rateDay,note,mileage,toMileage}>>}
  */
 export async function getFleet() {
   if (USE_MOCK) return getMockFleetNormalized();
-  try {
-    const body = await postAction('GET_FLEET', {});
-    const rows = body.fleet ?? [];
-    return rows.map(_normalizeFleetRow).filter(c => c.carId);
-  } catch (err) {
-    console.warn('[api] GET_FLEET failed, using Sheets API fallback:', err?.message ?? err);
-    const rows = await readSheet(SHEETS.CARS);
-    return rows
-      .map(row => _normalizeFleetRow({
-        carId: row[0],
-        name: row[1],
-        color: row[2],
-        status: row[3],
-        dateBuy: row[4],
-        priceBuy: row[5],
-        rateDay: row[6],
-        note: row[7],
-        mileage: row[8],
-        toMileage: row[9],
-      }))
-      .filter(c => c.carId);
-  }
-}
-
-function _normalizeFleetRow(r) {
-  return {
-    carId:     String(r.carId ?? '').trim(),
-    name:      String(r.name ?? ''),
-    color:     String(r.color ?? ''),
-    status:    String(r.status ?? '').trim(),
-    dateBuy:   parseSheetDate(r.dateBuy),
-    priceBuy:  Number(r.priceBuy) || 0,
-    rateDay:   Number(r.rateDay) || 0,
-    note:      String(r.note ?? ''),
-    mileage:   Math.round(Number(r.mileage ?? 0)) || 0,
-    toMileage: Math.round(Number(r.toMileage ?? 0)) || 0,
-  };
+  const data = await apiRequest('/fleet');
+  return data.fleet;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -275,50 +306,14 @@ function _normalizeFleetRow(r) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Водители + активная аренда (currentCar) через GET_DRIVERS; fallback — лист «Водители».
+ * Водители + активная аренда (currentCar) через REST GET /api/drivers.
  *
  * @returns {Promise<Array<{driverId,name,phone,license,status,deposit,note,carId,currentCar}>>}
  */
 export async function getDrivers() {
   if (USE_MOCK) return getMockDriversNormalized();
-  try {
-    const body = await postAction('GET_DRIVERS', {});
-    const rows = body.drivers ?? [];
-    return rows.map(_normalizeDriverRow).filter(d => d.driverId);
-  } catch (err) {
-    console.warn('[api] GET_DRIVERS failed, Sheets fallback:', err?.message ?? err);
-    const rows = await readSheet(SHEETS.DRIVERS);
-    return rows
-      .map(row => _normalizeDriverRow({
-        driverId: cell(row, 0),
-        name: cell(row, 1),
-        phone: cell(row, 2),
-        license: cell(row, 3),
-        status: cell(row, 4),
-        deposit: parseFloat(cell(row, 5)) || 0,
-        note: cell(row, 6),
-        currentCar: null,
-      }))
-      .filter(d => d.driverId);
-  }
-}
-
-function _normalizeDriverRow(r) {
-  const cur =
-    r.currentCar != null && String(r.currentCar).trim() !== ''
-      ? String(r.currentCar).trim()
-      : '';
-  return {
-    driverId: String(r.driverId ?? '').trim(),
-    name: String(r.name ?? r.fio ?? ''),
-    phone: String(r.phone ?? ''),
-    license: String(r.license ?? r.vu ?? ''),
-    status: String(r.status ?? '').trim(),
-    deposit: Number(r.deposit) || 0,
-    note: String(r.note ?? ''),
-    currentCar: cur || null,
-    carId: cur,
-  };
+  const data = await apiRequest('/drivers');
+  return data.drivers;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
