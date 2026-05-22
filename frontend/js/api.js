@@ -376,43 +376,121 @@ export async function getDeposits(driverId = null) {
  * @returns {Promise<object>}
  */
 export async function postAction(action, data) {
-  const webhookUrl = localStorage.getItem('matizi_webhook') || WEBHOOK_URL;
   const act = typeof action === 'object' && action ? action.action : action;
-  const incomingData = typeof action === 'object' && action ? { ...(action || {}) } : data;
-  if (typeof incomingData === 'object' && incomingData) delete incomingData.action;
-  const payloadData =
-    act === 'ADD_INCOME'
-      ? { ...incomingData, client_op_date: fmtDate(new Date()) }
-      : incomingData;
-  const payload = JSON.stringify({ action: act, token: SECRET_TOKEN, ...payloadData });
+  const d   = typeof action === 'object' && action ? { ...action } : { ...(data || {}) };
+  if (d.action) delete d.action;
 
-  // URLSearchParams → Content-Type: application/x-www-form-urlencoded
-  // браузер не шлёт preflight, Apps Script читает через e.parameter.data
-  const formData = new URLSearchParams();
-  formData.append('data', payload);
+  // ── Роутер: action → REST-эндпоинт ───────────────────────────────────────
+  let method = 'POST';
+  let endpoint;
+  let body = d;
 
-  let res;
-  try {
-    res = await fetch(webhookUrl, { method: 'POST', body: formData });
-  } catch {
-    throw new Error('NO_CONNECTION');
+  switch (act) {
+    // Операции кассы
+    case 'ADD_OPERATION':
+      endpoint = '/operations';
+      body = { ...d, author: d.author || d.provel || '' };
+      break;
+    case 'UPDATE_OPERATION':
+      endpoint = `/operations/${d.op_id || d.id}`;
+      method = 'PATCH';
+      break;
+    case 'DELETE_OPERATION':
+      endpoint = `/operations/${d.op_id || d.id}`;
+      method = 'DELETE';
+      body = null;
+      break;
+
+    // Аренда
+    case 'ADD_RENTAL':
+      endpoint = '/rentals';
+      break;
+    case 'SAVE_RENTAL_PROMISE':
+      endpoint = `/rentals/by-car/${d.car_id}/promise`;
+      method = 'PATCH';
+      body = { promised_until: d.promised_until ?? '' };
+      break;
+    case 'SAVE_BONUS_DAYS':
+      endpoint = `/rentals/by-car/${d.car_id}/bonus`;
+      method = 'PATCH';
+      body = { bonus_days: d.bonus_days, bonus_reason: d.bonus_reason ?? '' };
+      break;
+
+    // Парк — статус и пробег
+    case 'UPDATE_CAR_STATUS': {
+      const cid = d.car_id || d.carId;
+      endpoint = `/fleet/${encodeURIComponent(cid)}/status`;
+      method = 'PATCH';
+      body = { status: d.new_status || d.status };
+      break;
+    }
+    case 'UPDATE_CAR_MILEAGE': {
+      const cid = d.car_id || d.carId;
+      endpoint = `/fleet/${encodeURIComponent(cid)}/mileage`;
+      method = 'PATCH';
+      body = { mileage: d.mileage, mileage_to: d.next_to_mileage ?? d.mileage_to };
+      break;
+    }
+    case 'UPDATE_CAR_RATE': {
+      const cid = d.car_id || d.carId;
+      endpoint = `/fleet/${encodeURIComponent(cid)}/rate`;
+      method = 'PATCH';
+      body = { rate_day: d.new_rate, note: d.reason ?? '' };
+      break;
+    }
+
+    // Водители и депозиты
+    case 'SAVE_DRIVER':
+      endpoint = '/drivers';
+      body = {
+        id:       d.driver_id || d.id || '',
+        name:     d.name || d.fio || '',
+        phone:    d.phone || '',
+        passport: d.passport || d.vu || d.license || '',
+        note:     d.note || d.comment || '',
+      };
+      break;
+    case 'ADD_DEPOSIT':
+      endpoint = '/deposits';
+      body = {
+        driver_id: d.driver_id,
+        car_id:    d.car_id || '',
+        amount:    d.amount,
+        comment:   d.comment || '',
+        status:    d.status,
+      };
+      break;
+
+    // Google Drive — файлы (нет на новом бэкенде, тихо возвращаем заглушку)
+    case 'LIST_CAR_FILES':
+      return { status: 'ok', files: [] };
+    case 'GET_CAR_FILE':
+    case 'UPLOAD_CAR_FILE':
+    case 'DELETE_CAR_FILE':
+    case 'RENAME_CAR_FILE':
+      return { status: 'ok' };
+
+    // Аналитика (считается на клиенте)
+    case 'GET_DASHBOARD':
+    case 'GET_LOST_REVENUE':
+    case 'UPDATE_PERIOD':
+    case 'GET_INCOME_FORM':
+      return { status: 'ok' };
+
+    default:
+      console.warn('[postAction] неизвестный action, пропускаем:', act);
+      return { status: 'ok' };
   }
 
-  let body;
-  try {
-    body = await res.json();
-  } catch {
-    throw new Error(`HTTP ${res.status}: ответ не является JSON`);
-  }
+  const result = await apiRequest(endpoint, method === 'GET'
+    ? undefined
+    : { method, ...(body !== null ? { body } : {}) }
+  );
 
-  if (body?.status === 'error' || body?.error === true) {
-    throw new Error(body.message ?? 'UNKNOWN_ERROR');
-  }
-
-  // Инвалидируем кэш листов, которые могли измениться
+  // Инвалидируем SWR-кэш
   _invalidateByAction(act);
 
-  return body;
+  return result;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
