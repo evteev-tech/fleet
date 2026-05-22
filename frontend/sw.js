@@ -118,6 +118,8 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') return;
+
   const { request } = event;
   const url = new URL(request.url);
 
