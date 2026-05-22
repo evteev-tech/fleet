@@ -19,7 +19,7 @@ import {
   getWithSWR,
   invalidateCache as invalidateSwrCache,
 } from './cache.js';
-import { parseDate, fmtDate } from './utils/format.js';
+import { fmtDate } from './utils/format.js';
 import {
   getMockFleetNormalized,
   getMockDriversNormalized,
@@ -199,6 +199,19 @@ async function apiRequest(endpoint, options = {}) {
   return json;
 }
 
+/** Парсит дату из REST API (DD.MM.YYYY, ISO) в native Date. */
+const parseApiDate = (dateStr) => {
+  if (!dateStr) return new Date();
+  if (dateStr instanceof Date) return dateStr;
+  // Check for DD.MM.YYYY format
+  if (/^\d{2}\.\d{2}\.\d{4}/.test(dateStr)) {
+    const [day, month, year] = dateStr.split(' ')[0].split('.');
+    return new Date(`${year}-${month}-${day}T12:00:00Z`);
+  }
+  // Fallback for standard ISO / YYYY-MM-DD
+  return new Date(dateStr);
+};
+
 // ═══════════════════════════════════════════════════════════════════════════
 // ПОЛЬЗОВАТЕЛИ
 // ═══════════════════════════════════════════════════════════════════════════
@@ -242,11 +255,11 @@ export async function getOperations({ kassaId = null, month = null, year = null 
   if (kassaId) params.set('kassa_id', kassaId);
   const qs = params.toString() ? `?${params.toString()}` : '';
   const data = await apiRequest(`/operations${qs}`);
-  let ops = data.operations ?? [];
+  let ops = (data.operations ?? []).map(op => ({ ...op, date: parseApiDate(op.date) }));
   if (month && year) {
     ops = ops.filter(op => {
-      const d = parseDate(op.dateRaw ?? op.date);
-      if (!d) return true;
+      const d = op.date;
+      if (!d || Number.isNaN(d.getTime())) return true;
       return d.getMonth() + 1 === month && d.getFullYear() === year;
     });
   }
@@ -310,7 +323,12 @@ export async function getDrivers() {
 export async function getRentals() {
   if (USE_MOCK) return getMockRentalsNormalized();
   const data = await apiRequest('/rentals');
-  return data.rentals;
+  return data.rentals.map(r => ({
+    ...r,
+    dateStart: parseApiDate(r.dateStart),
+    dateEnd: parseApiDate(r.dateEnd),
+    promisedUntil: r.promisedUntil ? parseApiDate(r.promisedUntil) : null,
+  }));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -325,7 +343,7 @@ export async function getRentals() {
  */
 export async function getDeposits() {
   const data = await apiRequest('/deposits');
-  return data.deposits;
+  return data.deposits.map(d => ({ ...d, date: parseApiDate(d.date) }));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
