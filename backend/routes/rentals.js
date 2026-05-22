@@ -103,6 +103,23 @@ router.patch('/:id/promise', (req, res) => {
   return ok(res, { id, promised_until: puVal });
 });
 
+router.patch('/by-car/:car_id/bonus', (req, res) => {
+  const { car_id } = req.params;
+  const { bonus_days, bonus_reason } = req.body || {};
+  const days = Number(bonus_days);
+  if (!Number.isInteger(days) || days <= 0) return fail(res, 'INVALID_BONUS_DAYS');
+  const rental = db.prepare(`
+    SELECT id, bonus_days FROM rentals
+    WHERE car_id = ? AND status = 'active'
+    ORDER BY rowid DESC LIMIT 1
+  `).get(car_id);
+  if (!rental) return fail(res, 'RENTAL_NOT_FOUND', 404);
+  const newBonus = (Number(rental.bonus_days) || 0) + days;
+  db.prepare('UPDATE rentals SET bonus_days = ?, bonus_reason = ? WHERE id = ?')
+    .run(newBonus, String(bonus_reason || ''), rental.id);
+  return ok(res, { id: rental.id, bonusDays: newBonus });
+});
+
 router.post('/income', (req, res) => {
   const { car_id, driver_id, amount, date_from, date_to, rate, kassa_id,
           comment = '', provel = 'Азамат', mileage } = req.body;

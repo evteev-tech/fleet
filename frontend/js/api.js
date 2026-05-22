@@ -415,13 +415,51 @@ export async function postAction(action, data) {
   return body;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// ЗАПИСЬ — REST API
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** camelCase → snake_case для полей тела запроса. */
+function _toSnakeBody(payload, fieldMap = {}) {
+  const out = {};
+  for (const [key, val] of Object.entries(payload || {})) {
+    if (val === undefined) continue;
+    const mapped = fieldMap[key] ?? key.replace(/[A-Z]/g, ch => `_${ch.toLowerCase()}`);
+    out[mapped] = val;
+  }
+  return out;
+}
+
 export async function updateOperation(payload) {
-  return postAction('UPDATE_OPERATION', payload);
+  const p = payload || {};
+  const id = p.op_id ?? p.opId ?? p.id;
+  if (!id) throw new Error('MISSING: op_id');
+
+  const fieldMap = {
+    carId: 'car_id',
+    driverId: 'driver_id',
+    classOverride: 'class_override',
+    classItog: 'class_final',
+    kassaId: 'kassa_id',
+    provel: 'author',
+  };
+  const body = _toSnakeBody(p, fieldMap);
+  delete body.op_id;
+  delete body.opId;
+  delete body.id;
+
+  const result = await apiRequest(`/operations/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body,
+  });
+  invalidateSwrCache(CACHE_KEYS.CASH_OPS);
+  invalidateSwrCache(CACHE_KEYS.KASSAS);
+  invalidateSwrCache(CACHE_KEYS.DASHBOARD);
+  return result;
 }
 
 /**
- * Изменение ставки аренды (₽/день) у машины. Пишет rateDay в лист «Машины»
- * и дописывает след в note. Текущая аренда не трогается.
+ * Изменение ставки аренды (₽/день) у машины.
  *
  * @param {object} payload
  * @param {string} payload.car_id
@@ -432,7 +470,22 @@ export async function updateOperation(payload) {
  * @returns {Promise<object>}
  */
 export async function updateCarRate(payload) {
-  return postAction('UPDATE_CAR_RATE', payload);
+  const p = payload || {};
+  const carId = p.car_id ?? p.carId;
+  if (!carId) throw new Error('MISSING: car_id');
+
+  const result = await apiRequest(`/fleet/${encodeURIComponent(carId)}/rate`, {
+    method: 'PATCH',
+    body: {
+      rate_day: p.new_rate ?? p.rateDay ?? p.rate_day,
+      new_rate: p.new_rate ?? p.rateDay,
+      reason: p.reason ?? '',
+      by: p.by ?? '',
+    },
+  });
+  invalidateSwrCache(CACHE_KEYS.CARS);
+  invalidateSwrCache(CACHE_KEYS.INCOME_FORM);
+  return result;
 }
 
 /** Данные листа «Дашборд» для экрана «Аналитика» (Apps Script GET_DASHBOARD). */
@@ -477,11 +530,33 @@ export async function fetchIncomeForm() {
 }
 
 /**
- * Приход аренды: касса + строка аренды (ADD_INCOME).
+ * Приход аренды: касса + строка аренды (POST /api/rentals/income).
  * @param {object} payload
  */
 export async function postAddIncome(payload) {
-  return postAction('ADD_INCOME', payload);
+  const p = payload || {};
+  const result = await apiRequest('/rentals/income', {
+    method: 'POST',
+    body: {
+      car_id: p.car_id ?? p.carId,
+      driver_id: p.driver_id ?? p.driverId,
+      amount: p.amount,
+      date_from: p.date_from ?? p.dateFrom,
+      date_to: p.date_to ?? p.dateTo,
+      rate: p.rate ?? p.rateDay,
+      comment: p.comment ?? '',
+      kassa_id: p.kassa_id ?? p.kassaId,
+      provel: p.provel ?? p.author ?? '',
+      mileage: p.mileage,
+    },
+  });
+  invalidateSwrCache(CACHE_KEYS.CASH_OPS);
+  invalidateSwrCache(CACHE_KEYS.RENTALS);
+  invalidateSwrCache(CACHE_KEYS.CARS);
+  invalidateSwrCache(CACHE_KEYS.KASSAS);
+  invalidateSwrCache(CACHE_KEYS.INCOME_FORM);
+  invalidateSwrCache(CACHE_KEYS.DASHBOARD);
+  return result;
 }
 
 /**
@@ -503,12 +578,17 @@ export async function saveRentalPromise(carId, promisedUntil) {
     return { status: 'ok' };
   }
 
-  return postAction('SAVE_RENTAL_PROMISE', {
-    car_id: cid,
-    promised_until:
-      promisedUntil != null && promisedUntil instanceof Date && !Number.isNaN(promisedUntil.getTime())
-        ? fmtDate(promisedUntil)
-        : '',
+  return await apiRequest(`/rentals/by-car/${encodeURIComponent(cid)}/promise`, {
+    method: 'PATCH',
+    body: {
+      promised_until:
+        promisedUntil != null && promisedUntil instanceof Date && !Number.isNaN(promisedUntil.getTime())
+          ? fmtDate(promisedUntil)
+          : '',
+    },
+  }).then(result => {
+    invalidateSwrCache(CACHE_KEYS.RENTALS);
+    return result;
   });
 }
 
@@ -530,10 +610,15 @@ export async function saveBonusDays(carId, bonusDays, reason) {
     return { status: 'ok' };
   }
 
-  return postAction('SAVE_BONUS_DAYS', {
-    car_id: cid,
-    bonus_days: days,
-    bonus_reason: String(reason || ''),
+  return await apiRequest(`/rentals/by-car/${encodeURIComponent(cid)}/bonus`, {
+    method: 'PATCH',
+    body: {
+      bonus_days: days,
+      bonus_reason: String(reason || ''),
+    },
+  }).then(result => {
+    invalidateSwrCache(CACHE_KEYS.RENTALS);
+    return result;
   });
 }
 
