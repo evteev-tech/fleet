@@ -5,14 +5,9 @@
  * Запись:  POST WEBHOOK_URL  (Apps Script doPost)
  */
 
-import { SHEET_ID, API_KEY, WEBHOOK_URL, SECRET_TOKEN, CACHE_TTL_MS, SHEETS, USE_MOCK } from './config.js';
-import * as CONFIG from './config.js';
-import * as AuthModule from './auth.js';
+import { SHEET_ID, API_KEY, WEBHOOK_URL, SECRET_TOKEN, CACHE_TTL_MS, SHEETS, USE_MOCK, API_BASE } from './config.js';
+import { getToken, clearToken } from './auth.js';
 
-if (typeof window !== 'undefined') {
-  window.CONFIG = CONFIG;
-  window.Auth = AuthModule;
-}
 import {
   CACHE_KEYS,
   clearAllCache,
@@ -153,7 +148,7 @@ async function apiRequest(endpoint, options = {}) {
   const { body, headers: extraHeaders, ...rest } = options;
   const headers = { ...(extraHeaders || {}) };
 
-  const token = window.Auth?.getToken?.();
+  const token = getToken();
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
@@ -166,7 +161,7 @@ async function apiRequest(endpoint, options = {}) {
 
   let res;
   try {
-    res = await fetch(`${window.CONFIG.API_BASE}${endpoint}`, {
+    res = await fetch(`${API_BASE}${endpoint}`, {
       ...rest,
       headers,
       body: payload,
@@ -178,7 +173,7 @@ async function apiRequest(endpoint, options = {}) {
 
   if (res.status === 401) {
     _lastApiStatus = 'error';
-    window.Auth?.clearToken?.();
+    clearToken();
     throw new Error('UNAUTHORIZED');
   }
 
