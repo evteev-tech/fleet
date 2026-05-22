@@ -9,10 +9,13 @@ router.get('/drivers', (req, res) => {
   const drivers = db.prepare(`
     SELECT
       d.id, d.name, d.phone, d.passport, d.deposit_balance, d.note, d.active,
-      r.car_id    AS current_car_id,
-      c.name      AS current_car_name,
-      r.paid_until,
-      r.amount    AS rental_amount
+      r.car_id         AS current_car_id,
+      c.name           AS current_car_name,
+      r.id             AS rentalId,
+      r.rate_day       AS rateDay,
+      r.promised_until AS promisedUntil,
+      r.date_start     AS dateStart,
+      r.date_end       AS dateEnd
     FROM drivers d
     LEFT JOIN rentals r ON r.driver_id = d.id AND r.status = 'active'
     LEFT JOIN cars c ON c.id = r.car_id
