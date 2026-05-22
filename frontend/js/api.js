@@ -264,9 +264,15 @@ export async function getOperations(kassaId = null) {
   return data.operations.map(op => ({
     ...op,
     id: op.opId || op.id,
-    date: parseApiDate(op.date),
+    date: parseApiDate(op.date || op.dateRaw),
     author: op.provel || op.author,
     amount: Number(op.amount) || 0,
+    // UI compatibility aliases (old screen filters expect snake_case)
+    kassa_id: op.kassaId || op.kassa_id,
+    car_id: op.carId || op.car_id,
+    driver_id: op.driverId || op.driver_id,
+    class_itog: op.classItog || op.class_itog,
+    class_override: op.classOverride || op.class_override,
   }));
 }
 
