@@ -249,26 +249,48 @@ export async function getUsers() {
  * @param {{ kassaId?: string|null, month?: number|null, year?: number|null }} opts
  * @returns {Promise<Array>}
  */
-export async function getOperations({ kassaId = null, month = null, year = null } = {}) {
-  if (USE_MOCK) return getMockOperationsNormalized({ kassaId, month, year });
-  const params = new URLSearchParams();
-  if (kassaId) params.set('kassa_id', kassaId);
-  const qs = params.toString() ? `?${params.toString()}` : '';
-  const data = await apiRequest(`/operations${qs}`);
-  let ops = (data.operations ?? []).map(op => ({
-    ...op,
-    id: op.opId || op.id,
-    date: parseApiDate(op.dateRaw || op.date),
-    author: op.provel || op.author,
-  }));
-  if (month && year) {
-    ops = ops.filter(op => {
-      const d = op.date;
-      if (!d || Number.isNaN(d.getTime())) return true;
-      return d.getMonth() + 1 === month && d.getFullYear() === year;
-    });
+export async function getOperations(kassaId = null) {
+  let url = '/operations';
+  if (kassaId) url += `?kassa_id=${kassaId}`;
+  const data = await apiRequest(url);
+
+  if (!data || !data.operations || data.operations.length === 0) {
+    return [];
   }
-  return ops;
+
+  // ВРЕМЕННЫЙ ДЕБАГ: Выведет первую операцию прямо на экран!
+  alert('ДАННЫЕ С СЕРВЕРА:\n' + JSON.stringify(data.operations[0], null, 2));
+
+  return data.operations.map(op => {
+    // Универсальный парсинг даты
+    let dateObj = new Date();
+    const rawDate = op.dateRaw || op.date || op.date_raw;
+
+    if (typeof rawDate === 'string') {
+      if (/^\d{2}\.\d{2}\.\d{4}/.test(rawDate)) {
+        const [day, month, year] = rawDate.split(' ')[0].split('.');
+        dateObj = new Date(`${year}-${month}-${day}T12:00:00Z`);
+      } else {
+        // Подстраховка для формата "2026-05-15 12:00:00"
+        dateObj = new Date(rawDate.replace(' ', 'T'));
+      }
+    } else if (rawDate instanceof Date) {
+      dateObj = rawDate;
+    } else if (typeof rawDate === 'number') {
+      dateObj = new Date(rawDate);
+    }
+
+    return {
+      ...op,
+      id: op.opId || op.id,
+      date: dateObj,
+      author: op.provel || op.author,
+      // Подстраховка на случай смены регистра в алиасах
+      amount: Number(op.amount) || 0,
+      type: op.type || '',
+      direction: op.direction || '',
+    };
+  });
 }
 
 /**
