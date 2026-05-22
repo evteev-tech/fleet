@@ -1,12 +1,31 @@
 import { Router } from 'express';
 import db from '../db.js';
-import { ok, fail, getNextId, formatDate, calcClass } from '../utils.js';
+import { ok, fail, getNextId, calcClass } from '../utils.js';
 
 const router = Router();
 
+function normalizeOp(row) {
+  return {
+    opId:          row.id,
+    date:          row.date,
+    dateRaw:       row.date,
+    kassaId:       row.kassa_id,
+    direction:     row.direction,
+    amount:        row.amount,
+    type:          row.type,
+    category:      row.category,
+    carId:         row.car_id,
+    driverId:      row.driver_id,
+    comment:       row.comment,
+    provel:        row.author,
+    classOverride: row.class_override,
+    classItog:     row.class_final,
+  };
+}
+
 // GET /api/operations
 router.get('/operations', (req, res) => {
-  const { kassa_id, car_id, driver_id, limit = 200 } = req.query;
+  const { kassa_id, car_id, driver_id, limit = 500 } = req.query;
 
   let sql = 'SELECT * FROM kassa_ops WHERE 1=1';
   const params = [];
@@ -19,7 +38,7 @@ router.get('/operations', (req, res) => {
   params.push(Number(limit));
 
   const rows = db.prepare(sql).all(...params);
-  return ok(res, { operations: rows });
+  return ok(res, { operations: rows.map(normalizeOp) });
 });
 
 // POST /api/operations — ADD_OPERATION
