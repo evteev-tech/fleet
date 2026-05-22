@@ -2,7 +2,7 @@
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-BRANCH="matizi-server"
+BRANCH="main"
 PM2_APP="matizi"
 
 cd "$REPO_DIR"
@@ -24,6 +24,8 @@ if [ -f backend/package.json ]; then
   (cd backend && npm install --omit=dev)
 fi
 
-pm2 restart "$PM2_APP"
+pm2 restart "$PM2_APP" --update-env
 
 echo "✅ Задеплоено ($BRANCH @ $(git rev-parse --short HEAD))"
+echo "   Backend: PM2 перезапущен"
+echo "   Frontend: обновлён через git pull (nginx читает напрямую)"
