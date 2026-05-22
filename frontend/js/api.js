@@ -524,8 +524,8 @@ export async function updateAnalyticsPeriod(year, month, options = {}) {
  * @returns {Promise<Array<{ carId: string, lastPaidDate: string }>>}
  */
 export async function fetchIncomeForm() {
-  const body = await postAction('GET_INCOME_FORM', {});
-  const rows = body.incomeForm;
+  const body = await apiRequest('/rentals/income-form');
+  const rows = body?.incomeForm;
   return Array.isArray(rows) ? rows : [];
 }
 
