@@ -21,5 +21,18 @@ export function parseDate(s) {
   const d = new Date(s);
   return isNaN(d.getTime()) ? null : d;
 }
+export function nowStr() {
+  const d = new Date();
+  return `${formatDate(d)} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+export function calcClass(type, direction) {
+  const t = String(type || '').toLowerCase().trim();
+  const dir = String(direction || '').toLowerCase().trim();
+  if (t === 'аренда') return 'revenue';
+  if (t.startsWith('депозит')) return 'deposit';
+  if (t === 'перевод_входящий' || t === 'перевод_исходящий') return 'transfer';
+  if (dir === 'расход') return 'opex';
+  return 'revenue';
+}
 export function ok(res, data) { return res.json({ status: 'ok', ...data }); }
 export function fail(res, message, code = 400) { return res.status(code).json({ status: 'error', error: true, message }); }

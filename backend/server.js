@@ -4,7 +4,9 @@ import { requireAuth } from './auth.js';
 import authRoutes    from './routes/auth.js';
 import fleetRoutes   from './routes/fleet.js';
 import driversRoutes from './routes/drivers.js';
-import rentalsRoutes from './routes/rentals.js';
+import rentalsRoutes    from './routes/rentals.js';
+import operationsRoutes from './routes/operations.js';
+import depositsRoutes   from './routes/deposits.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -23,6 +25,8 @@ app.get('/api/ping', (req, res) => res.json({ status: 'ok', message: 'pong', ts:
 app.use('/api', requireAuth, fleetRoutes);
 app.use('/api', requireAuth, driversRoutes);
 app.use('/api', requireAuth, rentalsRoutes);
+app.use('/api', requireAuth, operationsRoutes);
+app.use('/api', requireAuth, depositsRoutes);
 app.use((req, res) => res.status(404).json({ status: 'error', message: 'NOT_FOUND' }));
 app.use((err, req, res, next) => { console.error('[error]', err); res.status(500).json({ status: 'error', message: 'INTERNAL_ERROR' }); });
 app.listen(PORT, () => console.log(`[server] Matizi запущен на порту ${PORT}`));
