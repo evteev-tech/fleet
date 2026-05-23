@@ -2,7 +2,7 @@
  * fleet.js — экран «Парк»: данные GET_FLEET, фильтр по статусу, карточки Т-Банка.
  */
 
-import { getFleet, getDrivers, getRentals, postAction, invalidateCache, updateCarRate } from '../api.js';
+import { getFleet, getDrivers, getRentals, postAction, invalidateCache, updateCarRate, issueRental, closeRental } from '../api.js';
 import { getWithSWR, CACHE_KEYS, invalidateCache as invalidateLocalCache } from '../cache.js';
 import { showScreen } from '../router.js';
 import { showBottomSheet, hideBottomSheet, showToast } from '../ui.js';
@@ -125,9 +125,13 @@ export function initFleet() {
     if (!confirm(`Принять ${car.carId} из аренды → простой?`)) return;
     void (async () => {
       try {
-        await postAction('UPDATE_CAR_STATUS', { car_id: car.carId, new_status: CAR_STATUSES.IDLE });
+        await closeRental(car.carId);
         invalidateCache(SHEETS.CARS);
+        invalidateCache(SHEETS.RENTALS);
+        invalidateCache(SHEETS.DRIVERS);
         invalidateLocalCache(CACHE_KEYS.CARS);
+        invalidateLocalCache(CACHE_KEYS.RENTALS);
+        invalidateLocalCache(CACHE_KEYS.DRIVERS);
         invalidateLocalCache(CACHE_KEYS.INCOME_FORM);
         showToast('Машина принята ✓', 'success');
         showScreen('screen-fleet');
@@ -564,6 +568,27 @@ async function _openCarSheet(car) {
         await _openDriverSelectSheet(car);
         return;
       }
+      // Машина в аренде → Простой = приёмка: закрываем аренду через REST, не просто меняем статус
+      if (statusKey(car.status) === 'rent' && btn.dataset.newStatus === CAR_STATUSES.IDLE) {
+        const b = btn;
+        b.disabled = true; b.style.opacity = '0.5';
+        try {
+          await closeRental(car.carId);
+          invalidateCache(SHEETS.CARS);
+          invalidateCache(SHEETS.RENTALS);
+          invalidateCache(SHEETS.DRIVERS);
+          invalidateLocalCache(CACHE_KEYS.CARS);
+          invalidateLocalCache(CACHE_KEYS.RENTALS);
+          invalidateLocalCache(CACHE_KEYS.DRIVERS);
+          invalidateLocalCache(CACHE_KEYS.INCOME_FORM);
+          showToast('Машина принята ✓', 'success');
+          hideBottomSheet(() => renderFleet());
+        } catch (err) {
+          b.disabled = false; b.style.opacity = '';
+          showToast(err.message === 'NO_CONNECTION' ? 'Нет соединения' : 'Ошибка', 'error');
+        }
+        return;
+      }
       await _changeStatus(car, btn.dataset.newStatus);
     });
 
@@ -668,24 +693,14 @@ async function _openDriverSelectSheet(car) {
 
 async function _changeStatusWithDriver(car, newStatus, driverId, dateStartISO) {
   const btn = document.getElementById('fleet-bs-confirm');
-  if (btn) {
-    btn.disabled = true;
-    btn.style.opacity = '0.5';
-  }
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
 
   try {
-    await postAction('UPDATE_CAR_STATUS', { car_id: car.carId, new_status: newStatus });
-
-    const dateStart = dateStartISO
-      ? _isoToDDMMYYYY(dateStartISO)
-      : _fmtDateForApi(new Date());
-
-    await postAction('ADD_RENTAL', {
+    await issueRental({
       car_id: car.carId,
       driver_id: driverId,
-      date_start: dateStart,
       rate_day: car.rateDay,
-      comment: 'выдача из Парка',
+      date_start: dateStartISO ? _isoToDDMMYYYY(dateStartISO) : _fmtDateForApi(new Date()),
     });
 
     invalidateCache(SHEETS.CARS);
@@ -699,10 +714,7 @@ async function _changeStatusWithDriver(car, newStatus, driverId, dateStartISO) {
     showToast('Машина выдана ✓', 'success');
     hideBottomSheet(() => renderFleet());
   } catch (err) {
-    if (btn) {
-      btn.disabled = false;
-      btn.style.opacity = '';
-    }
+    if (btn) { btn.disabled = false; btn.style.opacity = ''; }
     showToast(err.message === 'NO_CONNECTION' ? 'Нет соединения' : 'Ошибка', 'error');
   }
 }

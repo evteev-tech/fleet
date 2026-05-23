@@ -695,6 +695,49 @@ export async function saveBonusDays(carId, bonusDays, reason) {
   });
 }
 
+/**
+ * Выдача машины водителю через REST POST /api/rentals/issue.
+ * Атомарно: закрывает висящую активную аренду + открывает новую + status='в аренде'.
+ */
+export async function issueRental(payload) {
+  const p = payload || {};
+  const carId = p.car_id ?? p.carId;
+  if (!carId) throw new Error('MISSING: car_id');
+  const result = await apiRequest('/rentals/issue', {
+    method: 'POST',
+    body: {
+      car_id: carId,
+      driver_id: p.driver_id ?? p.driverId,
+      rate_day: p.rate_day ?? p.rateDay,
+      date_start: p.date_start ?? p.dateStart ?? '',
+      comment: p.comment ?? 'выдача из Парка',
+    },
+  });
+  invalidateSwrCache(CACHE_KEYS.CARS);
+  invalidateSwrCache(CACHE_KEYS.RENTALS);
+  invalidateSwrCache(CACHE_KEYS.DRIVERS);
+  invalidateSwrCache(CACHE_KEYS.INCOME_FORM);
+  return result;
+}
+
+/**
+ * Приёмка машины через REST PATCH /api/rentals/by-car/:car_id/close.
+ * Закрывает активную аренду + возвращает машину в 'простой'.
+ */
+export async function closeRental(carId, comment = '') {
+  const cid = String(carId || '').trim();
+  if (!cid) throw new Error('MISSING: car_id');
+  const result = await apiRequest(`/rentals/by-car/${encodeURIComponent(cid)}/close`, {
+    method: 'PATCH',
+    body: { comment },
+  });
+  invalidateSwrCache(CACHE_KEYS.CARS);
+  invalidateSwrCache(CACHE_KEYS.RENTALS);
+  invalidateSwrCache(CACHE_KEYS.DRIVERS);
+  invalidateSwrCache(CACHE_KEYS.INCOME_FORM);
+  return result;
+}
+
 // ─── Какие листы сбрасываем после каждого action ─────────────────────────────
 const ACTION_INVALIDATES = {
   ADD_OPERATION:    [SHEETS.OPERATIONS],
