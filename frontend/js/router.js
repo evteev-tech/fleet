@@ -36,6 +36,11 @@ const NAV_ICONS = {
   <path d="M14 20V11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
   <path d="M19 20V4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
 </svg>`,
+  svodka: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+  <rect x="3" y="4" width="18" height="17" rx="2" stroke="currentColor" stroke-width="1.6"/>
+  <path d="M3 9h18M8 2v4M16 2v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M7 13v4M11 15v2M15 12v5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+</svg>`,
   settings: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
   <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/>
   <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
@@ -43,11 +48,6 @@ const NAV_ICONS = {
   add: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
   <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/>
   <path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-</svg>`,
-  svodka: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-  <rect x="3" y="4" width="18" height="17" rx="2" stroke="currentColor" stroke-width="1.6"/>
-  <path d="M3 9h18M8 2v4M16 2v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-  <path d="M7 13h3v3H7z" fill="currentColor"/>
 </svg>`,
 };
 

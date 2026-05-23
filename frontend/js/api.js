@@ -291,17 +291,6 @@ export async function getFleet() {
   return data.fleet;
 }
 
-/**
- * Матрица «Сводки» за месяц через REST GET /api/svodka.
- * @param {number} year
- * @param {number} month  1..12
- * @returns {Promise<object>} svodka: { year, month, daysInMonth, summary, matrix }
- */
-export async function getSvodka(year, month) {
-  const data = await apiRequest(`/svodka?year=${year}&month=${month}`);
-  return data.svodka;
-}
-
 // ═══════════════════════════════════════════════════════════════════════════
 // ВОДИТЕЛИ
 // ═══════════════════════════════════════════════════════════════════════════
@@ -344,6 +333,21 @@ export async function getRentals(status = null) {
     dateEnd: formatToRuDate(r.dateEnd),
     promisedUntil: r.promisedUntil ? formatToRuDate(r.promisedUntil) : null,
   }));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// СВОДКА (календарная матрица по парку за месяц)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Календарный отчёт по парку за месяц через REST GET /api/svodka.
+ * @param {number} year
+ * @param {number} month  — 1..12
+ * @returns {Promise<{year,month,daysInMonth,summary,matrix}|null>}
+ */
+export async function getSvodka(year, month) {
+  const data = await apiRequest(`/svodka?year=${year}&month=${month}`);
+  return data?.svodka ?? null;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

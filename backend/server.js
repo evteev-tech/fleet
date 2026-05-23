@@ -26,12 +26,12 @@ app.use('/api', authRoutes);
 app.get('/api/ping', (req, res) => res.json({ status: 'ok', message: 'pong', ts: new Date().toISOString() }));
 app.use('/api', requireAuth, fleetRoutes);
 app.use('/api', requireAuth, driversRoutes);
-app.use('/api', requireAuth, svodkaRoutes);
 app.use('/api/rentals', requireAuth, rentalsRoutes);
 
 app.use('/api/operations', requireAuth, operationsRoutes);
 app.use('/api/deposits',   requireAuth, depositsRoutes);
 app.use('/api/kassas',     requireAuth, kassasRoutes);
+app.use('/api/svodka',     requireAuth, svodkaRoutes);
 app.use((req, res) => res.status(404).json({ status: 'error', message: 'NOT_FOUND' }));
 app.use((err, req, res, next) => { console.error('[error]', err); res.status(500).json({ status: 'error', message: 'INTERNAL_ERROR' }); });
 app.listen(PORT, () => console.log(`[server] Matizi запущен на порту ${PORT}`));

@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import db from '../db.js';
-import { ok, fail, keysToCamel, formatDate } from '../utils.js';
-import { logCarStatus } from '../status-log.js';
+import { ok, fail, keysToCamel, formatDate, logCarStatus } from '../utils.js';
 const router = Router();
 router.get('/fleet', (req, res) => {
   const cars = db.prepare(`
@@ -43,7 +42,7 @@ router.patch('/fleet/:id/status', (req, res) => {
   if (!car) return fail(res, 'CAR_NOT_FOUND', 404);
   const tx = db.transaction(() => {
     db.prepare('UPDATE cars SET status = ? WHERE id = ?').run(status, id);
-    logCarStatus(id, status, { author: req.user?.login || '' });
+    logCarStatus(id, status, req.user?.login || '');
   });
   tx();
   return ok(res, { id, status });

@@ -1,10 +1,14 @@
 /**
  * svodka.js — календарная «Сводка» по парку за месяц (точка входа инвестора).
+ *
+ * Данные: getSvodka(year, month) → REST GET /api/svodka.
+ * Матрица «дни × машины»: на каждую машину пара колонок поступление/расход.
+ * Цвета статусов — с референса (старый Excel), заданы в css/screens/svodka.css.
  */
 
-import { getSvodka } from '../api.js';
+import { getSvodka }            from '../api.js';
 import { getWithSWR, CACHE_KEYS } from '../cache.js';
-import { fmtRuInt } from '../utils/format.js';
+import { fmtRuInt }             from '../utils/format.js';
 
 const _now = new Date();
 let _month = _now.getMonth() + 1;
@@ -12,6 +16,7 @@ let _year  = _now.getFullYear();
 
 const WD = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
 
+// Статус машины → CSS-класс ячейки поступления.
 const STATUS_CLASS = {
   'в аренде':  'rent',
   'простой':   'idle',
@@ -19,6 +24,8 @@ const STATUS_CLASS = {
   'парк':      'park',
 };
 
+// UI-палитра цветов машин (cars.color в БД — это цвет кузова текстом, не hex,
+// поэтому для различения колонок назначаем фиксированные цвета по индексу).
 const CAR_PALETTE = [
   '#1AAE9F', '#E89B3C', '#D85A52', '#7FB3E0', '#B58BC2', '#E0C84E',
   '#EF8A92', '#5FB97A', '#C77DBB', '#6E8BD6', '#D9A05B', '#74C2C9',
@@ -78,6 +85,7 @@ export async function renderSvodka() {
   });
 }
 
+// ─── Свод месяца (тёмный хедер) ───────────────────────────────────────────────
 function _setSummarySkeleton() {
   ['svIncome', 'svExpense', 'svNet', 'svLoad'].forEach(id => {
     const el = document.getElementById(id);
@@ -98,6 +106,7 @@ function _renderSummary(s) {
   if (net)  net.textContent  = _fmtSigned(s.net);
   if (load) load.textContent = `${s.loadPct}%`;
 
+  // Полоса загрузки: аренда / простой+ремонт. rentDays известны, остальное добиваем.
   const bar = document.getElementById('svLoadBar');
   if (bar) {
     const rentPct = s.loadPct;
@@ -107,12 +116,14 @@ function _renderSummary(s) {
   }
 }
 
+// ─── Матрица (скролл вниз/вправо) ─────────────────────────────────────────────
 function _renderMatrix(data) {
   const wrap = document.getElementById('svGridWrap');
   if (!wrap) return;
   const cars = data.matrix || [];
   const days = data.daysInMonth;
 
+  // thead: пара колонок на машину (дох.|расх.); «Парк» — одна колонка (расход).
   let h1 = '<tr class="sv-h1"><th class="sv-corner sv-pin" rowspan="2"></th>';
   let h2 = '<tr class="sv-h2">';
   cars.forEach((c, i) => {
@@ -128,6 +139,7 @@ function _renderMatrix(data) {
   });
   h1 += '</tr>'; h2 += '</tr>';
 
+  // tbody: строки-дни
   let body = '';
   for (let d = 1; d <= days; d++) {
     const dowIdx = new Date(_year, _month - 1, d).getDay();
@@ -144,12 +156,13 @@ function _renderMatrix(data) {
         : (cell.expenseTag ? `<span class="sv-tag">${_esc(cell.expenseTag)}</span>—` : null);
 
       if (c.isPark) {
+        // только колонка расхода
         body += expCell
           ? `<td class="sv-out sv-out--has sv-cargrp-l sv-cargrp-r" style="--car:${color}">${expCell}</td>`
           : `<td class="sv-out sv-out--none sv-cargrp-l sv-cargrp-r" style="--car:${color}">·</td>`;
       } else {
         const cls = STATUS_CLASS[cell.status] || 'idle';
-        const inTxt = cell.income > 0 ? _fmtInt(cell.income) : '';
+        const inTxt = cell.income > 0 ? _fmtInt(cell.income) : '';  // статус — только цветом
         body += `<td class="sv-in sv-${cls} sv-cargrp-l" style="--car:${color}">${inTxt}</td>`;
         body += expCell
           ? `<td class="sv-out sv-out--has sv-cargrp-r" style="--car:${color}">${expCell}</td>`
@@ -159,6 +172,7 @@ function _renderMatrix(data) {
     body += '</tr>';
   }
 
+  // tfoot: итог за месяц
   let foot = '<tr class="sv-foot"><td class="sv-foot-lbl sv-pin">Итог</td>';
   cars.forEach((c, i) => {
     const color = carColor(i);
@@ -190,6 +204,7 @@ function _showError() {
   }
 }
 
+// ─── Хелперы ──────────────────────────────────────────────────────────────────
 function _setMonthLabel() {
   const el = document.getElementById('svMonthLabel');
   if (!el) return;

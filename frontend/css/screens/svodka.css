@@ -1,30 +1,21 @@
 /**
  * svodka.css — стили экрана «Сводка» (календарная матрица по парку).
+ * Цвета статусов взяты с референса (старый Excel), живут только здесь.
  */
 
-#screen-svodka:not(.screen--active) {
-  display: none !important;
-}
-
-#screen-svodka.screen--active {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  height: 100%;
-  min-height: 0;
-}
-
 #screen-svodka {
-  --sv-rent:   #2ECC71;
+  /* ── Палитра референса (локальная, не глобальная) ── */
+  --sv-rent:   #2ECC71;   /* аренда   — зелёный  */
   --sv-rent-t: #06402A;
-  --sv-idle:   #2BD4E0;
+  --sv-idle:   #2BD4E0;   /* простой  — голубой  */
   --sv-idle-t: #0A4248;
-  --sv-repair: #FF3B30;
-  --sv-exp:    #FBB034;
+  --sv-repair: #FF3B30;   /* ремонт   — красный  */
+  --sv-exp:    #FBB034;   /* расход   — оранжевый */
   --sv-exp-t:  #5A3D00;
   --sv-dark:   #1a1a1a;
 }
 
+/* ── Тёмный хедер со сводом месяца ── */
 .sv-header {
   background: var(--sv-dark);
   color: #fff;
@@ -39,7 +30,7 @@
   display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
 }
 .sv-month__btn {
-  background: rgba(255,255,255,0.12); border: none; color: rgba(255,255,255,0.7);
+  background: var(--surface-on-dark-strong); border: none; color: rgba(255,255,255,0.7);
   border-radius: 6px; width: 24px; height: 24px; font-size: 14px; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
 }
@@ -56,21 +47,21 @@
   font-size: 9px; color: rgba(255,255,255,0.45);
   text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px;
 }
+.sv-load { }
 .sv-load__top {
   display: flex; justify-content: space-between; font-size: 10px;
   color: rgba(255,255,255,0.45); margin-bottom: 5px;
 }
 .sv-load__bar {
-  height: 5px; background: rgba(255,255,255,0.12);
+  height: 5px; background: var(--surface-on-dark-strong);
   border-radius: 3px; overflow: hidden; display: flex;
 }
 .sv-load__bar > span { display: block; height: 100%; }
 
-.sv-header, .sv-legend { flex-shrink: 0; }
-
+/* ── Легенда ── */
 .sv-legend {
   display: flex; gap: 14px; flex-wrap: wrap;
-  padding: 8px 16px; font-size: 11px; color: var(--color-muted, #8A8A8E);
+  padding: 8px 16px; font-size: 11px; color: var(--c-muted);
   background: #fafafa; border-bottom: 0.5px solid rgba(0,0,0,0.07);
 }
 .sv-legend span { display: inline-flex; align-items: center; gap: 5px; }
@@ -78,19 +69,24 @@
   width: 12px; height: 12px; border-radius: 2px;
   display: inline-block; flex-shrink: 0;
 }
+/* фолбэк-цвета легенды на случай, если инлайн-стиль перебит глобальным reset */
 .sv-legend i.lg-rent   { background: #2ECC71 !important; }
 .sv-legend i.lg-idle   { background: #2BD4E0 !important; }
 .sv-legend i.lg-repair { background: #FF3B30 !important; }
 .sv-legend i.lg-exp    { background: #FBB034 !important; }
 
+/* ── Матрица ── */
+#screen-svodka { display: none; }
+#screen-svodka.screen--active { display: flex; flex-direction: column; }
+.sv-header, .sv-legend { flex-shrink: 0; }
 .sv-grid-wrap {
   flex: 1 1 auto;
-  min-height: 0;
+  min-height: 0;          /* чтобы flex-ребёнок реально скроллился, а не распирал */
   overflow: auto;
   -webkit-overflow-scrolling: touch;
 }
 .sv-grid {
-  border-collapse: separate;
+  border-collapse: separate;   /* separate — иначе sticky-границы шапки «уезжают» */
   border-spacing: 0;
   font-size: 11px;
   font-variant-numeric: tabular-nums;
@@ -100,6 +96,7 @@
   border-bottom: 0.5px solid rgba(0,0,0,0.08);
 }
 
+/* шапка: тёмная, два уровня */
 .sv-h1 th {
   padding: 7px 4px; font-size: 12px; font-weight: 600; color: #fff;
   text-align: center; background: #2a2a2a;
@@ -110,6 +107,7 @@
 }
 .sv-corner { background: var(--sv-dark) !important; border: none; }
 
+/* sticky шапка сверху + колонка дат слева. Высоту h1 фиксируем, чтобы h2 встал точно. */
 .sv-grid thead th { position: sticky; z-index: 3; }
 .sv-h1 th { top: 0; height: 30px; }
 .sv-h2 th { top: 30px; }
@@ -123,12 +121,14 @@
 }
 .sv-dow { color: rgba(255,255,255,0.45); }
 
+/* ── W3: выходные (сб/вс) — жёлтая боковая метка + затемнение даты ── */
 .sv-weekend .sv-date {
   background: #0e0e0e;
   box-shadow: inset 3px 0 0 var(--sv-exp);
 }
 .sv-weekend .sv-date .sv-dow { color: var(--sv-exp); }
 
+/* ячейки поступления (статус заливкой) */
 .sv-in {
   text-align: center; padding: 6px 7px; font-weight: 700; min-width: 52px;
 }
@@ -137,18 +137,28 @@
 .sv-repair { background: var(--sv-repair); color: #fff; }
 .sv-park   { background: #fff; }
 
+/* ячейки расхода */
 .sv-out { text-align: center; padding: 4px 7px; font-weight: 600; min-width: 60px; }
 .sv-out--has  { background: var(--sv-exp); color: var(--sv-exp-t); }
 .sv-out--none { background: #fff; color: #d8d8d8; }
 .sv-tag { font-size: 8.5px; font-weight: 500; display: block; line-height: 1.15; }
 
+/* колонка «Парк» — шапка нейтральная */
 .sv-park-h { background: #3a3a3a !important; }
 
-/* Граница группы машины — только слева (начало машины) */
-.sv-cargrp   { border-left: 3px solid var(--car) !important; border-right: none !important; }
-.sv-cargrp-l { border-left: 3px solid var(--car) !important; }
-.sv-cargrp-r { border-right: none !important; }
+/* ── Вариант C: цветные боковые границы группы машины ───────────────────────
+   Каждая машина (пара колонок дох.|расх.) обрамлена своим цветом слева и справа,
+   поэтому при горизонтальном скролле видно, где её колонки начинаются/кончаются. */
+.sv-cargrp     { border-left: 3px solid var(--car) !important; border-right: 3px solid var(--car) !important; }
+/* Граница группы машины — только СЛЕВА (начало машины). Правую не рисуем,
+   иначе между соседними машинами встают две разноцветные линии впритык и
+   кажется, что цвет налезает на чужое поле. Внутри пары дох.|расх. — обычная
+   тонкая серая линия сетки. */
+.sv-cargrp     { border-left: 3px solid var(--car) !important; border-right: none !important; }
+.sv-cargrp-l   { border-left: 3px solid var(--car) !important; }
+.sv-cargrp-r   { border-right: none !important; }
 
+/* итоговая строка */
 .sv-foot td {
   background: #111; color: #fff; font-weight: 700;
   padding: 7px 6px; text-align: center; font-size: 11px;
@@ -161,3 +171,5 @@
 }
 .sv-fg { color: #4CD964; }
 .sv-fr { color: #FF8A4C; }
+
+/* десктоп: грид растягивается тем же flex:1, доп. высота не нужна */

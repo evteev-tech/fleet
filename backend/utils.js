@@ -54,3 +54,29 @@ export function keysToCamel(obj) {
 
 export function ok(res, data) { return res.json({ status: 'ok', ...data }); }
 export function fail(res, message, code = 400) { return res.status(code).json({ status: 'error', error: true, message }); }
+
+/**
+ * Записывает смену статуса машины в журнал car_status_log.
+ * Вызывать ВНУТРИ той же транзакции, что меняет cars.status, чтобы запись
+ * была атомарной. Пишет, только если статус реально отличается от последнего
+ * в журнале на ту же дату (защита от дублей при повторных вызовах).
+ *
+ * @param {string} carId
+ * @param {string} status        — 'в аренде' | 'в ремонте' | 'простой'
+ * @param {string} [author]
+ * @param {string} [statusFrom]   — ISO YYYY-MM-DD; по умолчанию сегодня
+ */
+export function logCarStatus(carId, status, author = '', statusFrom = null) {
+  if (!carId || !status) return;
+  const from = statusFrom || new Date().toISOString().slice(0, 10);
+  // Не плодим запись, если последний зафиксированный статус уже такой же
+  const last = db.prepare(
+    `SELECT status FROM car_status_log
+     WHERE car_id = ? ORDER BY status_from DESC, id DESC LIMIT 1`
+  ).get(carId);
+  if (last && last.status === status) return;
+  db.prepare(
+    `INSERT INTO car_status_log (car_id, status, status_from, author)
+     VALUES (?, ?, ?, ?)`
+  ).run(carId, status, from, author);
+}
