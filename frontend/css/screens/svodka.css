@@ -29,7 +29,6 @@
   background: var(--sv-dark);
   color: #fff;
   padding: 12px 16px 14px;
-  flex-shrink: 0;
 }
 .sv-header__top {
   display: flex; align-items: center; justify-content: space-between;
@@ -67,11 +66,12 @@
 }
 .sv-load__bar > span { display: block; height: 100%; }
 
+.sv-header, .sv-legend { flex-shrink: 0; }
+
 .sv-legend {
   display: flex; gap: 14px; flex-wrap: wrap;
   padding: 8px 16px; font-size: 11px; color: var(--color-muted, #8A8A8E);
   background: #fafafa; border-bottom: 0.5px solid rgba(0,0,0,0.07);
-  flex-shrink: 0;
 }
 .sv-legend span { display: inline-flex; align-items: center; gap: 5px; }
 .sv-legend i {
@@ -84,11 +84,10 @@
 .sv-legend i.lg-exp    { background: #FBB034 !important; }
 
 .sv-grid-wrap {
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
-  max-height: calc(100vh - 320px);
 }
 .sv-grid {
   border-collapse: separate;
@@ -145,9 +144,10 @@
 
 .sv-park-h { background: #3a3a3a !important; }
 
-.sv-cargrp     { border-left: 3px solid var(--car) !important; border-right: 3px solid var(--car) !important; }
-.sv-cargrp-l   { border-left: 3px solid var(--car) !important; }
-.sv-cargrp-r   { border-right: 3px solid var(--car) !important; }
+/* Граница группы машины — только слева (начало машины) */
+.sv-cargrp   { border-left: 3px solid var(--car) !important; border-right: none !important; }
+.sv-cargrp-l { border-left: 3px solid var(--car) !important; }
+.sv-cargrp-r { border-right: none !important; }
 
 .sv-foot td {
   background: #111; color: #fff; font-weight: 700;
@@ -161,7 +161,3 @@
 }
 .sv-fg { color: #4CD964; }
 .sv-fr { color: #FF8A4C; }
-
-@media (min-width: 768px) {
-  .sv-grid-wrap { max-height: calc(100vh - 260px); }
-}
