@@ -44,6 +44,11 @@ const NAV_ICONS = {
   <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/>
   <path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
 </svg>`,
+  svodka: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+  <rect x="3" y="4" width="18" height="17" rx="2" stroke="currentColor" stroke-width="1.6"/>
+  <path d="M3 9h18M8 2v4M16 2v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M7 13h3v3H7z" fill="currentColor"/>
+</svg>`,
 };
 
 // ─── Конфиг navbar по ролям ───────────────────────────────────────────────────
@@ -65,10 +70,10 @@ const NAVBAR_CONFIG = {
   ],
 
   [ROLES.INVESTOR]: [
+    { id: 'screen-svodka',    label: 'Сводка',    iconSvg: NAV_ICONS.svodka },
     { id: 'screen-dashboard', label: 'Главная',   iconSvg: NAV_ICONS.home },
     { id: 'screen-history',   label: 'История',   iconSvg: NAV_ICONS.history },
     { id: 'screen-analytics', label: 'Аналитика', iconSvg: NAV_ICONS.analytics },
-    { id: 'screen-settings',  label: 'Настройки', iconSvg: NAV_ICONS.settings },
   ],
 };
 
@@ -202,7 +207,7 @@ export function initRouter({ onNeedLogin, onLoggedIn }) {
       .trim()
       .toLowerCase();
     const startScreen =
-      r === ROLES.MECHANIC || r === ROLES.OPERATIONS ? 'screen-home' : 'screen-dashboard';
+      r === ROLES.MECHANIC || r === ROLES.OPERATIONS ? 'screen-home' : 'screen-svodka';
     showScreen(startScreen);
     onLoggedIn?.(session);
   });

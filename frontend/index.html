@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="css/screens/login.css" />
   <link rel="stylesheet" href="css/screens/home.css" />
   <link rel="stylesheet" href="css/screens/dashboard.css" />
+  <link rel="stylesheet" href="css/screens/svodka.css" />
   <link rel="stylesheet" href="css/screens/analytics.css" />
   <link rel="stylesheet" href="css/screens/analytics_step2.css" />
   <link rel="stylesheet" href="css/screens/analytics_forecast.css" />
@@ -87,6 +88,34 @@
 
   <section id="screen-transfer" class="screen">
     <div id="transfer-root" class="transfer-root"></div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════
+       ЭКРАН: СВОДКА (investor — точка входа)
+  ════════════════════════════════════════════════ -->
+  <section id="screen-svodka" class="screen">
+    <div class="svodka-header">
+      <div class="header-top-row">
+        <span class="header-logo">Матизы</span>
+        <div class="header-avatar" id="svodkaAvatar" role="button" tabindex="0" aria-label="Меню профиля"></div>
+      </div>
+      <div class="svodka-sums" id="svodkaSums">
+        <div><div class="svodka-sv g" id="svodkaIncome">—</div><div class="svodka-sl">Поступления</div></div>
+        <div><div class="svodka-sv r" id="svodkaExpense">—</div><div class="svodka-sl">Расходы</div></div>
+        <div><div class="svodka-sv w" id="svodkaNet">—</div><div class="svodka-sl">Чистыми</div></div>
+        <div class="svodka-load"><div class="svodka-sv w" id="svodkaLoad">—</div><div class="svodka-sl">Загрузка</div></div>
+      </div>
+      <div class="period-switcher period-switcher--dark">
+        <button type="button" class="period-switcher__btn" id="svodkaMonthPrev" aria-label="Предыдущий период">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <span class="period-switcher__label" id="svodkaMonthLabel"></span>
+        <button type="button" class="period-switcher__btn" id="svodkaMonthNext" aria-label="Следующий период">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="svodka-body" id="svodkaBody"><!-- матрица рендерится в svodka.js --></div>
   </section>
 
   <!-- ═══════════════════════════════════════════════

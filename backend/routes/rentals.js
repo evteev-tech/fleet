@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import db from '../db.js';
 import { ok, fail, keysToCamel } from '../utils.js';
+import { logCarStatus } from '../status-log.js';
 
 const router = Router();
 
@@ -172,6 +173,7 @@ router.post('/income', (req, res) => {
 
     // 3. Статус машины и пробег
     db.prepare("UPDATE cars SET status='в аренде' WHERE id=?").run(car_id);
+    logCarStatus(car_id, 'в аренде', { dateFrom: isoFrom, author: provel || '' });
     if (mileage && Number(mileage) > 0)
       db.prepare('UPDATE cars SET mileage=? WHERE id=?').run(Math.round(Number(mileage)), car_id);
 
@@ -181,7 +183,6 @@ router.post('/income', (req, res) => {
   try { return ok(res, doTx()); }
   catch(e) { console.error('[ADD_INCOME]', e); return fail(res, e.message); }
 });
-
 
 // Приёмка машины: закрыть активную аренду + вернуть машину в простой
 router.patch('/by-car/:car_id/close', (req, res) => {
@@ -207,13 +208,13 @@ router.patch('/by-car/:car_id/close', (req, res) => {
     }
 
     db.prepare("UPDATE cars SET status='простой' WHERE id=?").run(car_id);
+    logCarStatus(car_id, 'простой', { author: req.user?.login || '' });
     return { car_id, closed: !!rental };
   });
 
   try { return ok(res, doTx()); }
   catch (e) { console.error('[CLOSE_RENTAL]', e); return fail(res, e.message); }
 });
-
 
 // Выдача машины: закрыть висящую активную аренду + открыть новую (атомарно)
 router.post('/issue', (req, res) => {
@@ -231,6 +232,7 @@ router.post('/issue', (req, res) => {
       .run(rental_id, car_id, driver_id, toIso(date_start || todayStr()), null, Number(rate_day), comment);
 
     db.prepare("UPDATE cars SET status='в аренде' WHERE id=?").run(car_id);
+    logCarStatus(car_id, 'в аренде', { dateFrom: toIso(date_start || todayStr()), author: req.user?.login || '' });
     return { rental_id, car_id };
   });
 

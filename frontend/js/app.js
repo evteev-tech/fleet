@@ -12,6 +12,7 @@ import { renderSidebar, updateSidebarActive, removeSidebar } from './sidebar.js'
 // Экраны
 import { initHome }      from './screens/home.js';
 import { initDashboard } from './screens/dashboard.js';
+import { initSvodka }    from './screens/svodka.js';
 import { initAdd }       from './screens/add.js';
 import { initHistory }   from './screens/history.js';
 import { initFleet }     from './screens/fleet.js';
@@ -33,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Инициализируем все экраны (подписывают свои слушатели событий)
   initHome();
   initDashboard();
+  initSvodka();
   initIncome();
   initExpense();
   initTransfer();

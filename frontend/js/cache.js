@@ -11,6 +11,7 @@ export const CACHE_KEYS = {
   CASH_OPS:    'cashOps',
   KASSAS:      'kassas',
   DASHBOARD:   'dashboard',
+  SVODKA:      'svodka',
   DEPOSITS:    'deposits',
   INCOME_FORM: 'incomeForm',
 };

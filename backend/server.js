@@ -8,6 +8,7 @@ import rentalsRoutes    from './routes/rentals.js';
 import operationsRoutes from './routes/operations.js';
 import depositsRoutes   from './routes/deposits.js';
 import kassasRoutes     from './routes/kassas.js';
+import svodkaRoutes     from './routes/svodka.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,6 +26,7 @@ app.use('/api', authRoutes);
 app.get('/api/ping', (req, res) => res.json({ status: 'ok', message: 'pong', ts: new Date().toISOString() }));
 app.use('/api', requireAuth, fleetRoutes);
 app.use('/api', requireAuth, driversRoutes);
+app.use('/api', requireAuth, svodkaRoutes);
 app.use('/api/rentals', requireAuth, rentalsRoutes);
 
 app.use('/api/operations', requireAuth, operationsRoutes);

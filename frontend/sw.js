@@ -5,8 +5,8 @@
  * Запросы: Network First, при ошибке — Cache (кроме Google API и CDN)
  */
 
-const CACHE_NAME = 'matizi-v4';
-const STATIC_CACHE_NAME = 'matizi-static-v4';
+const CACHE_NAME = 'matizi-v5';
+const STATIC_CACHE_NAME = 'matizi-static-v5';
 
 /** Пути от корня приложения (корректны и для GitHub Pages в подпапке). */
 const STATIC_FILES = [
@@ -20,6 +20,7 @@ const STATIC_FILES = [
   './css/screens/login.css',
   './css/screens/home.css',
   './css/screens/dashboard.css',
+  './css/screens/svodka.css',
   './css/screens/analytics.css',
   './css/screens/history.css',
   './css/screens/fleet.css',
@@ -49,6 +50,7 @@ const STATIC_FILES = [
   './js/mock/data.js',
   './js/screens/home.js',
   './js/screens/dashboard.js',
+  './js/screens/svodka.js',
   './js/screens/add.js',
   './js/screens/history.js',
   './js/screens/fleet.js',

@@ -51,6 +51,7 @@ const SIDEBAR_CONFIG = {
     {
       section: 'Основное',
       items: [
+        { screen: 'screen-svodka', label: 'Сводка', icon: 'ti-calendar-stats' },
         { screen: 'screen-dashboard', label: 'Главная', icon: 'ti-layout-dashboard' },
         { screen: 'screen-history', label: 'История', icon: 'ti-history' },
         { screen: 'screen-analytics', label: 'Аналитика', icon: 'ti-chart-bar' },
