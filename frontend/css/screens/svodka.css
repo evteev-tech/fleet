@@ -1,6 +1,5 @@
 /**
  * svodka.css — стили экрана «Сводка» (календарная матрица по парку).
- * Цвета статусов взяты с референса (старый Excel), живут только здесь.
  */
 
 #screen-svodka:not(.screen--active) {
@@ -36,17 +35,17 @@
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 12px;
 }
-.sv-header__title { font-size: 15px; font-weight: 900; color: #FFDD2D; letter-spacing: -0.3px; }
+.sv-header__title { font-size: 15px; font-weight: 600; }
 .sv-month {
   display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
 }
 .sv-month__btn {
   background: rgba(255,255,255,0.12); border: none; color: rgba(255,255,255,0.7);
-  border-radius: 6px; width: 28px; height: 28px; font-size: 14px; cursor: pointer;
+  border-radius: 6px; width: 24px; height: 24px; font-size: 14px; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
 }
 .sv-month__btn.period-switcher__btn--disabled { opacity: 0.35; pointer-events: none; }
-.sv-month__label { font-size: 13px; font-weight: 500; min-width: 120px; flex: 1; text-align: center; }
+.sv-month__label { font-size: 13px; font-weight: 500; min-width: 120px; }
 
 .sv-summary { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; }
 .sv-summary__cell { min-width: 84px; }
@@ -76,16 +75,13 @@
 }
 .sv-legend span { display: inline-flex; align-items: center; gap: 5px; }
 .sv-legend i { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
-.sv-legend .i-rent { background: var(--sv-rent); }
-.sv-legend .i-idle { background: var(--sv-idle); }
-.sv-legend .i-repair { background: var(--sv-repair); }
-.sv-legend .i-exp { background: var(--sv-exp); }
 
 .sv-grid-wrap {
   flex: 1;
   min-height: 0;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
+  max-height: calc(100vh - 320px);
 }
 .sv-grid {
   border-collapse: collapse;
@@ -115,6 +111,12 @@
 }
 .sv-dow { color: rgba(255,255,255,0.45); }
 
+.sv-weekend .sv-date {
+  background: #0e0e0e;
+  border-left: 3px solid var(--sv-exp);
+}
+.sv-weekend .sv-date .sv-dow { color: var(--sv-exp); }
+
 .sv-in {
   text-align: center; padding: 6px 7px; font-weight: 700; min-width: 52px;
 }
@@ -126,6 +128,10 @@
 .sv-out--has  { background: var(--sv-exp); color: var(--sv-exp-t); }
 .sv-out--none { background: #fff; color: #d8d8d8; }
 .sv-tag { font-size: 8.5px; font-weight: 500; display: block; line-height: 1.15; }
+
+.sv-cargrp     { border-left: 3px solid var(--car) !important; border-right: 3px solid var(--car) !important; }
+.sv-cargrp-l   { border-left: 3px solid var(--car) !important; }
+.sv-cargrp-r   { border-right: 3px solid var(--car) !important; }
 
 .sv-foot td {
   background: #111; color: #fff; font-weight: 700;
@@ -141,5 +147,5 @@
 .sv-fr { color: #FF8A4C; }
 
 @media (min-width: 768px) {
-  .sv-grid-wrap { max-height: none; }
+  .sv-grid-wrap { max-height: calc(100vh - 260px); }
 }

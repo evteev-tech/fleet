@@ -4,10 +4,6 @@ import { ok, fail, keysToCamel } from '../utils.js';
 
 const router = Router();
 
-// ─── Хелперы дат ──────────────────────────────────────────────────────────────
-// kassa_ops хранит даты как DD.MM.YYYY, rentals — как ISO YYYY-MM-DD.
-// Приводим всё к ISO-ключу дня YYYY-MM-DD для единого сопоставления.
-
 /** Любая дата (DD.MM.YYYY, ISO, с временем) → 'YYYY-MM-DD' или null. */
 function toIsoDay(str) {
   if (!str) return null;
@@ -19,7 +15,6 @@ function toIsoDay(str) {
   return null;
 }
 
-/** Категория расхода → короткий тег для ячейки. */
 const EXPENSE_TAGS = {
   'ремонт': 'ремонт',
   'запчасти': 'запчасти',
@@ -39,10 +34,6 @@ function expenseTag(category) {
   return EXPENSE_TAGS[c] || c || 'расход';
 }
 
-/**
- * GET /api/svodka?year=2026&month=4
- * Календарная матрица «дни × машины» за месяц.
- */
 router.get('/svodka', (req, res) => {
   try {
     const year = Number(req.query.year);
@@ -150,7 +141,14 @@ router.get('/svodka', (req, res) => {
           expense_tag: exp ? exp.tag : '',
         });
       }
-      return { car_id: car.id, name: car.name, color: car.color, status_now: car.status, days };
+      return {
+        car_id: car.id,
+        nick: car.id,
+        name: car.name,
+        color: car.color,
+        status_now: car.status,
+        days,
+      };
     });
 
     const totalCarDays = cars.length * daysInMonth;

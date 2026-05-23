@@ -1,14 +1,10 @@
 /**
  * svodka.js — календарная «Сводка» по парку за месяц (точка входа инвестора).
- *
- * Данные: getSvodka(year, month) → REST GET /api/svodka.
- * Матрица «дни × машины»: на каждую машину пара колонок поступление/расход.
- * Цвета статусов — с референса (старый Excel), заданы в css/screens/svodka.css.
  */
 
-import { getSvodka }            from '../api.js';
+import { getSvodka } from '../api.js';
 import { getWithSWR, CACHE_KEYS } from '../cache.js';
-import { fmtRuInt }             from '../utils/format.js';
+import { fmtRuInt } from '../utils/format.js';
 
 const _now = new Date();
 let _month = _now.getMonth() + 1;
@@ -115,29 +111,34 @@ function _renderMatrix(data) {
   let h2 = '<tr class="sv-h2">';
   cars.forEach(c => {
     const color = c.color || '#888';
-    h1 += `<th colspan="2" style="border-bottom:3px solid ${color}">${c.name || c.carId}</th>`;
-    h2 += '<th>пост.</th><th>расх.</th>';
+    const label = c.nick || c.carId || c.name;
+    h1 += `<th colspan="2" class="sv-cargrp" style="--car:${color}">${_esc(label)}</th>`;
+    h2 += `<th class="sv-cargrp-l" style="--car:${color}">дох.</th><th class="sv-cargrp-r" style="--car:${color}">расх.</th>`;
   });
   h1 += '</tr>'; h2 += '</tr>';
 
   let body = '';
   for (let d = 1; d <= days; d++) {
-    const dow = WD[new Date(_year, _month - 1, d).getDay()];
-    body += `<tr><td class="sv-date sv-pin">${String(d).padStart(2, '0')}.${String(_month).padStart(2, '0')}` +
+    const dowIdx = new Date(_year, _month - 1, d).getDay();
+    const dow = WD[dowIdx];
+    const isWeekend = dowIdx === 0 || dowIdx === 6;
+    const trCls = isWeekend ? ' class="sv-weekend"' : '';
+    body += `<tr${trCls}><td class="sv-date sv-pin">${String(d).padStart(2, '0')}.${String(_month).padStart(2, '0')}` +
             ` <span class="sv-dow">${dow}</span></td>`;
     cars.forEach(c => {
+      const color = c.color || '#888';
       const cell = c.days[d - 1] || {};
       const cls = STATUS_CLASS[cell.status] || 'idle';
       const inTxt = cell.income > 0 ? _fmtInt(cell.income)
                   : (STATUS_WORD[cell.status] || '');
-      body += `<td class="sv-in sv-${cls}">${inTxt}</td>`;
+      body += `<td class="sv-in sv-${cls} sv-cargrp-l" style="--car:${color}">${inTxt}</td>`;
       if (cell.expense > 0) {
-        body += `<td class="sv-out sv-out--has">` +
+        body += `<td class="sv-out sv-out--has sv-cargrp-r" style="--car:${color}">` +
                 `<span class="sv-tag">${_esc(cell.expenseTag)}</span>${_fmtInt(cell.expense)}</td>`;
       } else if (cell.expenseTag) {
-        body += `<td class="sv-out sv-out--has"><span class="sv-tag">${_esc(cell.expenseTag)}</span>—</td>`;
+        body += `<td class="sv-out sv-out--has sv-cargrp-r" style="--car:${color}"><span class="sv-tag">${_esc(cell.expenseTag)}</span>—</td>`;
       } else {
-        body += `<td class="sv-out sv-out--none">·</td>`;
+        body += `<td class="sv-out sv-out--none sv-cargrp-r" style="--car:${color}">·</td>`;
       }
     });
     body += '</tr>';
@@ -145,10 +146,11 @@ function _renderMatrix(data) {
 
   let foot = '<tr class="sv-foot"><td class="sv-foot-lbl sv-pin">Итог</td>';
   cars.forEach(c => {
+    const color = c.color || '#888';
     let gi = 0, ge = 0;
     c.days.forEach(x => { gi += x.income || 0; ge += x.expense || 0; });
-    foot += `<td class="sv-fg">${gi ? _fmtInt(gi) : '0'}</td>` +
-            `<td class="sv-fr">${ge ? _fmtInt(ge) : '0'}</td>`;
+    foot += `<td class="sv-fg sv-cargrp-l" style="--car:${color}">${gi ? _fmtInt(gi) : '0'}</td>` +
+            `<td class="sv-fr sv-cargrp-r" style="--car:${color}">${ge ? _fmtInt(ge) : '0'}</td>`;
   });
   foot += '</tr>';
 
