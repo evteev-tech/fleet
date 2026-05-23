@@ -116,7 +116,7 @@ export function initFleet() {
   });
 
   document.addEventListener('car:action:rent', e => {
-    if (e.detail?.car) void _openDriverSelectSheet(e.detail.car);
+    if (e.detail?.car) void _rentAction(e.detail.car);
   });
 
   document.addEventListener('car:action:return', e => {
@@ -420,7 +420,7 @@ function _bindCardClicks(body, cars) {
         const newStatus = item.dataset.newStatus;
         const statusKey_ = item.dataset.statusKey;
         if (statusKey_ === 'rent') {
-          void _openDriverSelectSheet(car);
+          void _rentAction(car);
         } else {
           void _changeStatus(car, newStatus);
         }
@@ -514,7 +514,7 @@ async function _openCarSheet(car) {
       k === 'rent' ? 'fleet-status-btn--rent' :
       k === 'repair' ? 'fleet-status-btn--repair' :
       'fleet-status-btn--idle';
-    const labelHtml = k === 'rent' ? `${lbl} →` : lbl;
+    const labelHtml = k === 'rent' ? (sk === 'repair' && car.driverId ? 'Вернуть водителю' : `${lbl} →`) : lbl;
     return `<button type="button" class="fleet-status-btn ${mod}" data-new-status="${escapeAttr(api)}">${labelHtml}</button>`;
   }).join('');
 
@@ -565,7 +565,7 @@ async function _openCarSheet(car) {
       const btn = e.target.closest('[data-new-status]');
       if (!btn) return;
       if (btn.classList.contains('fleet-status-btn--rent')) {
-        await _openDriverSelectSheet(car);
+        await _rentAction(car);
         return;
       }
       // Машина в аренде → Простой = приёмка: закрываем аренду через REST, не просто меняем статус
@@ -596,6 +596,15 @@ async function _openCarSheet(car) {
       _openRateSheet(car);
     });
   }, 0);
+}
+
+// Единая точка "перевести в аренду": возврат закреплённого водителя из ремонта ИЛИ новая выдача
+async function _rentAction(car) {
+  if (statusKey(car.status) === 'repair' && car.driverId) {
+    await _changeStatus(car, CAR_STATUSES.RENT);
+  } else {
+    await _openDriverSelectSheet(car);
+  }
 }
 
 async function _openDriverSelectSheet(car) {

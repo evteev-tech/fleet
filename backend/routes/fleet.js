@@ -21,8 +21,12 @@ router.get('/fleet', (req, res) => {
       r.date_start
     FROM cars c
     LEFT JOIN (
-      SELECT * FROM rentals WHERE status = 'active'
-      GROUP BY car_id HAVING rowid = MAX(rowid)
+      SELECT * FROM rentals r1
+      WHERE r1.status = 'active'
+        AND r1.rowid = (
+          SELECT MAX(r2.rowid) FROM rentals r2
+          WHERE r2.car_id = r1.car_id AND r2.status = 'active'
+        )
     ) r ON r.car_id = c.id
     LEFT JOIN drivers d ON d.id = r.driver_id
     ORDER BY c.id
