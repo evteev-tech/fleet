@@ -182,4 +182,60 @@ router.post('/income', (req, res) => {
   catch(e) { console.error('[ADD_INCOME]', e); return fail(res, e.message); }
 });
 
+
+// Приёмка машины: закрыть активную аренду + вернуть машину в простой
+router.patch('/by-car/:car_id/close', (req, res) => {
+  const { car_id } = req.params;
+  const { comment = '' } = req.body || {};
+
+  const doTx = db.transaction(() => {
+    const rental = db.prepare(
+      "SELECT id FROM rentals WHERE car_id = ? AND status = 'active' ORDER BY rowid DESC LIMIT 1"
+    ).get(car_id);
+
+    if (rental) {
+      const closeNote = comment
+        ? `${comment} [приёмка ${todayStr()}]`
+        : `приёмка ${todayStr()}`;
+      db.prepare(`
+        UPDATE rentals
+        SET status='closed',
+            date_end = COALESCE(date_end, ?),
+            comment  = TRIM(COALESCE(comment,'') || ' | ' || ?)
+        WHERE car_id = ? AND status = 'active'
+      `).run(toIso(todayStr()), closeNote, car_id);
+    }
+
+    db.prepare("UPDATE cars SET status='простой' WHERE id=?").run(car_id);
+    return { car_id, closed: !!rental };
+  });
+
+  try { return ok(res, doTx()); }
+  catch (e) { console.error('[CLOSE_RENTAL]', e); return fail(res, e.message); }
+});
+
+
+// Выдача машины: закрыть висящую активную аренду + открыть новую (атомарно)
+router.post('/issue', (req, res) => {
+  const { car_id, driver_id, rate_day, date_start, comment = 'выдача из Парка' } = req.body;
+  if (!car_id || !driver_id || rate_day === undefined)
+    return fail(res, 'MISSING_FIELDS');
+
+  const doTx = db.transaction(() => {
+    db.prepare("UPDATE rentals SET status='closed', date_end=COALESCE(date_end, ?) WHERE car_id=? AND status='active'")
+      .run(toIso(todayStr()), car_id);
+
+    const rental_id = getNextId('rentals', 'R');
+    db.prepare(`INSERT INTO rentals (id,car_id,driver_id,date_start,date_end,rate_day,comment,status)
+      VALUES (?,?,?,?,?,?,?,'active')`)
+      .run(rental_id, car_id, driver_id, toIso(date_start || todayStr()), null, Number(rate_day), comment);
+
+    db.prepare("UPDATE cars SET status='в аренде' WHERE id=?").run(car_id);
+    return { rental_id, car_id };
+  });
+
+  try { return ok(res, doTx()); }
+  catch (e) { console.error('[ISSUE_RENTAL]', e); return fail(res, e.message); }
+});
+
 export default router;
