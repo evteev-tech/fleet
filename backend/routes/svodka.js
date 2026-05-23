@@ -4,7 +4,6 @@ import { ok, fail, keysToCamel } from '../utils.js';
 
 const router = Router();
 
-/** Любая дата (DD.MM.YYYY, ISO, с временем) → 'YYYY-MM-DD' или null. */
 function toIsoDay(str) {
   if (!str) return null;
   const s = String(str).trim().split(/[ T]/)[0];
@@ -51,11 +50,11 @@ router.get('/svodka', (req, res) => {
     const ops = db.prepare(
       `SELECT car_id, date, direction, amount, category
          FROM kassa_ops
-        WHERE car_id IS NOT NULL AND car_id <> '' AND date LIKE ?`
+        WHERE date LIKE ?`
     ).all(ddmmSuffix);
 
     const rentals = db.prepare(
-      `SELECT car_id, date_start, date_end, status FROM rentals
+      `SELECT car_id, date_start, date_end, rate_day, status FROM rentals
         WHERE car_id IS NOT NULL AND car_id <> ''`
     ).all();
 
@@ -65,25 +64,38 @@ router.get('/svodka', (req, res) => {
     ).all();
 
     const incomeByCarDay = {};
-    const expenseByCarDay = {};
+    for (const r of rentals) {
+      const s = toIsoDay(r.date_start);
+      if (!s) continue;
+      const eRaw = r.date_end ? toIsoDay(r.date_end) : null;
+      const end = eRaw || todayIso;
+      const rate = Number(r.rate_day) || 0;
+      if (rate <= 0) continue;
+      let cur = new Date(`${s}T00:00:00`);
+      const endD = new Date(`${end}T00:00:00`);
+      let guard = 0;
+      while (cur <= endD && guard++ < 800) {
+        const di = cur.toISOString().slice(0, 10);
+        if (di.startsWith(monthPrefixIso)) {
+          (incomeByCarDay[r.car_id] ||= {});
+          incomeByCarDay[r.car_id][di] = rate;
+        }
+        cur.setDate(cur.getDate() + 1);
+      }
+    }
 
+    const PARK = '__PARK__';
+    const expenseByCarDay = {};
     for (const o of ops) {
       const day = toIsoDay(o.date);
       if (!day || !day.startsWith(monthPrefixIso)) continue;
-      const car = o.car_id;
+      if (String(o.direction || '').toLowerCase() !== 'расход') continue;
       const amt = Number(o.amount) || 0;
-      const dir = String(o.direction || '').toLowerCase();
-      const cat = String(o.category || '').toLowerCase();
-
-      if (dir === 'приход' && cat === 'аренда') {
-        (incomeByCarDay[car] ||= {});
-        incomeByCarDay[car][day] = (incomeByCarDay[car][day] || 0) + amt;
-      } else if (dir === 'расход') {
-        (expenseByCarDay[car] ||= {});
-        const cell = (expenseByCarDay[car][day] ||= { sum: 0, maxAmt: 0, tag: '' });
-        cell.sum += amt;
-        if (amt > cell.maxAmt) { cell.maxAmt = amt; cell.tag = expenseTag(o.category); }
-      }
+      const key = (o.car_id && String(o.car_id).trim()) ? o.car_id : PARK;
+      (expenseByCarDay[key] ||= {});
+      const cell = (expenseByCarDay[key][day] ||= { sum: 0, maxAmt: 0, tag: '' });
+      cell.sum += amt;
+      if (amt > cell.maxAmt) { cell.maxAmt = amt; cell.tag = expenseTag(o.category); }
     }
 
     const logByCar = {};
@@ -107,8 +119,7 @@ router.get('/svodka', (req, res) => {
       for (const r of list) {
         const s = toIsoDay(r.date_start);
         if (!s || s > dayIso) continue;
-        const e = r.date_end ? toIsoDay(r.date_end) : null;
-        const end = e || todayIso;
+        const end = r.date_end ? toIsoDay(r.date_end) : todayIso;
         if (dayIso <= end) return true;
       }
       return false;
@@ -141,15 +152,23 @@ router.get('/svodka', (req, res) => {
           expense_tag: exp ? exp.tag : '',
         });
       }
-      return {
-        car_id: car.id,
-        nick: car.id,
-        name: car.name,
-        color: car.color,
-        status_now: car.status,
-        days,
-      };
+      return { car_id: car.id, nick: car.id, color: car.color, days };
     });
+
+    const parkDays = [];
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dayIso = `${monthPrefixIso}${String(d).padStart(2, '0')}`;
+      const exp = expenseByCarDay[PARK]?.[dayIso] || null;
+      if (exp) sumExpense += exp.sum;
+      parkDays.push({
+        day: d,
+        status: 'парк',
+        income: 0,
+        expense: exp ? exp.sum : 0,
+        expense_tag: exp ? exp.tag : '',
+      });
+    }
+    matrix.push({ car_id: PARK, nick: 'Парк', color: '#9aa1a8', is_park: true, days: parkDays });
 
     const totalCarDays = cars.length * daysInMonth;
     const load = totalCarDays > 0 ? Math.round((rentDays / totalCarDays) * 100) : 0;

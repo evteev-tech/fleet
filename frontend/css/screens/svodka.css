@@ -74,7 +74,14 @@
   flex-shrink: 0;
 }
 .sv-legend span { display: inline-flex; align-items: center; gap: 5px; }
-.sv-legend i { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
+.sv-legend i {
+  width: 12px; height: 12px; border-radius: 2px;
+  display: inline-block; flex-shrink: 0;
+}
+.sv-legend i.lg-rent   { background: #2ECC71 !important; }
+.sv-legend i.lg-idle   { background: #2BD4E0 !important; }
+.sv-legend i.lg-repair { background: #FF3B30 !important; }
+.sv-legend i.lg-exp    { background: #FBB034 !important; }
 
 .sv-grid-wrap {
   flex: 1;
@@ -84,26 +91,32 @@
   max-height: calc(100vh - 320px);
 }
 .sv-grid {
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
-.sv-grid th, .sv-grid td { border: 0.5px solid rgba(255,255,255,0.5); }
+.sv-grid th, .sv-grid td {
+  border-right: 0.5px solid rgba(0,0,0,0.08);
+  border-bottom: 0.5px solid rgba(0,0,0,0.08);
+}
 
 .sv-h1 th {
-  padding: 7px 4px 0; font-size: 12px; font-weight: 500; color: #fff;
+  padding: 7px 4px; font-size: 12px; font-weight: 600; color: #fff;
   text-align: center; background: #2a2a2a;
 }
 .sv-h2 th {
-  padding: 4px 6px; font-size: 9px; font-weight: 500; color: var(--color-muted, #8A8A8E);
-  text-transform: uppercase; letter-spacing: 0.03em; background: #fafafa;
+  padding: 4px 6px; font-size: 9px; font-weight: 500; color: #6b7178;
+  text-transform: uppercase; letter-spacing: 0.03em; background: #f0f1f3;
 }
-.sv-corner { background: var(--sv-dark); border: none; }
+.sv-corner { background: var(--sv-dark) !important; border: none; }
 
-.sv-grid thead th { position: sticky; top: 0; z-index: 3; }
-.sv-h2 th { top: 28px; }
+.sv-grid thead th { position: sticky; z-index: 3; }
+.sv-h1 th { top: 0; height: 30px; }
+.sv-h2 th { top: 30px; }
 .sv-pin { position: sticky; left: 0; z-index: 2; }
-.sv-grid thead .sv-pin { z-index: 4; }
+.sv-grid thead .sv-pin { z-index: 5; }
+.sv-grid tfoot .sv-pin { z-index: 2; }
 
 .sv-date {
   padding: 5px 9px; font-size: 11px; font-weight: 500; color: #fff;
@@ -113,7 +126,7 @@
 
 .sv-weekend .sv-date {
   background: #0e0e0e;
-  border-left: 3px solid var(--sv-exp);
+  box-shadow: inset 3px 0 0 var(--sv-exp);
 }
 .sv-weekend .sv-date .sv-dow { color: var(--sv-exp); }
 
@@ -123,11 +136,14 @@
 .sv-rent   { background: var(--sv-rent);   color: var(--sv-rent-t); }
 .sv-idle   { background: var(--sv-idle);   color: var(--sv-idle-t); }
 .sv-repair { background: var(--sv-repair); color: #fff; }
+.sv-park   { background: #fff; }
 
 .sv-out { text-align: center; padding: 4px 7px; font-weight: 600; min-width: 60px; }
 .sv-out--has  { background: var(--sv-exp); color: var(--sv-exp-t); }
 .sv-out--none { background: #fff; color: #d8d8d8; }
 .sv-tag { font-size: 8.5px; font-weight: 500; display: block; line-height: 1.15; }
+
+.sv-park-h { background: #3a3a3a !important; }
 
 .sv-cargrp     { border-left: 3px solid var(--car) !important; border-right: 3px solid var(--car) !important; }
 .sv-cargrp-l   { border-left: 3px solid var(--car) !important; }

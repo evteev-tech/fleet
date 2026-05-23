@@ -16,8 +16,14 @@ const STATUS_CLASS = {
   'в аренде':  'rent',
   'простой':   'idle',
   'в ремонте': 'repair',
+  'парк':      'park',
 };
-const STATUS_WORD = { 'простой': 'простой', 'в ремонте': 'ремонт' };
+
+const CAR_PALETTE = [
+  '#1AAE9F', '#E89B3C', '#D85A52', '#7FB3E0', '#B58BC2', '#E0C84E',
+  '#EF8A92', '#5FB97A', '#C77DBB', '#6E8BD6', '#D9A05B', '#74C2C9',
+];
+function carColor(idx) { return CAR_PALETTE[idx % CAR_PALETTE.length]; }
 
 function _svodkaScreen() { return document.getElementById('screen-svodka'); }
 
@@ -109,11 +115,16 @@ function _renderMatrix(data) {
 
   let h1 = '<tr class="sv-h1"><th class="sv-corner sv-pin" rowspan="2"></th>';
   let h2 = '<tr class="sv-h2">';
-  cars.forEach(c => {
-    const color = c.color || '#888';
-    const label = c.nick || c.carId || c.name;
-    h1 += `<th colspan="2" class="sv-cargrp" style="--car:${color}">${_esc(label)}</th>`;
-    h2 += `<th class="sv-cargrp-l" style="--car:${color}">дох.</th><th class="sv-cargrp-r" style="--car:${color}">расх.</th>`;
+  cars.forEach((c, i) => {
+    const color = carColor(i);
+    const label = c.nick || c.carId;
+    if (c.isPark) {
+      h1 += `<th class="sv-cargrp sv-park-h" style="--car:${color}">${_esc(label)}</th>`;
+      h2 += `<th class="sv-cargrp-l sv-cargrp-r" style="--car:${color}">расх.</th>`;
+    } else {
+      h1 += `<th colspan="2" class="sv-cargrp" style="--car:${color}">${_esc(label)}</th>`;
+      h2 += `<th class="sv-cargrp-l" style="--car:${color}">дох.</th><th class="sv-cargrp-r" style="--car:${color}">расх.</th>`;
+    }
   });
   h1 += '</tr>'; h2 += '</tr>';
 
@@ -125,32 +136,40 @@ function _renderMatrix(data) {
     const trCls = isWeekend ? ' class="sv-weekend"' : '';
     body += `<tr${trCls}><td class="sv-date sv-pin">${String(d).padStart(2, '0')}.${String(_month).padStart(2, '0')}` +
             ` <span class="sv-dow">${dow}</span></td>`;
-    cars.forEach(c => {
-      const color = c.color || '#888';
+    cars.forEach((c, i) => {
+      const color = carColor(i);
       const cell = c.days[d - 1] || {};
-      const cls = STATUS_CLASS[cell.status] || 'idle';
-      const inTxt = cell.income > 0 ? _fmtInt(cell.income)
-                  : (STATUS_WORD[cell.status] || '');
-      body += `<td class="sv-in sv-${cls} sv-cargrp-l" style="--car:${color}">${inTxt}</td>`;
-      if (cell.expense > 0) {
-        body += `<td class="sv-out sv-out--has sv-cargrp-r" style="--car:${color}">` +
-                `<span class="sv-tag">${_esc(cell.expenseTag)}</span>${_fmtInt(cell.expense)}</td>`;
-      } else if (cell.expenseTag) {
-        body += `<td class="sv-out sv-out--has sv-cargrp-r" style="--car:${color}"><span class="sv-tag">${_esc(cell.expenseTag)}</span>—</td>`;
+      const expCell = cell.expense > 0
+        ? `<span class="sv-tag">${_esc(cell.expenseTag)}</span>${_fmtInt(cell.expense)}`
+        : (cell.expenseTag ? `<span class="sv-tag">${_esc(cell.expenseTag)}</span>—` : null);
+
+      if (c.isPark) {
+        body += expCell
+          ? `<td class="sv-out sv-out--has sv-cargrp-l sv-cargrp-r" style="--car:${color}">${expCell}</td>`
+          : `<td class="sv-out sv-out--none sv-cargrp-l sv-cargrp-r" style="--car:${color}">·</td>`;
       } else {
-        body += `<td class="sv-out sv-out--none sv-cargrp-r" style="--car:${color}">·</td>`;
+        const cls = STATUS_CLASS[cell.status] || 'idle';
+        const inTxt = cell.income > 0 ? _fmtInt(cell.income) : '';
+        body += `<td class="sv-in sv-${cls} sv-cargrp-l" style="--car:${color}">${inTxt}</td>`;
+        body += expCell
+          ? `<td class="sv-out sv-out--has sv-cargrp-r" style="--car:${color}">${expCell}</td>`
+          : `<td class="sv-out sv-out--none sv-cargrp-r" style="--car:${color}">·</td>`;
       }
     });
     body += '</tr>';
   }
 
   let foot = '<tr class="sv-foot"><td class="sv-foot-lbl sv-pin">Итог</td>';
-  cars.forEach(c => {
-    const color = c.color || '#888';
+  cars.forEach((c, i) => {
+    const color = carColor(i);
     let gi = 0, ge = 0;
     c.days.forEach(x => { gi += x.income || 0; ge += x.expense || 0; });
-    foot += `<td class="sv-fg sv-cargrp-l" style="--car:${color}">${gi ? _fmtInt(gi) : '0'}</td>` +
-            `<td class="sv-fr sv-cargrp-r" style="--car:${color}">${ge ? _fmtInt(ge) : '0'}</td>`;
+    if (c.isPark) {
+      foot += `<td class="sv-fr sv-cargrp-l sv-cargrp-r" style="--car:${color}">${ge ? _fmtInt(ge) : '0'}</td>`;
+    } else {
+      foot += `<td class="sv-fg sv-cargrp-l" style="--car:${color}">${gi ? _fmtInt(gi) : '0'}</td>` +
+              `<td class="sv-fr sv-cargrp-r" style="--car:${color}">${ge ? _fmtInt(ge) : '0'}</td>`;
+    }
   });
   foot += '</tr>';
 
