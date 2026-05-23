@@ -4,202 +4,172 @@ import { ok, fail, keysToCamel } from '../utils.js';
 
 const router = Router();
 
-// DD.MM.YYYY → YYYY-MM-DD
-function ruToIso(s) {
-  if (!s) return '';
-  const m = String(s).trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/);
-  return m ? `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}` : String(s).slice(0, 10);
+// ─── Хелперы дат ──────────────────────────────────────────────────────────────
+// kassa_ops хранит даты как DD.MM.YYYY, rentals — как ISO YYYY-MM-DD.
+// Приводим всё к ISO-ключу дня YYYY-MM-DD для единого сопоставления.
+
+/** Любая дата (DD.MM.YYYY, ISO, с временем) → 'YYYY-MM-DD' или null. */
+function toIsoDay(str) {
+  if (!str) return null;
+  const s = String(str).trim().split(/[ T]/)[0];
+  const ddmm = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (ddmm) return `${ddmm[3]}-${ddmm[2].padStart(2, '0')}-${ddmm[1].padStart(2, '0')}`;
+  const iso = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (iso) return `${iso[1]}-${iso[2].padStart(2, '0')}-${iso[3].padStart(2, '0')}`;
+  return null;
 }
 
-function isoToday() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+/** Категория расхода → короткий тег для ячейки. */
+const EXPENSE_TAGS = {
+  'ремонт': 'ремонт',
+  'запчасти': 'запчасти',
+  'ТО': 'ТО',
+  'страховка': 'страховка',
+  'связь_глонасс': 'глонасс',
+  'ЗП': 'ЗП',
+  'реклама': 'реклама',
+  'доставка': 'доставка',
+  'покупка_машины': 'покупка',
+  'штраф_ГИБДД': 'штраф',
+  'ДТП': 'ДТП',
+  'прочее': 'прочее',
+};
+function expenseTag(category) {
+  const c = String(category || '').trim();
+  return EXPENSE_TAGS[c] || c || 'расход';
 }
 
-function isEmptyCarId(id) {
-  return id == null || String(id).trim() === '';
-}
-
-/** @returns {Set<number>} дни месяца (1..N), когда машина в аренде */
-function rentDaysForCar(carId, rentals, daysInMonth, monthPrefix, todayIso) {
-  const days = new Set();
-  for (const r of rentals) {
-    if (r.car_id !== carId) continue;
-    const start = String(r.date_start).slice(0, 10);
-    const end = r.date_end ? String(r.date_end).slice(0, 10) : todayIso;
-    for (let d = 1; d <= daysInMonth; d++) {
-      const iso = `${monthPrefix}-${String(d).padStart(2, '0')}`;
-      if (iso >= start && iso <= end) days.add(d);
-    }
-  }
-  return days;
-}
-
-/** Последний статус из лога на день (date_from <= isoDay) */
-function statusFromLog(carId, isoDay, logByCar) {
-  const entries = logByCar.get(carId);
-  if (!entries?.length) return null;
-  let last = null;
-  for (const e of entries) {
-    if (e.date_from <= isoDay) last = e.status;
-    else break;
-  }
-  return last;
-}
-
-function addExpenseBucket(bucket, amount, category) {
-  bucket.sum += amount;
-  if (amount > bucket.maxAmount) {
-    bucket.maxAmount = amount;
-    bucket.tag = category || '';
-  }
-}
-
+/**
+ * GET /api/svodka?year=2026&month=4
+ * Календарная матрица «дни × машины» за месяц.
+ */
 router.get('/svodka', (req, res) => {
   try {
-    const now = new Date();
-    const year  = parseInt(req.query.year, 10)  || now.getFullYear();
-    const month = parseInt(req.query.month, 10) || (now.getMonth() + 1);
+    const year = Number(req.query.year);
+    const month = Number(req.query.month);
+    if (!year || !month || month < 1 || month > 12) return fail(res, 'INVALID_PERIOD');
+
     const daysInMonth = new Date(year, month, 0).getDate();
     const mm = String(month).padStart(2, '0');
-    const monthPrefix = `${year}-${mm}`;
-    const monthEndIso = `${monthPrefix}-${String(daysInMonth).padStart(2, '0')}`;
-    const todayIso = isoToday();
+    const monthPrefixIso = `${year}-${mm}-`;
+    const todayIso = new Date().toISOString().slice(0, 10);
 
-    const cars = db.prepare(`SELECT id, name, color, status FROM cars ORDER BY id`).all();
+    const cars = db.prepare('SELECT id, name, color, status FROM cars ORDER BY id').all();
 
-    const rentals = db.prepare(`
-      SELECT car_id, date_start, date_end FROM rentals
-      WHERE date_start <= ? AND (date_end IS NULL OR date_end >= ?)
-    `).all(monthEndIso, `${monthPrefix}-01`);
+    const ddmmSuffix = `%.${mm}.${year}`;
+    const ops = db.prepare(
+      `SELECT car_id, date, direction, amount, category
+         FROM kassa_ops
+        WHERE car_id IS NOT NULL AND car_id <> '' AND date LIKE ?`
+    ).all(ddmmSuffix);
 
-    const statusLog = db.prepare(`
-      SELECT car_id, status, date_from FROM car_status_log
-      WHERE date_from <= ? ORDER BY car_id, date_from, id
-    `).all(monthEndIso);
+    const rentals = db.prepare(
+      `SELECT car_id, date_start, date_end, status FROM rentals
+        WHERE car_id IS NOT NULL AND car_id <> ''`
+    ).all();
 
-    const logByCar = new Map();
-    for (const row of statusLog) {
-      const cid = row.car_id;
-      if (!logByCar.has(cid)) logByCar.set(cid, []);
-      logByCar.get(cid).push({ status: row.status, date_from: String(row.date_from).slice(0, 10) });
-    }
+    const statusLog = db.prepare(
+      `SELECT car_id, status, date_from FROM car_status_log
+        ORDER BY car_id, date_from, id`
+    ).all();
 
-    const ops = db.prepare(`
-      SELECT date, direction, amount, category, car_id,
-             COALESCE(class_final, class_override, class_calc) AS class_itog
-      FROM kassa_ops
-    `).all().filter(o => ruToIso(o.date).startsWith(monthPrefix));
-
-    const incomeByCarDay = new Map();
-    const expenseByCarDay = new Map();
-    const parkByDay = new Map();
-
-    let totalIncome = 0;
-    let totalExpense = 0;
+    const incomeByCarDay = {};
+    const expenseByCarDay = {};
 
     for (const o of ops) {
-      const iso = ruToIso(o.date);
-      const amount = Number(o.amount) || 0;
+      const day = toIsoDay(o.date);
+      if (!day || !day.startsWith(monthPrefixIso)) continue;
+      const car = o.car_id;
+      const amt = Number(o.amount) || 0;
       const dir = String(o.direction || '').toLowerCase();
+      const cat = String(o.category || '').toLowerCase();
 
-      if (dir === 'приход' && String(o.class_itog || '').toLowerCase() === 'revenue') {
-        totalIncome += amount;
-        if (!isEmptyCarId(o.car_id)) {
-          const key = o.car_id;
-          if (!incomeByCarDay.has(key)) incomeByCarDay.set(key, new Map());
-          const dayMap = incomeByCarDay.get(key);
-          dayMap.set(iso, (dayMap.get(iso) || 0) + amount);
-        }
-      }
-
-      if (dir === 'расход') {
-        totalExpense += amount;
-        const cat = o.category || '';
-        if (isEmptyCarId(o.car_id)) {
-          if (!parkByDay.has(iso)) parkByDay.set(iso, { sum: 0, maxAmount: 0, tag: '' });
-          addExpenseBucket(parkByDay.get(iso), amount, cat);
-        } else {
-          const key = o.car_id;
-          if (!expenseByCarDay.has(key)) expenseByCarDay.set(key, new Map());
-          const dayMap = expenseByCarDay.get(key);
-          if (!dayMap.has(iso)) dayMap.set(iso, { sum: 0, maxAmount: 0, tag: '' });
-          addExpenseBucket(dayMap.get(iso), amount, cat);
-        }
+      if (dir === 'приход' && cat === 'аренда') {
+        (incomeByCarDay[car] ||= {});
+        incomeByCarDay[car][day] = (incomeByCarDay[car][day] || 0) + amt;
+      } else if (dir === 'расход') {
+        (expenseByCarDay[car] ||= {});
+        const cell = (expenseByCarDay[car][day] ||= { sum: 0, maxAmt: 0, tag: '' });
+        cell.sum += amt;
+        if (amt > cell.maxAmt) { cell.maxAmt = amt; cell.tag = expenseTag(o.category); }
       }
     }
 
-    let rentMachineDays = 0;
+    const logByCar = {};
+    for (const r of statusLog) (logByCar[r.car_id] ||= []).push(r);
+    function statusOnDay(carId, dayIso) {
+      const log = logByCar[carId];
+      if (!log?.length) return null;
+      let cur = null;
+      for (const e of log) {
+        if (e.date_from <= dayIso) cur = e.status;
+        else break;
+      }
+      return cur;
+    }
 
-    const carRows = cars.map(car => {
-      const carId = car.id;
-      const rentDays = rentDaysForCar(carId, rentals, daysInMonth, monthPrefix, todayIso);
-      let totalCarIncome = 0;
-      let totalCarExpense = 0;
+    const rentalsByCar = {};
+    for (const r of rentals) (rentalsByCar[r.car_id] ||= []).push(r);
+    function inRentalOnDay(carId, dayIso) {
+      const list = rentalsByCar[carId];
+      if (!list) return false;
+      for (const r of list) {
+        const s = toIsoDay(r.date_start);
+        if (!s || s > dayIso) continue;
+        const e = r.date_end ? toIsoDay(r.date_end) : null;
+        const end = e || todayIso;
+        if (dayIso <= end) return true;
+      }
+      return false;
+    }
 
+    let sumIncome = 0;
+    let sumExpense = 0;
+    let rentDays = 0;
+
+    const matrix = cars.map(car => {
       const days = [];
       for (let d = 1; d <= daysInMonth; d++) {
-        const iso = `${monthPrefix}-${String(d).padStart(2, '0')}`;
-        let status;
-        if (rentDays.has(d)) {
-          status = 'rent';
-          rentMachineDays++;
-        } else {
-          const logStatus = statusFromLog(carId, iso, logByCar);
-          status = logStatus === 'в ремонте' ? 'repair' : 'idle';
-        }
+        const dayIso = `${monthPrefixIso}${String(d).padStart(2, '0')}`;
 
-        const income = incomeByCarDay.get(carId)?.get(iso) || 0;
-        const expBucket = expenseByCarDay.get(carId)?.get(iso);
-        const expense = expBucket?.sum || 0;
-        const expenseTag = expBucket?.tag || '';
+        let status = statusOnDay(car.id, dayIso);
+        if (!status) status = inRentalOnDay(car.id, dayIso) ? 'в аренде' : 'простой';
 
-        totalCarIncome += income;
-        totalCarExpense += expense;
+        const income = incomeByCarDay[car.id]?.[dayIso] || 0;
+        const exp = expenseByCarDay[car.id]?.[dayIso] || null;
 
-        days.push({ day: d, status, income, expense, expenseTag });
+        sumIncome += income;
+        if (exp) sumExpense += exp.sum;
+        if (status === 'в аренде') rentDays++;
+
+        days.push({
+          day: d,
+          status,
+          income,
+          expense: exp ? exp.sum : 0,
+          expense_tag: exp ? exp.tag : '',
+        });
       }
-
-      return {
-        carId,
-        name: car.name,
-        color: car.color,
-        days,
-        totalIncome: totalCarIncome,
-        totalExpense: totalCarExpense,
-      };
+      return { car_id: car.id, name: car.name, color: car.color, status_now: car.status, days };
     });
 
-    const park = [];
-    for (let d = 1; d <= daysInMonth; d++) {
-      const iso = `${monthPrefix}-${String(d).padStart(2, '0')}`;
-      const bucket = parkByDay.get(iso);
-      park.push({
-        day: d,
-        expense: bucket?.sum || 0,
-        expenseTag: bucket?.tag || '',
-      });
-    }
+    const totalCarDays = cars.length * daysInMonth;
+    const load = totalCarDays > 0 ? Math.round((rentDays / totalCarDays) * 100) : 0;
 
-    const loadPercent = cars.length > 0
-      ? Math.round((rentMachineDays / (cars.length * daysInMonth)) * 1000) / 10
-      : 0;
-
-    const svodka = {
-      year,
-      month,
-      daysInMonth,
-      cars: carRows,
-      park,
-      totals: {
-        income: totalIncome,
-        expense: totalExpense,
-        net: totalIncome - totalExpense,
-        loadPercent,
-      },
-    };
-
-    return ok(res, { svodka: keysToCamel(svodka) });
+    return ok(res, {
+      svodka: keysToCamel({
+        year, month, days_in_month: daysInMonth,
+        summary: {
+          income: sumIncome,
+          expense: sumExpense,
+          net: sumIncome - sumExpense,
+          load_pct: load,
+          cars_count: cars.length,
+          rent_days: rentDays,
+        },
+        matrix,
+      }),
+    });
   } catch (e) {
     console.error('[SVODKA]', e);
     return fail(res, e.message);

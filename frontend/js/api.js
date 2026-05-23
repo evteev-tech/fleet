@@ -295,7 +295,7 @@ export async function getFleet() {
  * Матрица «Сводки» за месяц через REST GET /api/svodka.
  * @param {number} year
  * @param {number} month  1..12
- * @returns {Promise<object>} svodka: { year, month, daysInMonth, cars, park, totals }
+ * @returns {Promise<object>} svodka: { year, month, daysInMonth, summary, matrix }
  */
 export async function getSvodka(year, month) {
   const data = await apiRequest(`/svodka?year=${year}&month=${month}`);

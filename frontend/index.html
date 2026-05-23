@@ -94,28 +94,44 @@
        ЭКРАН: СВОДКА (investor — точка входа)
   ════════════════════════════════════════════════ -->
   <section id="screen-svodka" class="screen">
-    <div class="svodka-header">
-      <div class="header-top-row">
-        <span class="header-logo">Матизы</span>
-        <div class="header-avatar" id="svodkaAvatar" role="button" tabindex="0" aria-label="Меню профиля"></div>
+    <div class="sv-header">
+      <div class="sv-header__top">
+        <span class="sv-header__title">Матизы</span>
       </div>
-      <div class="svodka-sums" id="svodkaSums">
-        <div><div class="svodka-sv g" id="svodkaIncome">—</div><div class="svodka-sl">Поступления</div></div>
-        <div><div class="svodka-sv r" id="svodkaExpense">—</div><div class="svodka-sl">Расходы</div></div>
-        <div><div class="svodka-sv w" id="svodkaNet">—</div><div class="svodka-sl">Чистыми</div></div>
-        <div class="svodka-load"><div class="svodka-sv w" id="svodkaLoad">—</div><div class="svodka-sl">Загрузка</div></div>
+      <div class="sv-month">
+        <button type="button" class="sv-month__btn" id="svMonthPrev" aria-label="Предыдущий месяц">‹</button>
+        <span class="sv-month__label" id="svMonthLabel"></span>
+        <button type="button" class="sv-month__btn" id="svMonthNext" aria-label="Следующий месяц">›</button>
       </div>
-      <div class="period-switcher period-switcher--dark">
-        <button type="button" class="period-switcher__btn" id="svodkaMonthPrev" aria-label="Предыдущий период">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-        <span class="period-switcher__label" id="svodkaMonthLabel"></span>
-        <button type="button" class="period-switcher__btn" id="svodkaMonthNext" aria-label="Следующий период">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
+      <div class="sv-summary">
+        <div class="sv-summary__cell">
+          <div class="sv-summary__val sv-summary__val--g" id="svIncome">—</div>
+          <div class="sv-summary__lbl">Поступления</div>
+        </div>
+        <div class="sv-summary__cell">
+          <div class="sv-summary__val sv-summary__val--r" id="svExpense">—</div>
+          <div class="sv-summary__lbl">Расходы</div>
+        </div>
+        <div class="sv-summary__cell">
+          <div class="sv-summary__val sv-summary__val--w" id="svNet">—</div>
+          <div class="sv-summary__lbl">Чистыми</div>
+        </div>
+      </div>
+      <div class="sv-load">
+        <div class="sv-load__top">
+          <span>Загрузка парка</span>
+          <span id="svLoad">—</span>
+        </div>
+        <div class="sv-load__bar" id="svLoadBar"></div>
       </div>
     </div>
-    <div class="svodka-body" id="svodkaBody"><!-- матрица рендерится в svodka.js --></div>
+    <div class="sv-legend">
+      <span><i class="i-rent"></i> аренда</span>
+      <span><i class="i-idle"></i> простой</span>
+      <span><i class="i-repair"></i> ремонт</span>
+      <span><i class="i-exp"></i> расход</span>
+    </div>
+    <div class="sv-grid-wrap" id="svGridWrap"></div>
   </section>
 
   <!-- ═══════════════════════════════════════════════

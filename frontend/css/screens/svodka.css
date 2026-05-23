@@ -1,8 +1,13 @@
-/* ═══════════════════════════════════════════════
-   screens/svodka.css — матрица «Сводка»
-════════════════════════════════════════════════ */
+/**
+ * svodka.css — стили экрана «Сводка» (календарная матрица по парку).
+ * Цвета статусов взяты с референса (старый Excel), живут только здесь.
+ */
 
-#screen-svodka {
+#screen-svodka:not(.screen--active) {
+  display: none !important;
+}
+
+#screen-svodka.screen--active {
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -10,295 +15,131 @@
   min-height: 0;
 }
 
-#screen-svodka .svodka-header {
-  flex-shrink: 0;
-  background: #1A1A1A;
-  padding: max(16px, env(safe-area-inset-top)) 16px 16px;
+#screen-svodka {
+  --sv-rent:   #2ECC71;
+  --sv-rent-t: #06402A;
+  --sv-idle:   #2BD4E0;
+  --sv-idle-t: #0A4248;
+  --sv-repair: #FF3B30;
+  --sv-exp:    #FBB034;
+  --sv-exp-t:  #5A3D00;
+  --sv-dark:   #1a1a1a;
 }
 
-#screen-svodka .header-top-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.sv-header {
+  background: var(--sv-dark);
+  color: #fff;
+  padding: 12px 16px 14px;
+  flex-shrink: 0;
+}
+.sv-header__top {
+  display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 12px;
 }
-
-#screen-svodka .header-logo {
-  color: #FFDD2D;
-  font-size: 15px;
-  font-weight: 900;
-  letter-spacing: -0.3px;
+.sv-header__title { font-size: 15px; font-weight: 900; color: #FFDD2D; letter-spacing: -0.3px; }
+.sv-month {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
 }
-
-#screen-svodka .header-avatar,
-#svodkaAvatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
+.sv-month__btn {
+  background: rgba(255,255,255,0.12); border: none; color: rgba(255,255,255,0.7);
+  border-radius: 6px; width: 28px; height: 28px; font-size: 14px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
 }
+.sv-month__btn.period-switcher__btn--disabled { opacity: 0.35; pointer-events: none; }
+.sv-month__label { font-size: 13px; font-weight: 500; min-width: 120px; flex: 1; text-align: center; }
 
-#screen-svodka .svodka-sums {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin-bottom: 14px;
+.sv-summary { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; }
+.sv-summary__cell { min-width: 84px; }
+.sv-summary__val { font-size: 15px; font-weight: 600; }
+.sv-summary__val--g { color: #4CD964; }
+.sv-summary__val--r { color: #FF6B6B; }
+.sv-summary__val--w { color: #fff; }
+.sv-summary__lbl {
+  font-size: 9px; color: rgba(255,255,255,0.45);
+  text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px;
 }
-
-#screen-svodka .svodka-sv {
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.sv-load__top {
+  display: flex; justify-content: space-between; font-size: 10px;
+  color: rgba(255,255,255,0.45); margin-bottom: 5px;
 }
-
-#screen-svodka .svodka-sv.g { color: #2ECC71; }
-#screen-svodka .svodka-sv.r { color: #FF3B30; }
-#screen-svodka .svodka-sv.w { color: #fff; }
-
-#screen-svodka .svodka-sl {
-  font-size: 10px;
-  font-weight: 600;
-  color: rgba(255,255,255,0.45);
-  margin-top: 2px;
+.sv-load__bar {
+  height: 5px; background: rgba(255,255,255,0.12);
+  border-radius: 3px; overflow: hidden; display: flex;
 }
+.sv-load__bar > span { display: block; height: 100%; }
 
-#screen-svodka .svodka-skeleton {
-  display: inline-block;
-  width: 60px;
-  height: 14px;
-  border-radius: 4px;
+.sv-legend {
+  display: flex; gap: 14px; flex-wrap: wrap;
+  padding: 8px 16px; font-size: 11px; color: var(--color-muted, #8A8A8E);
+  background: #fafafa; border-bottom: 0.5px solid rgba(0,0,0,0.07);
+  flex-shrink: 0;
 }
+.sv-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.sv-legend i { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
+.sv-legend .i-rent { background: var(--sv-rent); }
+.sv-legend .i-idle { background: var(--sv-idle); }
+.sv-legend .i-repair { background: var(--sv-repair); }
+.sv-legend .i-exp { background: var(--sv-exp); }
 
-#screen-svodka .svodka-body {
+.sv-grid-wrap {
   flex: 1;
   min-height: 0;
-  overflow: hidden;
-  background: var(--color-bg, #F5F5F7);
-  display: flex;
-  flex-direction: column;
-}
-
-#screen-svodka .svodka-scroll.scroll {
-  flex: 1;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
 }
-
-#screen-svodka .grid {
-  display: inline-block;
-  min-width: 100%;
+.sv-grid {
+  border-collapse: collapse;
   font-size: 11px;
+  font-variant-numeric: tabular-nums;
 }
+.sv-grid th, .sv-grid td { border: 0.5px solid rgba(255,255,255,0.5); }
 
-#screen-svodka .grid-head,
-#screen-svodka .grid-row {
-  display: flex;
-  flex-wrap: nowrap;
+.sv-h1 th {
+  padding: 7px 4px 0; font-size: 12px; font-weight: 500; color: #fff;
+  text-align: center; background: #2a2a2a;
 }
-
-#screen-svodka .grid-head {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  background: #1A1A1A;
+.sv-h2 th {
+  padding: 4px 6px; font-size: 9px; font-weight: 500; color: var(--color-muted, #8A8A8E);
+  text-transform: uppercase; letter-spacing: 0.03em; background: #fafafa;
 }
+.sv-corner { background: var(--sv-dark); border: none; }
 
-#screen-svodka .date-c {
-  flex: 0 0 44px;
-  width: 44px;
-  min-width: 44px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 6px 4px;
-  background: #1A1A1A;
-  color: rgba(255,255,255,0.85);
-  border-right: 1px solid rgba(255,255,255,0.08);
+.sv-grid thead th { position: sticky; top: 0; z-index: 3; }
+.sv-h2 th { top: 28px; }
+.sv-pin { position: sticky; left: 0; z-index: 2; }
+.sv-grid thead .sv-pin { z-index: 4; }
+
+.sv-date {
+  padding: 5px 9px; font-size: 11px; font-weight: 500; color: #fff;
+  background: var(--sv-dark); white-space: nowrap; text-align: left;
 }
+.sv-dow { color: rgba(255,255,255,0.45); }
 
-#screen-svodka .date-c.pin {
-  position: sticky;
-  left: 0;
-  z-index: 15;
+.sv-in {
+  text-align: center; padding: 6px 7px; font-weight: 700; min-width: 52px;
 }
+.sv-rent   { background: var(--sv-rent);   color: var(--sv-rent-t); }
+.sv-idle   { background: var(--sv-idle);   color: var(--sv-idle-t); }
+.sv-repair { background: var(--sv-repair); color: #fff; }
 
-#screen-svodka .grid-head .date-c {
-  z-index: 25;
+.sv-out { text-align: center; padding: 4px 7px; font-weight: 600; min-width: 60px; }
+.sv-out--has  { background: var(--sv-exp); color: var(--sv-exp-t); }
+.sv-out--none { background: #fff; color: #d8d8d8; }
+.sv-tag { font-size: 8.5px; font-weight: 500; display: block; line-height: 1.15; }
+
+.sv-foot td {
+  background: #111; color: #fff; font-weight: 700;
+  padding: 7px 6px; text-align: center; font-size: 11px;
+  border-color: rgba(255,255,255,0.12);
 }
-
-#screen-svodka .date-num {
-  font-weight: 800;
-  font-size: 12px;
-  line-height: 1.1;
+.sv-foot-lbl {
+  text-align: left; padding-left: 9px; color: rgba(255,255,255,0.6);
+  font-size: 10px; text-transform: uppercase; font-weight: 500;
+  background: #111;
 }
+.sv-fg { color: #4CD964; }
+.sv-fr { color: #FF8A4C; }
 
-#screen-svodka .date-wd {
-  font-size: 9px;
-  opacity: 0.55;
-  text-transform: lowercase;
-}
-
-#screen-svodka .mh-group {
-  flex: 0 0 88px;
-  width: 88px;
-  min-width: 88px;
-  background: #1A1A1A;
-  border-top: 3px solid var(--car-color, #888);
-  border-right: 1px solid rgba(255,255,255,0.06);
-}
-
-#screen-svodka .mh1 {
-  color: #fff;
-  font-weight: 800;
-  font-size: 11px;
-  text-align: center;
-  padding: 6px 2px 2px;
-}
-
-#screen-svodka .mh2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  color: rgba(255,255,255,0.45);
-  font-size: 8px;
-  font-weight: 600;
-  text-align: center;
-  padding-bottom: 4px;
-}
-
-#screen-svodka .in,
-#screen-svodka .out {
-  flex: 0 0 44px;
-  width: 44px;
-  min-width: 44px;
-  min-height: 36px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 3px 2px;
-  border-right: 1px solid rgba(0,0,0,0.04);
-  border-bottom: 1px solid rgba(0,0,0,0.04);
-  text-align: center;
-  line-height: 1.15;
-}
-
-#screen-svodka .in.rent  { background: #2ECC71; color: #fff; }
-#screen-svodka .in.idle  { background: #2BD4E0; color: #0a3d42; }
-#screen-svodka .in.repair { background: #FF3B30; color: #fff; }
-
-#screen-svodka .in-val {
-  font-weight: 800;
-  font-size: 10px;
-}
-
-#screen-svodka .in-lbl {
-  font-size: 8px;
-  font-weight: 700;
-  opacity: 0.85;
-  text-transform: lowercase;
-}
-
-#screen-svodka .out.has {
-  background: #FFF8EB;
-  color: #1A1A1A;
-}
-
-#screen-svodka .out.none {
-  background: #fff;
-  color: rgba(0,0,0,0.15);
-}
-
-#screen-svodka .out-tag {
-  font-size: 7px;
-  font-weight: 700;
-  color: #FBB034;
-  max-width: 40px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-#screen-svodka .out-val {
-  font-size: 9px;
-  font-weight: 800;
-  color: #E08000;
-}
-
-#screen-svodka .out-dot {
-  font-size: 14px;
-  line-height: 1;
-}
-
-#screen-svodka .mh-group--park {
-  flex: 0 0 44px;
-  width: 44px;
-  min-width: 44px;
-  border-top-color: #FBB034;
-}
-
-#screen-svodka .mh-group--park .mh2 {
-  grid-template-columns: 1fr;
-}
-
-#screen-svodka .park-col,
-#screen-svodka .park-foot {
-  background: #FFF3E0;
-}
-
-#screen-svodka .foot-row {
-  position: sticky;
-  bottom: 0;
-  z-index: 10;
-  background: #1A1A1A;
-}
-
-#screen-svodka .foot.in-foot.g { color: #2ECC71; }
-
-#screen-svodka .foot-label {
-  font-size: 9px;
-  font-weight: 800;
-}
-
-#screen-svodka .foot {
-  flex: 0 0 44px;
-  width: 44px;
-  min-width: 44px;
-  padding: 8px 2px;
-  text-align: center;
-  font-weight: 800;
-  font-size: 9px;
-  background: #1A1A1A;
-  color: #fff;
-  border-right: 1px solid rgba(255,255,255,0.06);
-}
-
-#screen-svodka .foot.out-foot.o { color: #FBB034; }
-
-@media (max-width: 480px) {
-  #screen-svodka .grid { font-size: 10px; }
-  #screen-svodka .in-val,
-  #screen-svodka .out-val { font-size: 8px; }
-  #screen-svodka .mh-group,
-  #screen-svodka .in,
-  #screen-svodka .out,
-  #screen-svodka .foot {
-    flex: 0 0 40px;
-    width: 40px;
-    min-width: 40px;
-  }
-  #screen-svodka .date-c {
-    flex: 0 0 40px;
-    width: 40px;
-    min-width: 40px;
-  }
+@media (min-width: 768px) {
+  .sv-grid-wrap { max-height: none; }
 }
