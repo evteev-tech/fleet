@@ -243,6 +243,8 @@ function _goHome(role) {
   const r = String(role ?? '').trim().toLowerCase();
   if (r === ROLES.MECHANIC || r === ROLES.OPERATIONS) {
     showScreen('screen-home');
+  } else if (r === ROLES.INVESTOR) {
+    showScreen('screen-svodka');
   } else {
     showScreen('screen-dashboard');
   }
