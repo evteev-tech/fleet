@@ -72,11 +72,11 @@ export function logCarStatus(carId, status, author = '', statusFrom = null) {
   // Не плодим запись, если последний зафиксированный статус уже такой же
   const last = db.prepare(
     `SELECT status FROM car_status_log
-     WHERE car_id = ? ORDER BY status_from DESC, id DESC LIMIT 1`
+     WHERE car_id = ? ORDER BY date_from DESC, id DESC LIMIT 1`
   ).get(carId);
   if (last && last.status === status) return;
   db.prepare(
-    `INSERT INTO car_status_log (car_id, status, status_from, author)
+    `INSERT INTO car_status_log (car_id, status, date_from, author)
      VALUES (?, ?, ?, ?)`
   ).run(carId, status, from, author);
 }

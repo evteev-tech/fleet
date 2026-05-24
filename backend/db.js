@@ -13,18 +13,38 @@ console.log(`[db] Подключено: ${DB_PATH}`);
 // ─── Миграция: журнал статусов машин (для отчёта «Сводка») ───────────────────
 // Хранит историю смены статусов по дням. БД помнит только текущий cars.status;
 // чтобы строить календарную матрицу по дням, нужен журнал изменений.
-// status_from — ISO YYYY-MM-DD (день, с которого статус действует).
+// date_from — ISO YYYY-MM-DD (день, с которого статус действует).
 db.exec(`
   CREATE TABLE IF NOT EXISTS car_status_log (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     car_id      TEXT    NOT NULL,
     status      TEXT    NOT NULL,
-    status_from TEXT    NOT NULL,
+    date_from   TEXT    NOT NULL,
     author      TEXT    DEFAULT '',
     created_at  TEXT    DEFAULT (datetime('now'))
   );
-  CREATE INDEX IF NOT EXISTS idx_csl_car_date ON car_status_log (car_id, status_from);
+  CREATE INDEX IF NOT EXISTS idx_csl_car_date ON car_status_log (car_id, date_from);
 `);
+
+// Страховка: если таблица существовала с иной схемой (ранний деплой), CREATE IF
+// NOT EXISTS её не трогает — поэтому до-создаём недостающие колонки вручную.
+try {
+  const cols = db.prepare(`PRAGMA table_info(car_status_log)`).all().map(c => c.name);
+  if (cols.includes('status_from') && !cols.includes('date_from')) {
+    db.exec(`ALTER TABLE car_status_log RENAME COLUMN status_from TO date_from`);
+  } else if (!cols.includes('date_from')) {
+    db.exec(`ALTER TABLE car_status_log ADD COLUMN date_from TEXT`);
+    if (cols.includes('status_from')) {
+      db.exec(`UPDATE car_status_log SET date_from = status_from WHERE date_from IS NULL OR date_from = ''`);
+    }
+  } else if (cols.includes('status_from')) {
+    db.exec(`UPDATE car_status_log SET date_from = status_from WHERE date_from IS NULL OR date_from = ''`);
+  }
+  if (!cols.includes('author'))    db.exec(`ALTER TABLE car_status_log ADD COLUMN author TEXT DEFAULT ''`);
+  if (!cols.includes('created_at')) db.exec(`ALTER TABLE car_status_log ADD COLUMN created_at TEXT`);
+} catch (e) {
+  console.error('[db] car_status_log: проверка колонок:', e.message);
+}
 
 // Одноразовый засев: если журнал пуст, записываем текущий статус каждой машины
 // сегодняшней датой. Так актуальный «ремонт» виден в матрице сразу, а не после
@@ -35,7 +55,7 @@ try {
     const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
     const cars = db.prepare('SELECT id, status FROM cars').all();
     const ins = db.prepare(
-      `INSERT INTO car_status_log (car_id, status, status_from, author)
+      `INSERT INTO car_status_log (car_id, status, date_from, author)
        VALUES (?, ?, ?, 'seed')`
     );
     const seed = db.transaction(rows => {
