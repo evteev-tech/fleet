@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Сводка — превью</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+button{cursor:pointer;border:none;background:none;font:inherit;color:inherit}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:#faf8f4;color:#2a1d12;min-height:100vh;-webkit-font-smoothing:antialiased;font-size:14px}
+
+:root{
+  --sv-bg:#faf8f4; --sv-surface:#fff; --sv-elevated:#fdfbf6; --sv-sunken:#f3eee5;
+  --sv-text:#2a1d12; --sv-text2:#5a4a3b; --sv-muted:#a09484; --sv-faint:#c8baa6;
+  --sv-border:#ebe3d6; --sv-border-s:#dbceb5; --sv-accent:#c95a2a;
+  --sv-rent:#7ee07e;   --sv-rent-t:#1f7a1f;   --sv-rent-bg:#9aec9a;
+  --sv-repair:#ff5e5e; --sv-repair-t:#a00010;  --sv-repair-bg:#ff7575;
+  --sv-idle:#7fe5e5;   --sv-idle-t:#0a6464;    --sv-idle-bg:#a8eded;
+  --sv-exp:#ffb84d;    --sv-exp-t:#8a4a00;     --sv-exp-bg:#ffcc7a;
+  --sv-r:12px; --sv-mono:ui-monospace,'SF Mono',monospace;
+}
+
+/* ── Layout ── */
+.sv-frame{display:flex;flex-direction:column;height:100vh;overflow:hidden;background:var(--sv-bg)}
+
+/* ── Header ── */
+.sv-head{background:var(--sv-surface);border-bottom:1px solid var(--sv-border);flex-shrink:0;padding:20px 28px 0}
+.sv-head-top{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-bottom:16px;flex-wrap:wrap}
+.sv-eyebrow{font-family:var(--sv-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--sv-muted);font-weight:500;margin-bottom:6px}
+.sv-month{display:flex;align-items:center;gap:8px}
+.sv-month-btn{width:28px;height:28px;border-radius:8px;border:1px solid var(--sv-border);background:var(--sv-elevated);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--sv-text2)}
+.sv-month-label{font-size:22px;font-weight:700;letter-spacing:-.022em}
+.sv-head-stats{display:flex;gap:28px;align-items:flex-end;flex-wrap:wrap}
+.sv-stat-l{font-family:var(--sv-mono);font-size:9px;color:var(--sv-muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px;font-weight:500}
+.sv-stat-v{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.sv-stat-v.pos{color:var(--sv-rent-t)} .sv-stat-v.neg{color:var(--sv-repair-t)}
+
+/* ── Tabs ── */
+.sv-tabs{display:flex}
+.sv-tab{padding:8px 18px;font-size:13px;font-weight:600;color:var(--sv-muted);border-bottom:2px solid transparent;transition:color .1s,border-color .1s;letter-spacing:.01em}
+.sv-tab:hover{color:var(--sv-text2)}
+.sv-tab.active{color:var(--sv-accent);border-bottom-color:var(--sv-accent)}
+
+/* ── Legend ── */
+.sv-legend{display:flex;gap:14px;flex-wrap:wrap;padding:7px 28px;font-size:11px;font-weight:600;font-family:var(--sv-mono);color:var(--sv-text2);background:var(--sv-elevated);border-bottom:1px solid var(--sv-border);flex-shrink:0}
+.sv-legend span{display:inline-flex;align-items:center;gap:5px}
+.sv-lg{width:12px;height:12px;border-radius:3px;display:inline-block;flex-shrink:0}
+.sv-lg--rent{background:var(--sv-rent)} .sv-lg--idle{background:var(--sv-idle)}
+.sv-lg--repair{background:var(--sv-repair)} .sv-lg--exp{background:var(--sv-exp)}
+
+/* ── Content ── */
+.sv-content{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0}
+
+/* ════ V1 SPREADSHEET ════ */
+.ss-wrap{flex:1;overflow:hidden;padding:16px 24px 24px;min-height:0;display:flex;flex-direction:column}
+.ss-scroll{flex:1;overflow:auto;border:1px solid var(--sv-border);border-radius:var(--sv-r);background:var(--sv-surface);min-height:0}
+.ss-table{border-collapse:separate;border-spacing:0;width:100%;font-size:12px}
+.ss-table th,.ss-table td{text-align:left;vertical-align:top;border-right:1px solid var(--sv-border);border-bottom:1px solid var(--sv-border);padding:0}
+.ss-th-date{position:sticky;left:0;top:0;z-index:5;background:var(--sv-surface);width:88px;min-width:88px;padding:12px 10px;font-weight:700;font-size:10px;font-family:var(--sv-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--sv-muted);border-bottom:2px solid var(--sv-border-s)}
+.ss-th-car{position:sticky;top:0;z-index:4;background:var(--sv-surface);padding:7px 10px 5px;text-align:center;border-bottom:1px solid var(--sv-border);border-top:3px solid var(--car,#ccc)}
+.ss-car-plate{font-size:14px;font-weight:800;letter-spacing:-.01em;color:var(--sv-text)}
+.ss-sub-h{position:sticky;top:48px;z-index:3;background:var(--sv-elevated);font-family:var(--sv-mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--sv-muted);font-weight:600;padding:4px 8px;border-bottom:2px solid var(--sv-border-s)}
+.ss-sub-h.in{color:var(--sv-rent-t)} .ss-sub-h.out{color:var(--sv-repair-t)}
+.ss-th-tot{position:sticky;right:0;top:0;z-index:5;background:var(--sv-surface);padding:12px 12px;font-family:var(--sv-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--sv-muted);font-weight:600;border-left:2px solid var(--sv-border-s);border-bottom:2px solid var(--sv-border-s);min-width:104px}
+.ss-td-date{position:sticky;left:0;z-index:2;background:var(--sv-surface);padding:7px 10px;font-family:var(--sv-mono);font-size:11px;font-variant-numeric:tabular-nums;font-weight:600;color:var(--sv-text);border-right:1px solid var(--sv-border-s);white-space:nowrap}
+.ss-td-dow{display:block;font-size:9px;color:var(--sv-muted);margin-top:1px;font-weight:500;text-transform:uppercase}
+.ss-cell{padding:5px 8px;height:42px;min-width:56px;vertical-align:middle}
+.ss-cell.ss-in{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--sv-mono);font-weight:700;font-size:12px;border-right:none}
+.ss-cell.ss-out{min-width:90px}
+.ss-cell.st-rent{background:var(--sv-rent);color:#0c4a0c}
+.ss-cell.st-repair{background:var(--sv-repair)}
+.ss-cell.st-idle{background:var(--sv-idle)}
+.ss-money{font-size:12px;font-weight:700}
+.ss-exp{display:block;padding:3px 5px;background:var(--sv-exp-bg);border:1px solid rgba(138,74,0,.18);border-radius:5px;font-family:var(--sv-mono);font-size:10px;color:var(--sv-exp-t);font-weight:600;line-height:1.3;margin-bottom:2px}
+.ss-exp:last-child{margin-bottom:0}
+.ss-exp-amt{font-weight:700}
+.ss-exp-note{display:block;font-size:9px;font-weight:500;opacity:.75;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:82px}
+.ss-td-tot{position:sticky;right:0;z-index:2;background:var(--sv-surface);padding:5px 10px;font-family:var(--sv-mono);font-variant-numeric:tabular-nums;border-left:2px solid var(--sv-border-s);text-align:right;min-width:104px}
+.ss-tot-net{font-size:13px;font-weight:700}
+.ss-tot-sub{font-size:9px;color:var(--sv-muted);margin-top:2px;font-weight:500}
+.ss-td-tot.pos .ss-tot-net{color:var(--sv-rent-t)} .ss-td-tot.neg .ss-tot-net{color:var(--sv-repair-t)}
+.ss-foot td{background:var(--sv-elevated)!important;font-weight:700;border-top:2px solid var(--sv-border-s)}
+.ss-foot .ss-foot-in{text-align:right;font-family:var(--sv-mono);color:var(--sv-rent-t);font-variant-numeric:tabular-nums;padding:6px 8px}
+.ss-foot .ss-foot-out{font-family:var(--sv-mono);color:var(--sv-repair-t);text-align:right;font-variant-numeric:tabular-nums;padding:6px 8px}
+.ss-weekend .ss-td-date{box-shadow:inset 3px 0 0 var(--sv-exp)}
+.ss-weekend .ss-td-dow{color:var(--sv-exp-t)}
+
+/* ════ V2 TIMELINE ════ */
+.tl-wrap{flex:1;overflow:auto;padding:16px 24px 24px;min-height:0}
+.tl-header,.tl-row{display:grid;grid-template-columns:124px minmax(0,1fr) 188px;gap:0}
+.tl-header{position:sticky;top:0;background:var(--sv-bg);z-index:3;border-bottom:1px solid var(--sv-border-s)}
+.tl-car-col{padding:8px 10px;display:flex;flex-direction:column;justify-content:center;font-family:var(--sv-mono);font-size:10px;color:var(--sv-muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.tl-row .tl-car-col{background:var(--sv-surface);border-left:1px solid var(--sv-border);border-right:1px solid var(--sv-border);border-bottom:1px solid var(--sv-border)}
+.tl-car-plate{font-size:15px;font-weight:800;letter-spacing:-.01em;color:var(--sv-text);text-transform:none;padding-bottom:2px;border-bottom:3px solid var(--car,#ccc);width:fit-content;margin-bottom:3px}
+.tl-car-sub{font-family:var(--sv-mono);font-size:10px;color:var(--sv-muted);letter-spacing:.02em;font-weight:500}
+.tl-days{display:grid;gap:0}
+.tl-day-head{padding:7px 2px;text-align:center;font-family:var(--sv-mono);border-right:1px solid var(--sv-border)}
+.tl-day-num{font-size:12px;font-weight:700;color:var(--sv-text);letter-spacing:-.01em}
+.tl-day-dow{font-size:9px;color:var(--sv-muted);margin-top:1px;text-transform:uppercase;letter-spacing:.04em}
+.tl-cell{position:relative;height:54px;display:flex;align-items:center;justify-content:center;border-right:1px solid var(--sv-bg);border-bottom:1px solid var(--sv-bg);font-family:var(--sv-mono);font-size:11px;font-weight:700;overflow:hidden}
+.tl-cell.st-rent{background:var(--sv-rent);color:var(--sv-rent-t)}
+.tl-cell.st-repair{background:var(--sv-repair);color:var(--sv-repair-t)}
+.tl-cell.st-idle{background:var(--sv-idle);color:var(--sv-idle-t);opacity:.7}
+.tl-cell-glyph{font-size:9px;text-transform:uppercase;letter-spacing:.04em;font-weight:600;opacity:.9}
+.tl-cell-glyph.idle{opacity:.4;font-size:14px}
+.tl-cell-exp{position:absolute;left:2px;right:2px;bottom:2px;font-family:var(--sv-mono);font-size:9px;font-weight:700;background:var(--sv-surface);color:var(--sv-exp-t);padding:1px 3px;border-radius:3px;text-align:center;border:1px solid rgba(138,74,0,.18);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tl-totals-head,.tl-totals{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border-left:1px solid var(--sv-border-s)}
+.tl-totals-head{padding:7px 0;font-family:var(--sv-mono);font-size:9px;color:var(--sv-muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.tl-totals-head>div{text-align:center;border-right:1px solid var(--sv-border)}
+.tl-totals-head>div:last-child{border-right:none}
+.tl-row .tl-totals{background:var(--sv-surface);border-bottom:1px solid var(--sv-border);border-right:1px solid var(--sv-border)}
+.tl-tot-cell{padding:6px 4px;text-align:center;font-family:var(--sv-mono);font-variant-numeric:tabular-nums;font-size:12px;font-weight:700;border-right:1px solid var(--sv-border);display:flex;align-items:center;justify-content:center}
+.tl-tot-cell:last-child{border-right:none}
+.tl-tot-cell.pos{color:var(--sv-rent-t)} .tl-tot-cell.warn,.tl-tot-cell.neg{color:var(--sv-repair-t)}
+.tl-footer-row{margin-top:8px;border-top:2px solid var(--sv-border-s)}
+.tl-footer-row .tl-car-col{background:transparent;border:none}
+.tl-cell-foot{background:var(--sv-surface);font-size:10px;border-right:1px solid var(--sv-border);border-bottom:1px solid var(--sv-border)}
+.tl-cell-foot.pos{color:var(--sv-rent-t)} .tl-cell-foot.neg{color:var(--sv-repair-t)}
+.tl-foot-net{font-weight:700}
+
+/* ════ V3 P&L ════ */
+.pl-wrap{flex:1;overflow:auto;padding:16px 24px 24px;min-height:0}
+.pl-head-row,.pl-row{display:grid;grid-template-columns:76px minmax(200px,1fr) 112px 1fr 112px;gap:14px;align-items:center}
+.pl-head-row{padding:9px 16px;background:var(--sv-surface);border:1px solid var(--sv-border);border-radius:10px;margin-bottom:8px;position:sticky;top:0;z-index:3;font-family:var(--sv-mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--sv-muted);font-weight:600}
+.pl-h-money{text-align:right}
+.pl-h-plate{font-family:var(--sv-mono);font-size:10px;font-weight:700;color:var(--sv-text2);text-align:center;padding-bottom:2px;border-bottom:2px solid var(--car,#ccc);text-transform:none;letter-spacing:.02em}
+.pl-row{padding:9px 16px;background:var(--sv-surface);border:1px solid var(--sv-border);border-radius:10px;margin-bottom:6px;transition:border-color .15s,box-shadow .15s}
+.pl-row:hover{border-color:var(--sv-border-s);box-shadow:0 4px 14px -10px rgba(42,29,18,.15)}
+.pl-date{display:flex;flex-direction:column}
+.pl-d-num{font-family:var(--sv-mono);font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.pl-d-dow{font-size:9.5px;color:var(--sv-muted);text-transform:uppercase;letter-spacing:.06em;margin-top:1px}
+.pl-cars{display:grid;gap:4px}
+.pl-pill{height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:var(--sv-mono);font-size:11px;font-weight:700;border:1px solid transparent}
+.pl-pill.st-rent{background:var(--sv-rent);color:var(--sv-rent-t);border-color:rgba(31,122,31,.15)}
+.pl-pill.st-repair{background:var(--sv-repair);color:var(--sv-repair-t)}
+.pl-pill.st-idle{background:var(--sv-idle);color:var(--sv-idle-t)}
+.pl-money{font-family:var(--sv-mono);font-variant-numeric:tabular-nums;font-size:13px;font-weight:700;text-align:right}
+.pl-money.pos{color:var(--sv-rent-t)} .pl-money.neg{color:var(--sv-repair-t)}
+.pl-money.pl-net{font-size:14px;letter-spacing:-.01em}
+.pl-money-muted{color:var(--sv-faint);font-family:var(--sv-mono);font-size:13px}
+.pl-money.neg-stack{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left}
+.pl-exp-total{font-family:var(--sv-mono);color:var(--sv-repair-t);font-size:13px;font-weight:700}
+.pl-exp-notes{font-size:10px;color:var(--sv-muted);font-weight:500;line-height:1.35}
+</style>
+</head>
+<body>
+<div class="sv-frame">
+  <header class="sv-head">
+    <div class="sv-head-top">
+      <div>
+        <div class="sv-eyebrow">Сводка по парку</div>
+        <div class="sv-month">
+          <button class="sv-month-btn">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <span class="sv-month-label">Апрель 2026</span>
+          <button class="sv-month-btn">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="sv-head-stats">
+        <div class="sv-stat">
+          <div class="sv-stat-l">Поступления</div>
+          <div class="sv-stat-v pos">+88 400 ₽</div>
+        </div>
+        <div class="sv-stat">
+          <div class="sv-stat-l">Расходы</div>
+          <div class="sv-stat-v neg">−38 251 ₽</div>
+        </div>
+        <div class="sv-stat">
+          <div class="sv-stat-l">Чистыми</div>
+          <div class="sv-stat-v pos">+50 149 ₽</div>
+        </div>
+        <div class="sv-stat">
+          <div class="sv-stat-l">Загрузка</div>
+          <div class="sv-stat-v">62%</div>
+        </div>
+      </div>
+    </div>
+    <div class="sv-tabs">
+      <button class="sv-tab active" onclick="switchView('v1',this)">Матрица</button>
+      <button class="sv-tab" onclick="switchView('v2',this)">Лента</button>
+      <button class="sv-tab" onclick="switchView('v3',this)">P&amp;L</button>
+    </div>
+  </header>
+  <div class="sv-legend">
+    <span><i class="sv-lg sv-lg--rent"></i>аренда</span>
+    <span><i class="sv-lg sv-lg--idle"></i>простой</span>
+    <span><i class="sv-lg sv-lg--repair"></i>ремонт</span>
+    <span><i class="sv-lg sv-lg--exp"></i>расход</span>
+  </div>
+  <div class="sv-content" id="svContent"></div>
+</div>
+
+<script>
+/* ── Данные апреля (из макета) ── */
+const CARS = [
+  {id:'О52', rate:850, color:'#7dd3c0'},
+  {id:'766', rate:850, color:'#f4ad77'},
+  {id:'О86', rate:850, color:'#d97a7a'},
+  {id:'268', rate:850, color:'#8ab4e8'},
+  {id:'723', rate:850, color:'#b07ac4'},
+  {id:'165', rate:850, color:'#f0d97a'},
+  {id:'982', rate:800, color:'#e8a4b3'},
+];
+const RAW = [
+//       O52       766       O86       268       723       165       982
+/*01*/['idle',   'idle',   'rent',   'repair', 'rent',   'rent',   'rent'],
+/*02*/['idle',   'idle',   'rent',   'repair', 'rent',   'rent',   'rent'],
+/*03*/['idle',   'idle',   'rent',   'repair', 'idle',   'rent',   'rent'],
+/*04*/['idle',   'idle',   'rent',   'idle',   'idle',   'rent',   'rent'],
+/*05*/['idle',   'idle',   'repair', 'idle',   'idle',   'rent',   'rent'],
+/*06*/['idle',   'idle',   'repair', 'idle',   'idle',   'rent',   'rent'],
+/*07*/['idle',   'idle',   'repair', 'idle',   'idle',   'rent',   'rent'],
+/*08*/['repair', 'idle',   'rent',   'repair', 'idle',   'rent',   'rent'],
+/*09*/['repair', 'idle',   'rent',   'repair', 'idle',   'rent',   'rent'],
+/*10*/['repair', 'idle',   'rent',   'repair', 'idle',   'rent',   'rent'],
+/*11*/['repair', 'idle',   'rent',   'idle',   'idle',   'rent',   'rent'],
+/*12*/['repair', 'idle',   'repair', 'idle',   'idle',   'rent',   'rent'],
+/*13*/['repair', 'idle',   'repair', 'idle',   'idle',   'rent',   'rent'],
+/*14*/['repair', 'idle',   'rent',   'idle',   'idle',   'rent',   'rent'],
+/*15*/['repair', 'idle',   'rent',   'idle',   'idle',   'rent',   'rent'],
+/*16*/['repair', 'idle',   'rent',   'idle',   'idle',   'rent',   'rent'],
+/*17*/['repair', 'idle',   'rent',   'idle',   'idle',   'rent',   'rent'],
+/*18*/['repair', 'idle',   'rent',   'idle',   'idle',   'rent',   'rent'],
+];
+const EXPENSES = [
+  {d:0, ci:0, amt:5500, note:'ГЛОНАСС'},
+  {d:0, ci:1, amt:5500, note:'ГЛОНАСС'},
+  {d:1, ci:0, amt:600,  note:'Глонасс / 3 мес'},
+  {d:1, ci:1, amt:600,  note:'Глонасс / 3 мес'},
+  {d:1, ci:2, amt:600,  note:'Глонасс / 3 мес'},
+  {d:1, ci:3, amt:600,  note:'Глонасс / 3 мес'},
+  {d:1, ci:4, amt:600,  note:'Глонасс / 3 мес'},
+  {d:1, ci:5, amt:600,  note:'Глонасс / 3 мес'},
+  {d:1, ci:6, amt:600,  note:'Глонасс / 3 мес'},
+  {d:4, ci:2, amt:5000, note:'ЭП слесарю'},
+  {d:5, ci:2, amt:12800,note:'Запчасти'},
+  {d:6, ci:1, amt:1127, note:'Авито объявление'},
+  {d:8, ci:3, amt:3000, note:'Работа Марк'},
+  {d:9, ci:3, amt:2500, note:'ТО'},
+  {d:11,ci:1, amt:1224, note:'Авито продвижение'},
+];
+
+const DAYS = 18;
+const WD = ['вс','пн','вт','ср','чт','пт','сб'];
+
+function fmt(n){return new Intl.NumberFormat('ru-RU').format(Math.round(n))}
+function dayOfWeek(d){ return new Date(2026,3,d).getDay() } // апрель 2026
+
+function expFor(di, ci){ return EXPENSES.filter(e=>e.d===di && e.ci===ci) }
+function dayInc(di){ let s=0; CARS.forEach((c,i)=>{ if(RAW[di][i]==='rent') s+=c.rate }); return s }
+function dayExp(di){ return EXPENSES.filter(e=>e.d===di).reduce((s,e)=>s+e.amt,0) }
+
+/* ── V1 Spreadsheet ── */
+function buildV1(){
+  let h1=`<tr><th class="ss-th-date" rowspan="2">Дата</th>`;
+  CARS.forEach(c=>{ h1+=`<th colspan="2" class="ss-th-car" style="--car:${c.color}"><div class="ss-car-plate">${c.id}</div></th>` });
+  h1+=`<th class="ss-th-tot" rowspan="2">Итого</th></tr>`;
+  let h2='<tr>'; CARS.forEach(()=>{ h2+='<th class="ss-sub-h in">поступ.</th><th class="ss-sub-h out">расход</th>' }); h2+='</tr>';
+  let body='';
+  for(let d=0;d<DAYS;d++){
+    const dow=WD[dayOfWeek(d+1)];
+    const isWk=[0,6].includes(dayOfWeek(d+1));
+    let dInc=dayInc(d), dExp=dayExp(d);
+    let cells='';
+    CARS.forEach((c,ci)=>{
+      const st=RAW[d][ci], ex=expFor(d,ci);
+      const inc=st==='rent'?c.rate:0;
+      cells+=`<td class="ss-cell ss-in st-${st}">${inc>0?`<span class="ss-money">${fmt(inc)}</span>`:''}</td>`;
+      cells+=`<td class="ss-cell ss-out">${ex.map(e=>`<span class="ss-exp"><span class="ss-exp-amt">${fmt(e.amt)}</span><span class="ss-exp-note">${e.note}</span></span>`).join('')}</td>`;
+    });
+    const net=dInc-dExp;
+    const dStr=String(d+1).padStart(2,'0')+'.04';
+    body+=`<tr${isWk?' class="ss-weekend"':''}><td class="ss-td-date">${dStr}<span class="ss-td-dow">${dow}</span></td>${cells}<td class="ss-td-tot ${net>=0?'pos':'neg'}"><div class="ss-tot-net">${net>=0?'+':''}${fmt(net)}</div><div class="ss-tot-sub">${fmt(dInc)} − ${fmt(dExp)}</div></td></tr>`;
+  }
+  let foot='<tr class="ss-foot"><td class="ss-td-date">Итого</td>';
+  let tIn=0,tOut=0;
+  CARS.forEach((c,ci)=>{
+    let ci2=0,co=0;
+    for(let d=0;d<DAYS;d++){ if(RAW[d][ci]==='rent') ci2+=c.rate }
+    co=EXPENSES.filter(e=>e.ci===ci).reduce((s,e)=>s+e.amt,0);
+    tIn+=ci2; tOut+=co;
+    foot+=`<td class="ss-cell ss-foot-in">${fmt(ci2)}</td><td class="ss-cell ss-foot-out">${co>0?fmt(co):'—'}</td>`;
+  });
+  foot+=`<td class="ss-td-tot pos"><div class="ss-tot-net">+${fmt(tIn-tOut)}</div><div class="ss-tot-sub">net</div></td></tr>`;
+  return `<div class="ss-wrap"><div class="ss-scroll"><table class="ss-table"><thead>${h1}${h2}</thead><tbody>${body}</tbody><tfoot>${foot}</tfoot></table></div></div>`;
+}
+
+/* ── V2 Timeline ── */
+function buildV2(){
+  const cw=`repeat(${DAYS},minmax(38px,1fr))`;
+  let dh=''; for(let d=0;d<DAYS;d++) dh+=`<div class="tl-day-head"><div class="tl-day-num">${d+1}</div><div class="tl-day-dow">${WD[dayOfWeek(d+1)]}</div></div>`;
+  let hdr=`<div class="tl-header"><div class="tl-car-col">Машина</div><div class="tl-days" style="grid-template-columns:${cw}">${dh}</div><div class="tl-totals-head"><div>аренда</div><div>ремонт</div><div>net ₽</div></div></div>`;
+  let rows='';
+  CARS.forEach((c,ci)=>{
+    let rentD=0,repD=0,cInc=0,cExp=0,cells='';
+    for(let d=0;d<DAYS;d++){
+      const st=RAW[d][ci], ex=expFor(d,ci);
+      const inc=st==='rent'?c.rate:0;
+      if(st==='rent') rentD++;
+      if(st==='repair') repD++;
+      cInc+=inc; cExp+=ex.reduce((s,e)=>s+e.amt,0);
+      const expChip=ex.length>0?`<div class="tl-cell-exp">${fmt(ex.reduce((s,e)=>s+e.amt,0))}</div>`:'';
+      const inner=st==='rent'?`<span class="tl-cell-amt">${fmt(c.rate)}</span>`:st==='repair'?`<span class="tl-cell-glyph">рем</span>`:`<span class="tl-cell-glyph idle">—</span>`;
+      cells+=`<div class="tl-cell st-${st}">${inner}${expChip}</div>`;
+    }
+    const net=cInc-cExp;
+    rows+=`<div class="tl-row"><div class="tl-car-col"><div class="tl-car-plate" style="--car:${c.color}">${c.id}</div><div class="tl-car-sub">апрель 2026</div></div><div class="tl-days" style="grid-template-columns:${cw}">${cells}</div><div class="tl-totals"><div class="tl-tot-cell pos">${rentD}д</div><div class="tl-tot-cell warn">${repD}д</div><div class="tl-tot-cell ${net>=0?'pos':'neg'}">${net>=0?'+':''}${fmt(net)}</div></div></div>`;
+  });
+  let fc=''; let totalNet=0;
+  for(let d=0;d<DAYS;d++){
+    const net=dayInc(d)-dayExp(d); totalNet+=net;
+    fc+=`<div class="tl-cell tl-cell-foot ${net>=0?'pos':'neg'}"><span class="tl-foot-net">${net>=0?'+':'−'}${fmt(Math.abs(net)/1000).replace('.',',')}к</span></div>`;
+  }
+  return `<div class="tl-wrap">${hdr}${rows}<div class="tl-row tl-footer-row"><div class="tl-car-col" style="font-family:var(--sv-mono);font-size:10px;color:var(--sv-muted)">Итого день</div><div class="tl-days" style="grid-template-columns:${cw}">${fc}</div><div class="tl-totals"><div class="tl-tot-cell" style="grid-column:1/span 3;font-weight:700">${totalNet>=0?'+':''}${fmt(totalNet)} ₽</div></div></div></div>`;
+}
+
+/* ── V3 P&L ── */
+function buildV3(){
+  const cols=`repeat(${CARS.length},1fr)`;
+  const hPlates=CARS.map(c=>`<div class="pl-h-plate" style="--car:${c.color}">${c.id}</div>`).join('');
+  let hdr=`<div class="pl-head-row"><div>День</div><div class="pl-h-cars" style="display:grid;grid-template-columns:${cols};gap:4px">${hPlates}</div><div class="pl-h-money">Поступления</div><div class="pl-h-money">Расходы</div><div class="pl-h-money">Net</div></div>`;
+  let rows='';
+  for(let d=0;d<DAYS;d++){
+    const dow=WD[dayOfWeek(d+1)];
+    const dInc=dayInc(d), dExp=dayExp(d), net=dInc-dExp;
+    const pills=CARS.map((c,ci)=>{
+      const st=RAW[d][ci];
+      return `<div class="pl-pill st-${st}">${st==='rent'?fmt(c.rate):''}</div>`;
+    }).join('');
+    const exNotes=[...new Set(EXPENSES.filter(e=>e.d===d).map(e=>e.note))];
+    const expHtml=dExp>0?`<div class="pl-money neg-stack"><span class="pl-exp-total">−${fmt(dExp)}</span>${exNotes.length?`<span class="pl-exp-notes">${exNotes.slice(0,2).join(', ')}${exNotes.length>2?'…':''}</span>`:''}</div>`:`<span class="pl-money-muted">—</span>`;
+    rows+=`<div class="pl-row"><div class="pl-date"><div class="pl-d-num">${String(d+1).padStart(2,'0')}.04</div><div class="pl-d-dow">${dow}</div></div><div class="pl-cars" style="grid-template-columns:${cols}">${pills}</div><div class="pl-money pos">+${fmt(dInc)}</div>${expHtml}<div class="pl-money pl-net ${net>=0?'pos':'neg'}">${net>=0?'+':''}${fmt(net)}</div></div>`;
+  }
+  return `<div class="pl-wrap">${hdr}${rows}</div>`;
+}
+
+let curView='v1';
+function switchView(v, btn){
+  curView=v;
+  document.querySelectorAll('.sv-tab').forEach(t=>t.classList.toggle('active',t===btn));
+  render();
+}
+function render(){
+  const c=document.getElementById('svContent');
+  if(curView==='v1') c.innerHTML=buildV1();
+  else if(curView==='v2') c.innerHTML=buildV2();
+  else c.innerHTML=buildV3();
+}
+render();
+</script>
+</body>
+</html>
