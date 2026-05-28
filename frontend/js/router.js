@@ -71,7 +71,6 @@ const NAVBAR_CONFIG = {
 
   [ROLES.INVESTOR]: [
     { id: 'screen-svodka',    label: 'Сводка',    iconSvg: NAV_ICONS.svodka },
-    { id: 'screen-dashboard', label: 'Главная',   iconSvg: NAV_ICONS.home },
     { id: 'screen-history',   label: 'История',   iconSvg: NAV_ICONS.history },
     { id: 'screen-analytics', label: 'Аналитика', iconSvg: NAV_ICONS.analytics },
   ],
